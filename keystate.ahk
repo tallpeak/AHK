@@ -1,16 +1,38 @@
 ; https://github.com/tallpeak/AHK/GTA/keystate.ahk
 
 #Requires AutoHotkey v2.0
+#Warn All
 InstallKeybdHook
 ;InstallMouseHook ; causes GetKeyState("WheelDown","P") and GetKeyState("WheelUp","P") to return non-zero
-; indicating that they are physically (bot not logically) pressed down, after first use of the corresponding scroll wheel 
-; direction on my MS bluetooth mouse 
+; indicating that they are physically (bot not logically) pressed down, after first use of the corresponding scroll wheel
+; direction on my MS bluetooth mouse
 KeyHistory(100)
 Persistent
 #SingleInstance force
 
-WindowSearchCriteria := "ahk_exe GTA5.exe"
 
+; original application I used this technique with,
+; as knowing the keystate is useful for debugging of macros that automate games
+;WindowSearchCriteria := "ahk_exe GTA5.exe"
+
+; something unique that I can find in the window title:
+proc_title := "qomph.com/aaron"
+WindowSearchCriteria := proc_title
+PID := 0
+
+; need to start under conhost so that title can be set
+; new terminal.exe in Windows 11 doesn't allow title to be set
+; nor does new Notepad.exe
+; prefix with conhost -- to start cmd under conhost, per:
+; https://stackoverflow.com/questions/75991731/programmatically-start-process-in-old-windows-terminal
+Run "conhost.exe -- cmd.exe /k title " proc_title
+
+; WindowSearchCriteria := "ahk_pid " . PID
+HWND := WinWait(WindowSearchCriteria)
+WindowSearchCriteria := "ahk_id " . HWND
+WinActivate(WindowSearchCriteria)
+
+;WinActivate "ahk_pid " PID
 TIMEIT := false
 
 GetAllKeyState() {
