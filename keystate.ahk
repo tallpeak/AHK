@@ -2,7 +2,9 @@
 
 #Requires AutoHotkey v2.0
 InstallKeybdHook
-InstallMouseHook
+;InstallMouseHook ; causes GetKeyState("WheelDown","P") and GetKeyState("WheelUp","P") to return non-zero
+; indicating that they are physically (bot not logically) pressed down, after first use of the corresponding scroll wheel 
+; direction on my MS bluetooth mouse 
 KeyHistory(100)
 Persistent
 #SingleInstance force
