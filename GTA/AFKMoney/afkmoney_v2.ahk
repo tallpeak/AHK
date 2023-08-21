@@ -9,8 +9,11 @@ KeyHistory(100)
 Persistent
 #SingleInstance force
 
+global gWaitTimer := 0
+
 ; Important configuration variables
 Debug_KeyState := true
+KeyState_Update_Interval := 500
 AttemptLaunch := true   ; Run steam game
 
 launch_dir := A_ScriptDir
@@ -110,8 +113,13 @@ if ! WinExist("ahk_exe GTA5.exe") {
 	w := WinWaitActive("ahk_exe GTA5.exe",,120) ; Set GTA in focus at start (but user can change focus)
 	ToolTip("")
 	if w && WinExist("ahk_exe GTA5.exe") {
+		ToolTip("GTA5 window found, reloading script in 4 seconds...")
+		Sleep(4000)
+		ToolTip()
 		Reload
-		;WinGetPos(&WX, &WY, &WW, &WH)
+		ToolTip("Reload failed")
+		Sleep(2000)
+		ExitApp(1)
 	} else {
 		ToolTip("can't find GTA5.exe; exiting. Try again after loading GTA")
 		Sleep(2000)
@@ -220,7 +228,7 @@ UpdateTitleBar_KeyState() {
 }
 
 if Debug_KeyState {
-	SetTimer(UpdateTitleBar_KeyState,1000,0)
+	SetTimer(UpdateTitleBar_KeyState, KeyState_Update_Interval, 0)
 }
 Return
 
@@ -264,8 +272,9 @@ StealthCircles(*)
 ; Process, Close, GTA5.exe
 ; return
 
-^!F6::
+*^!F6::
 {
+	ClearAllKeyState()
 	reloadscript()
 }
 
@@ -309,12 +318,10 @@ StealthCircles(*)
 	toggleReturnToFreemode()
 }
 
-; ^!P::
-; 	PostMessage, 0xf, , , , ahk_exe GTA5.exe
-; 	Return
-
 ; Avoid messing with application-specific hotkeys:
 #HotIf WinActive("ahk_exe GTA5.exe") ; //replaces #IfWinActive from AHK v1
+; Try this ?
+; HotIfWinActive("ahk_exe GTA5.exe")
 
 ; Pressing F8 hogs the thread so that F8 doesn't work again,
 ; until SetTimer and Return releases the thread
@@ -732,6 +739,7 @@ toggleReturnToFreemode()
 	setdefaultkeydelay()
 }
 
+; get oppressor mk2 from mechanic (last vehicle in arcade)
 ^o::
 {
 	SetCapsLockState("AlwaysOff")
@@ -741,33 +749,35 @@ toggleReturnToFreemode()
 	Sleep(666)
 	Send("{right}{up}{enter}")
 	Sleep(777)
-	Send("{up 18}{enter}")
+	Send("{up 18}{enter}") ; sometimes 17
 	Sleep(5250) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
 	Send("{up 8}{enter}{up}") ; {enter}
 	setdefaultkeydelay()
 }
 
 ; Oppressor Mk2 get ??? seems to be  return to garage
-/* 	ErrorLevel := !KeyWait("Alt", "T2")
-	SetKeyDelay(25, 15) ;delay,pressDuration
-	Send("{m}")
-	Sleep(55) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
-	Send("{down 5}{enter}{down 3}{enter}{down 2}{enter}")
-	setdefaultkeydelay() */
+	;~ ErrorLevel := !KeyWait("Alt", "T2")
+	;~ SetKeyDelay(25, 15) ;delay,pressDuration
+	;~ Send("{m}")
+	;~ Sleep(55) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
+	;~ Send("{down 5}{enter}{down 3}{enter}{down 2}{enter}")
+	;~ setdefaultkeydelay()
 
 
 ; Oppressor Mk2 get from terrorbyte
-!+o::
+^+o::
 {
-	ErrorLevel := !KeyWait("Alt", "T2")
-	SetKeyDelay(25, 15) ;delay,pressDuration
+	KeyWait("Shift", "T2")
+	KeyWait("Control", "T2")
+	SetKeyDelay(10, 70) ;delay,pressDuration
 	Send("{m}")
 	Sleep(55)
 	Send("{down 6}{enter}{down 3}{enter}{down 2}{enter}")
+	Send("z{enter}z{esc 3}") ; one extra enter, some delay
 	setdefaultkeydelay()
 }
 
-;;helicopter fly forward 60 seconds
+;;helicopter fly forward 120 seconds
 ^+NumpadUp::
 ^+Numpad8::
 {
@@ -777,7 +787,7 @@ toggleReturnToFreemode()
     KeyWait("Numpad8", "T1")
     KeyWait("NumpadUp", "T1")
 	Send("{w down}{numpad8 down}")
-	KeyWait("w","DT60")
+	KeyWait("w","DT120")
 	;sleep(60000)
 	Send("{w up}{numpad8 up}")
 }
@@ -789,18 +799,20 @@ toggleReturnToFreemode()
 	Send("{w down}")
 }
 
-;~ ;Drive slowly
-;~ ^!+w::
-;~ {
-	;~ Loop 999 {
-		;~ Send("{w down}")
-		;~ Sleep(500)
-		;~ Send("{w up}")
-		;~ Sleep(500)
-		;~ if GetKeyState("w","P")
-			;~ return
-	;~ }
-;~ }
+;Drive slowly for nightclub VIP to hosp or home, etc
+^!+w::
+{
+	;~ global TBmode
+	;~ TBmode := "driving slowly"
+	Loop 999 {
+		Send("{w down}")
+		Sleep(444)
+		Send("{w up}")
+		Sleep(333)
+		if GetKeyState("w","P") || GetKeyState("Shift","P")
+			return
+	}
+}
 
 ; Run or swim straight
 ^!r::
@@ -809,22 +821,43 @@ toggleReturnToFreemode()
 	Return
 }
 
+WaitTimer_Start() {
+	global gWaitTimer := 0
+	SetTimer(WaitTimer,10)
+}
 
-; (for Oppressor Mk2 owners)
-; to fly across the map
-; fly straight for 2 minutes; first up, then straight, then down partway
-; Control  Shift W
+WaitTimer_Stop() {
+	SetTimer(WaitTimer,0)
+	WinSetTitle("t=" . gWaitTimer, "ahk_exe GTA5.exe")
+}
+
+WaitTimer() {
+	global gWaitTimer += 1
+	if Mod(gWaitTimer,5)==0 {
+		WinSetTitle("t=" . gWaitTimer, "ahk_exe GTA5.exe")
+	}
+}
+
+
+; for Oppressor Mk2 owners - fly across the map
+; Originally: fly straight for 2 minutes; first up, then straight, then down partway
+; Control-Shift W
+; Now: Hold w for longer for a longer flight; 1 second held = t=100 = about a 45-second flight
 ^+w::
 {
-    KeyWait("Shift", "T1")
-    KeyWait("Control", "T1")
-    KeyWait("w", "T1")
+	WaitTimer_Start()
+	global gWaitTimer := 50
+	KeyWait("w", "T10")
+	WaitTimer_Stop()
+	t := gWaitTimer
+    KeyWait("Shift", "T2")
+    KeyWait("Control", "T2")
     Sleep(100)
     Send("{Numpad5 Down}{w Down}")
     Sleep(5000)
 	Send("{space down}")
     ;Sleep(25000)
-	el:=KeyWait("w","DT25")
+	el:=KeyWait("w","DT" . (t / 2 + 5)) ; DT25
 	Send("{space up}")
 	if GetKeyState("w","P")
 		goto endflight ;return
@@ -833,13 +866,13 @@ toggleReturnToFreemode()
     Sleep(20)
 	;Sleep(10000)
 	; doesnt seem to work: el:=KeyWait("w","T10")
-	el:=KeyWait("Numpad5","DT10")
+	el:=KeyWait("Numpad5","DT" . (t / 4)) ; DT10
 	if GetKeyState("w","P")
 		goto endflight ;return
 	;Input(l,"L10")
     Send("{Shift Down}{w Down}")
     ;Sleep(20000)
-	el:=KeyWait("w","DT10")
+	el:=KeyWait("w","DT" . (t / 4)) ; DT10
 	if GetKeyState("w","P")
 		return
 	;Input(l,"L20")
@@ -1032,8 +1065,8 @@ ResolutionUp(n)
 ; Same as a batch file with:
 ;  pssuspend gta5 && sleep 10 && pssuspend -r gta5
 ; Also helps for getting un-stuck when frozen entering Arcade or Casino
-^!NumpadEnd::
-^!End::
+*^!NumpadEnd::
+*^!End::
 {
 	UpdateTitleBar_KeyState()
 	;this was hanging; probably updating the title bar while suspended lead to a deadlock
@@ -1046,22 +1079,26 @@ ResolutionUp(n)
 	global last_kss := ""
 	Suspend(false)
 	Thread("NoTimers",false)
+	ClearAllKeyState()
 
 	;; this just deadlocked too, apparently
 	;~ Run("pssuspend gta5")
 	;~ Sleep(11000)
 	;~ Run("pssuspend -r gta5")
 
+	; the following worked, but is a bit slow to start
 	; RunWait("cmd /c suspend_for_seconds.bat gta5 10")
 }
 
 ; control shift alt end to end GTA5
-^+!NumpadEnd::
+^+!Del::
 {
-	WinKill("ahk_exe GTA5.exe")
-	;ToolTip("WinKill ErrorLevel=",String(ErrorLevel))
-	Sleep(5000)
-	ToolTip()
+	RunWait("pskill GTA5")
+	; this didn't work:
+	; el:=WinKill("ahk_exe GTA5.exe")
+	; ToolTip("WinKill ErrorLevel=" . el)
+	;Sleep(5000)
+	;ToolTip()
 }
 
 Process_Suspend(PID_or_Name){
@@ -1427,5 +1464,25 @@ TryWinActivate(w)
 ;!7::
 ;	CreateWindow("Win + 7")
 ;	return
+
+; lucky wheel; these settings arent working yet
+^!L:: {
+    delay := 1200 ;Edit this value to change the spinning speed: higher value = slower spin
+	ToolTip("Lucky Wheel...")
+    SetKeyDelay(10,70)
+    Send("e")
+    Sleep(4500)
+    Send ("{enter down}")
+    Sleep(50)
+    Send ("{enter up}")
+    ;Sleep,500
+
+    Tooltip("Waiting " delay " ms...", 0, 0)
+    Sleep(delay)
+    Send("{s down}")
+    Sleep(110)
+    Send("{s up}")
+    Tooltip
+}
 
 #HotIf

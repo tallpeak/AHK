@@ -1,4 +1,4 @@
-; https://github.com/tallpeak/AHK/GTA/keystate.ahk
+; https://github.com/tallpeak/AHK/keystate.ahk
 
 #Requires AutoHotkey v2.0
 #Warn All
@@ -9,7 +9,6 @@ InstallKeybdHook
 KeyHistory(100)
 Persistent
 #SingleInstance force
-
 
 ; original application I used this technique with,
 ; as knowing the keystate is useful for debugging of macros that automate games
