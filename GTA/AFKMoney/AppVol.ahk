@@ -1,4 +1,5 @@
-﻿#Requires AutoHotkey v2.0
+﻿; from https://gist.github.com/anonymous1184/b251cd8407a379d4965791585887cfce
+#Requires AutoHotkey v2.0
 
 AppVol(Target := "A", Level := 0) {
     if (Target ~= "^[-+]?\d+$") {
