@@ -1,13 +1,18 @@
-﻿; look on Qomph.com/gta for updates
-; currently only the AHK v1 version of this script is there,
-; and this has been updated a lot in the last 5 weeks
+﻿#Requires AutoHotkey v2.0
+; AFKMoney_v2 moved to github on 8/14/2023:
+; https://github.com/tallpeak/AHK/tree/main/GTA/AFKMoney
+; Also linked from QOMPH.com/gta ; ignore the ZIP of the v1 version
 
-#Requires AutoHotkey v2.0
 InstallKeybdHook
-;InstallMouseHook ; causes WheelDown and WheelUp to remain physically pressed, according to GetKeyState
+InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
+; but installing the mouse hook causes A_TimeIdlePhysical to revert to 0 when mouse is moving
+hideMouseWheelUpDownPhysical := false ; hide this apparent bug (whether in AHK, Windows, bluetooth mouse driver, or game); it seems to go away after resetting bluetooth.
 KeyHistory(100)
 Persistent
 #SingleInstance force
+
+#Include "AppVol.AHK"
+#Include "dialer.AHK"
 
 global gWaitTimer := 0
 
@@ -25,7 +30,8 @@ if (! FileExist(imgDir)) {
 }
 GTAtitle := "GTA5"
 
-SetNumLockState("Off")
+SetNumLockState("Off")  ; set a consistent state for Numlock
+SetCapsLockState("Off") ; it always annoys me when I accidentally hit capslock
 
 SendMode("Event") ; default, and only working method
 
@@ -33,8 +39,7 @@ myTimeIdlePhysical() {
 	return Min(A_TimeIdleKeyboard, A_TimeIdleMouse)
 }
 
-
-; AFKmoney v0.4 by Aaron W. West, aaron@qomph.com
+; AFKmoney by Aaron W. West, aaron@qomph.com
 ; converted to AHK2 7/13-7/21/2023
 ; uploaded to https://qomph.com/gta
 ; Started 3/7/2021
@@ -107,10 +112,18 @@ WW := 0
 WH := 0
 if ! WinExist("ahk_exe GTA5.exe") {
 	if AttemptLaunch {
-		RunWait("steam://rungameid/271590")
+		Run("steam://rungameid/271590") ; RunWait sometimes gets stuck
 	}
-	ToolTip("Looking for GTA5, up to 120 seconds....")
-	w := WinWaitActive("ahk_exe GTA5.exe",,120) ; Set GTA in focus at start (but user can change focus)
+	; If the user alt-tabs away while the launcher is loading, this can take a long time
+	w := 0
+	Loop 3 {
+		ToolTip("Looking for GTA5, waiting 60 seconds, loop #" . A_Index . " of 3")
+		w := WinWaitActive("ahk_exe GTA5.exe",,60) ; Set GTA in focus at start (but user can change focus)
+		if w {
+			break
+		}
+		WinActivate("ahk_exe GTA5.exe")
+	}
 	ToolTip("")
 	if w && WinExist("ahk_exe GTA5.exe") {
 		ToolTip("GTA5 window found, reloading script in 4 seconds...")
@@ -121,15 +134,26 @@ if ! WinExist("ahk_exe GTA5.exe") {
 		Sleep(2000)
 		ExitApp(1)
 	} else {
-		ToolTip("can't find GTA5.exe; exiting. Try again after loading GTA")
-		Sleep(2000)
+		ToolTip("can't find GTA5.exe; exiting in 10 seconds. Reload the script after loading GTA")
+		Sleep(10000)
 		ExitApp(1)
 	}
 }
 ;WinGetPos(&WX, &WY, &WW, &WH)
-WinGetClientPos(&WX, &WY, &WW, &WH, "ahk_exe GTA5.exe")
+WinGetClientPostries := 0
+Loop {
+	TryWinActivate("ahk_exe GTA5.exe")
+	WinGetClientPos(&WX, &WY, &WW, &WH, "ahk_exe GTA5.exe")
+	Sleep(100)
+	if WinGetClientPostries > 100 {
+		throw("can't get client window position/size, bombing out")
+	}
+	WinGetClientPostries += 1
+} until WW > 0 && WH > 0
+
 WinSetAlwaysOnTop(false) ; bug I hit once after alt-enter to go fullscreen; it was stuck on top after returning to windowed
 ; ImageResolution := "_1280x720" ;  screen resolution at which the image was clipped
+; bug in 2.0.7? ImageResolution == _0x0 WX: -32000 WY: -32000 WH: 0 WW: 0
 ImageResolution := "_" . WW . "x" . WH ; current screen resolution; look for images recorded at same
 XToolTip := 200
 YToolTip := WH-20
@@ -138,8 +162,6 @@ YToolTip := WH-20
 ;ToolTip, Instructions for use`: %helptext%, XToolTip, YToolTip, 1
 WinSetTitle(GTAtitle "`: " helptext, "ahk_exe GTA5.exe")
 startMission := 0
-
-CallMechanicKey      := "F5" ; Call Mechanic
 
 GetAllKeyState() {
 	freq := 0
@@ -167,7 +189,8 @@ GetAllKeyState() {
 			kb .= ks
 		} else if l && !p {
 			kl .= ks
-		} else if p && !l {
+		} else if p && !l && (((A_Index & 0x9E) != 0x9E) && !hideMouseWheelUpDownPhysical)  {
+			; got tired of seeing MouseWheelUp and MouseWheelDown
 			kp .= ks
 		}
 	}
@@ -231,11 +254,6 @@ if Debug_KeyState {
 	SetTimer(UpdateTitleBar_KeyState, KeyState_Update_Interval, 0)
 }
 Return
-
-;Hotkey, %CallMechanicKey%, CallMechanic
-CallMechanic() {
-;  dialNumber("328-555-0153", true)
-}
 
 ;Hotkey, F8, Start_AFK_Farming
 ;Hotkey, F9, Resume_AFK_Farming
@@ -416,7 +434,7 @@ Resume_AFK_Farming2()
 		}
 		else
 		{
-			if (A_TimeIdlePhysical < UserIdleThreshold && ! WinActive("ahk_axe GTA5.exe") && ! gotoFreemode)
+			if (A_TimeIdlePhysical < UserIdleThreshold && (! WinActive("ahk_axe GTA5.exe")) && (! gotoFreemode))
 			{
 				; warn the user that they are being interrupted
 				Loop 1 {
@@ -482,8 +500,9 @@ Resume_AFK_Farming2()
 				; TODO: change from search for Invite to search for PLAY
 				Sleep(MenuDelay * 6) ; this seems necessary; play button doesnt appear immediately
 				; Experiment with leaving the mission open? (can make more with more players)
+				; No: they will often vote me into a real survival!
 				TryWinActivate("ahk_exe GTA5.exe") ; GTA need to be on focus.
-				CloseMission := False
+				CloseMission := True
 				if (CloseMission)
 					Send("{d}") ; Matchmaking: closed
 				Send("{w}")
@@ -499,8 +518,8 @@ Resume_AFK_Farming2()
 				Send("{enter}") ; launch
 				Sleep(2000)
 				Send("{enter 3}") ; are you sure you want to launch this on your own?
-                ; a couple of minutes of waiting for possible player joining
-				Loop 24 ; because of "player joining" at times
+                ; a few of minutes of waiting for possible player joining
+				Loop 50 ; because of "player joining" at times
                 {
     				Sleep(MenuDelay * 5)
 					if WinActive("ahk_exe GTA5.EXE")
@@ -713,6 +732,41 @@ doSPAM()
   }
 }
 
+pasteToChat(msg)
+{
+	KeyWait("Ctrl", "T2")
+	KeyWait("Alt", "T2")
+	KeyWait("v", "T2")
+	SetKeyDelay(0, 10)
+	;Send("t{Esc}")
+	;SendMode("Input")
+	Loop Parse msg, "`r`n", "`r`n" {
+		if StrLen(A_LoopField) > 0 {
+			m := StrReplace(A_LoopField,"`t","    ")
+			Sleep(200)
+			Send("t")
+			Sleep(100)
+			Send("{Raw}" . m)
+			;SendInput("Input:{Raw}" . m)
+			;SendPlay("Play:{Raw}" . m)
+			;SendEvent("Event:{Raw}" . m)
+			;SendText("Text:{Raw}" . m)
+			Send("{enter}")
+		}
+	}
+	;SendMode("Event")
+}
+
+/* ^+F11::{
+	msg := ( "Public service announcement, to help PC users with griefing modders"
+			"|To escape from a session, get pssuspend from Microsoft.com and run this command:"
+			"|pssuspend gta5 && timeout -T 10 && pssuspend -r gta5"
+			"|See https://learn.microsoft.com/en-us/sysinternals/downloads/pssuspend{enter}" )
+	pasteToChat(msg)
+	setdefaultkeydelay()
+} */
+
+
 F12::toggleReturnToFreemode()
 
 toggleReturnToFreemode()
@@ -781,14 +835,12 @@ toggleReturnToFreemode()
 ^+NumpadUp::
 ^+Numpad8::
 {
-	;MsgBox("^+Numpad8::")
     KeyWait("Control", "T1")
 	KeyWait("Shift", "T1")
     KeyWait("Numpad8", "T1")
     KeyWait("NumpadUp", "T1")
 	Send("{w down}{numpad8 down}")
-	KeyWait("w","DT120")
-	;sleep(60000)
+	KeyWait("w","DT120") ;sleep(120000) or until w
 	Send("{w up}{numpad8 up}")
 }
 
@@ -866,7 +918,7 @@ WaitTimer() {
     Sleep(20)
 	;Sleep(10000)
 	; doesnt seem to work: el:=KeyWait("w","T10")
-	el:=KeyWait("Numpad5","DT" . (t / 4)) ; DT10
+	el:=KeyWait("w","DT" . (t / 4)) ; DT10
 	if GetKeyState("w","P")
 		goto endflight ;return
 	;Input(l,"L10")
@@ -933,21 +985,21 @@ endflight:
 	setdefaultkeydelay()
 }
 
-; get vehicle (when not CEO)
-^!v::
-{
-	SetKeyDelay(25, 15) ;delay,pressDuration
-	Send("{m}")
-	Sleep(100)
-	Send("{Down 4}{Enter 2}")
-	KeyWait("Alt", "T2")
-	ErrorLevel := !KeyWait("Ctrl", "T2")
-	If (! Errorlevel )
-	{
-		Send("{Esc}")
-	}
-	setdefaultkeydelay()
-}
+;~ ; get vehicle (when not CEO)
+;~ ^!v::
+;~ {
+	;~ SetKeyDelay(25, 15) ;delay,pressDuration
+	;~ Send("{m}")
+	;~ Sleep(100)
+	;~ Send("{Down 4}{Enter 2}")
+	;~ KeyWait("Alt", "T2")
+	;~ ErrorLevel := !KeyWait("Ctrl", "T2")
+	;~ If (! Errorlevel )
+	;~ {
+		;~ Send("{Esc}")
+	;~ }
+	;~ setdefaultkeydelay()
+;~ }
 
 ; New session:
 ^!n::
@@ -969,9 +1021,11 @@ endflight:
 	Sleep(MenuDelay * 2)
 	Send("{s 11}") ; Find new session; {w 3} might work but risks selecting Exit Online if it misses one w
 	setdefaultkeydelay()
+	Send("{Enter}")
+	Sleep(MenuDelay*2)
 	Loop 5 {
-		Send("{Enter}")
 		Sleep(MenuDelay)
+		Send("{Enter}")
 	} ; extra (are you sure take a while to show up)
 }
 
@@ -1063,12 +1117,16 @@ ResolutionUp(n)
 
 ; This puts me in a solo session.
 ; Same as a batch file with:
-;  pssuspend gta5 && sleep 10 && pssuspend -r gta5
+; pssuspend gta5 && sleep 10 && pssuspend -r gta5
+; pssuspend gta5 && timeout -T 10 && pssuspend -r gta5
 ; Also helps for getting un-stuck when frozen entering Arcade or Casino
 *^!NumpadEnd::
 *^!End::
 {
-	UpdateTitleBar_KeyState()
+	;UpdateTitleBar_KeyState()
+	global current_keystate := GetAllKeyState() . "Ending session (sleeping 10 seconds...)"
+	updateTitleBar()
+	Sleep(0) ; try to trigger the update of the title bar; Windows needs a tiny bit of time
 	;this was hanging; probably updating the title bar while suspended lead to a deadlock
 	Thread("NoTimers")
 	Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
@@ -1283,132 +1341,29 @@ setVolume()
 	global ProcessId := ErrorLevel
     SetAppVolume(ProcessId, Volume)
     ;;appvol:=GetAppVolume(ProcessId)
-	appvol:=SoundGetVolume()
-	; With the temp window creation,
-	; the following made GTA5 window forced-focused
-	; (alt-tab to switch to other windows failed to change focus)
-	; Regardless, it is not compatible with full-screen mode;
-	; hence disabled.
-	;msg = Volume=%Volume%
-	;Gosub,RemoveGui
-	;WinGetPos, X, Y, Width, Height, AHK_EXE GTA5.EXE
-	;displayOverlay(msg,X+Width-600,Y+Height-120)
+	;appvol:=SoundGetVolume()
 }
 
-; v1 only
-
-; GetAppVolume(PID)
-; {
-;     Local MasterVolume := 0
-
-;     Local IMMDeviceEnumerator := ComObject("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}")
-; 	if (!IMMDeviceEnumerator)
-; 	{
-; 		Return ; maybe this will prevent crashing next time
-; 	}
-; 	IMMDevice := 0
-;     DllCall(NumGet(NumGet(IMMDeviceEnumerator+0, "UPtr")+4*A_PtrSize, "UPtr"), "UPtr", IMMDeviceEnumerator, "UInt", 0, "UInt", 1, "UPtrP", &IMMDevice, "UInt")
-;     ObjRelease(IMMDeviceEnumerator)
-
-;     VarSetStrCapacity(&GUID, 16) ; V1toV2: if 'GUID' is NOT a UTF-16 string, use 'GUID := Buffer(16)'
-;     DllCall("Ole32.dll\CLSIDFromString", "Str", "{77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F}", "UPtr", GUID)
-; 	IAudioSessionManager2 := 0
-;     DllCall(NumGet(NumGet(IMMDevice+0, "UPtr")+3*A_PtrSize, "UPtr"), "UPtr", IMMDevice, "UPtr", GUID, "UInt", 23, "UPtr", 0, "UPtrP", &IAudioSessionManager2, "UInt")
-;     ObjRelease(IMMDevice)
-
-;     IAudioSessionEnumerator := 0
-; 	DllCall(NumGet(NumGet(IAudioSessionManager2+0, "UPtr")+5*A_PtrSize, "UPtr"), "UPtr", IAudioSessionManager2, "UPtrP", &IAudioSessionEnumerator, "UInt")
-;     ObjRelease(IAudioSessionManager2)
-
-; 	SessionCount := 0
-;     DllCall(NumGet(NumGet(IAudioSessionEnumerator+0, "UPtr")+3*A_PtrSize, "UPtr"), "UPtr", IAudioSessionEnumerator, "UIntP", &SessionCount, "UInt")
-;     Loop SessionCount
-;     {
-; 		IAudioSessionControl := 0
-;         DllCall(NumGet(NumGet(IAudioSessionEnumerator+0, "UPtr")+4*A_PtrSize, "UPtr"), "UPtr", IAudioSessionEnumerator, "Int", A_Index-1, "UPtrP", &IAudioSessionControl, "UInt")
-;         Local IAudioSessionControl2 := ComObjQuery(IAudioSessionControl, "{BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D}")
-;         ObjRelease(IAudioSessionControl)
-
-;         currentProcessId := 0
-; 		DllCall(NumGet(NumGet(IAudioSessionControl2+0, "UPtr")+14*A_PtrSize, "UPtr"), "UPtr", IAudioSessionControl2, "UIntP", &currentProcessId, "UInt")
-;         If (PID == currentProcessId)
-;         {
-;             Local ISimpleAudioVolume := ComObjQuery(IAudioSessionControl2, "{87CE5498-68D6-44E5-9215-6DA47EF883D8}")
-;             DllCall(NumGet(NumGet(ISimpleAudioVolume+0, "UPtr")+4*A_PtrSize, "UPtr"), "UPtr", ISimpleAudioVolume, "FloatP", &MasterVolume, "UInt")
-;             ObjRelease(ISimpleAudioVolume)
-;         }
-;         ObjRelease(IAudioSessionControl2)
-;     }
-;     ObjRelease(IAudioSessionEnumerator)
-
-;     Return Round(MasterVolume * 100)
-; }
 
 ; for v2
 SetAppVolume(PID, MasterVolume)    ; WIN_V+
 {
-	SoundSetVolume(MasterVolume) ; this is system/master volume, not app volume
+	;;SoundSetVolume(MasterVolume) ; this is system/master volume, not app volume
+	AppVol("GTA5.exe",MasterVolume) ; thanks to the github gist!
 }
-
-;; no longer works:
-; SetAppVolume_oldv1(PID, MasterVolume)
-; {
-;     MasterVolume := MasterVolume > 100 ? 100 : MasterVolume < 0 ? 0 : MasterVolume
-;     IMMDeviceEnumerator := ComObject("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}")
-; 	if (!IMMDeviceEnumerator)
-; 	{
-; 		Return ; maybe this will prevent crashing next time
-; 	}
-; 	IMMDevice := 0
-; 	a := NumGet(&IMMDeviceEnumerator+0, "UPtr")
-;     b := NumGet(a + 4*A_PtrSize, "UPtr")
-; 	DllCall(b, "UPtr", IMMDeviceEnumerator, "UInt", 0, "UInt", 1, "UPtrP", &IMMDevice, "UInt")
-;     ObjRelease(IMMDeviceEnumerator)
-
-;     VarSetStrCapacity(&GUID, 16) ; V1toV2: if 'GUID' is NOT a UTF-16 string, use 'GUID := Buffer(16)'
-;     DllCall("Ole32.dll\CLSIDFromString", "Str", "{77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F}", "UPtr", GUID)
-; 	IAudioSessionManager2 := 0
-;     DllCall(NumGet(NumGet(IMMDevice+0, "UPtr")+3*A_PtrSize, "UPtr"), "UPtr", IMMDevice, "UPtr", GUID, "UInt", 23, "UPtr", 0, "UPtrP", &IAudioSessionManager2, "UInt")
-;     ObjRelease(IMMDevice)
-; 	IAudioSessionEnumerator := 0
-;     DllCall(NumGet(NumGet(IAudioSessionManager2+0, "UPtr")+5*A_PtrSize, "UPtr"), "UPtr", IAudioSessionManager2, "UPtrP", &IAudioSessionEnumerator, "UInt")
-;     ObjRelease(IAudioSessionManager2)
-
-; 	SessionCount := 0
-;     DllCall(NumGet(NumGet(IAudioSessionEnumerator+0, "UPtr")+3*A_PtrSize, "UPtr"), "UPtr", IAudioSessionEnumerator, "UIntP", &SessionCount, "UInt")
-;     Loop SessionCount
-;     {
-; 		IAudioSessionControl := 0
-;         DllCall(NumGet(NumGet(IAudioSessionEnumerator+0, "UPtr")+4*A_PtrSize, "UPtr"), "UPtr", IAudioSessionEnumerator, "Int", A_Index-1, "UPtrP", &IAudioSessionControl, "UInt")
-;         IAudioSessionControl2 := ComObjQuery(IAudioSessionControl, "{BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D}")
-;         ObjRelease(IAudioSessionControl)
-
-; 		currentProcessId := 0
-;         DllCall(NumGet(NumGet(IAudioSessionControl2+0, "UPtr")+14*A_PtrSize, "UPtr"), "UPtr", IAudioSessionControl2, "UIntP", &currentProcessId, "UInt")
-;         If (PID == currentProcessId)
-;         {
-;             ISimpleAudioVolume := ComObjQuery(IAudioSessionControl2, "{87CE5498-68D6-44E5-9215-6DA47EF883D8}")
-;             DllCall(NumGet(NumGet(ISimpleAudioVolume+0, "UPtr")+3*A_PtrSize, "UPtr"), "UPtr", ISimpleAudioVolume, "Float", MasterVolume/100.0, "UPtr", 0, "UInt")
-;             ObjRelease(ISimpleAudioVolume)
-;         }
-;         ObjRelease(IAudioSessionControl2)
-;     }
-;     ObjRelease(IAudioSessionEnumerator)
-; }
-
 
 TryWinActivate(w)
 {
 	try {
-		WinActivate(w)
-		return ""
+		win := WinActivate(w)
+		return win
 	} catch Error as err {
-		return err.Message
+		return 0 ; err.Message
 	}
 }
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;; I'm double-NATted so this probably wouldn't do anything anyway
 ;; might work if administrator; turn on/off blocking of UDP ports 61455-61458
 ;;^!F7::Run,netsh advfirewall firewall set rule name="GTA5:block-spectator-mode-hackers" new enable=no
 ;;^!F8::Run,netsh advfirewall firewall set rule name="GTA5:block-spectator-mode-hackers" new enable=yes
@@ -1465,24 +1420,47 @@ TryWinActivate(w)
 ;	CreateWindow("Win + 7")
 ;	return
 
+; EDIT NOW!!!
+^!E:: {
+	win := TryWinActivate("AHK_EXE SCITE.EXE")
+	if !win {
+		p := RunWait("`"C:\Program Files\AutoHotkey\SciTE\SciTE.exe`" " A_ScriptFullPath)
+	}
+}
+
 ; lucky wheel; these settings arent working yet
 ^!L:: {
-    delay := 1200 ;Edit this value to change the spinning speed: higher value = slower spin
-	ToolTip("Lucky Wheel...")
-    SetKeyDelay(10,70)
+    delay := 1800 ;Edit this value to change the spinning speed: higher value = slower spin
+	WinSetTitle("Lucky Wheel...e", "ahk_exe GTA5.exe")
+    SetKeyDelay(10,90)
     Send("e")
-    Sleep(4500)
-    Send ("{enter down}")
-    Sleep(50)
-    Send ("{enter up}")
-    ;Sleep,500
-
-    Tooltip("Waiting " delay " ms...", 0, 0)
+    Sleep(4800)
+	WinSetTitle("Lucky Wheel...enter", "ahk_exe GTA5.exe")
+    Send("{enter down}")
+	Sleep(200)
+	Send("{enter up}")
+	WinSetTitle("Lucky Wheel: Waiting " delay " ms...before s", "ahk_exe GTA5.exe")
     Sleep(delay)
+    WinSetTitle("Lucky Wheel: s(spinning)", "ahk_exe GTA5.exe")
     Send("{s down}")
-    Sleep(110)
+    Sleep(55)
     Send("{s up}")
-    Tooltip
+	setdefaultkeydelay()
+	WinSetTitle("GTA5: Lucky Wheel completed")
 }
 
 #HotIf
+
+;;paste
+^!v::{
+	pasteToChat(A_Clipboard)
+}
+
+;~ ; This might work well if you are not in full-screen mode (avoid running in full-screen mode!)
+;~ ; https://www.reddit.com/r/software/comments/lt0ai9/is_there_a_alternative_to_chevolume_and_audio/
+;~ ^!V::
+;~ {
+	;~ Run("ms-settings:apps-volume")
+;~ }
+
+
