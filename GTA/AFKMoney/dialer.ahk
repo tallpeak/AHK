@@ -442,6 +442,14 @@ CallMechanic(ThisHotkey) {
 	dialNumber("328-555-0153", true)
 }
 
-CallMechanicKey := "^+m"
+CallMechanicKey := "^m"
 
 Hotkey(CallMechanicKey, CallMechanic)
+
+CallMorsKey := "^+m"
+
+CallMors(ThisHotkey) {
+	dialNumber("611-555-0149", true)
+}
+
+Hotkey(CallMorsKey, CallMors)

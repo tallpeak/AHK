@@ -3,6 +3,26 @@
 ; https://github.com/tallpeak/AHK/tree/main/GTA/AFKMoney
 ; Also linked from QOMPH.com/gta ; ignore the ZIP of the v1 version
 
+; IMPORTANT SETUP INSTRUCTIONS!
+; If you want to use F8 to start looping the
+; AFKMoney & RP mission, you will need to make screenshots
+; of some appropriate portion of the screen used to identify
+; the corresponding screen
+; representing where in the process the game currently is.
+;
+; These files must be placed in the "img" subdirectory.
+;
+; My resolution is 1280x720, so my screen clippings are named as follows:
+; AFKMoney&RPv2_1280x720.png
+; ConfirmSettings_1280x720.png
+; INVITE_1280x720.png
+; Play_1280x720.png
+; Replay_1280x720.png
+; SETTINGS_1280x720.png
+;
+; And yes, I know this process could use some
+; better error detection and documentation... maybe tomorrow.
+
 InstallKeybdHook
 InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
 ; but installing the mouse hook causes A_TimeIdlePhysical to revert to 0 when mouse is moving
@@ -81,6 +101,8 @@ myTimeIdlePhysical() {
 ; CONSTANTS
 ; A "kick" is a periodic activity to prevent idle; currently {z}
 
+GTAwindow := "ahk_exe GTA5.exe" ; or "ahk_class grcWindow"
+
 ;Sky Fall Fast AFK Test = 8
 WhichJob := 0 ; (only upload this as #0, first job) move down how many times in the bookmarked Survivals?
 helptext:=" F8 Start,F9 Resume,F10 Exit,F12 Freemode "
@@ -110,7 +132,7 @@ WX := 0
 WY := 0
 WW := 0
 WH := 0
-if ! WinExist("ahk_exe GTA5.exe") {
+if ! WinExist(GTAwindow) {
 	if AttemptLaunch {
 		Run("steam://rungameid/271590") ; RunWait sometimes gets stuck
 	}
@@ -118,14 +140,14 @@ if ! WinExist("ahk_exe GTA5.exe") {
 	w := 0
 	Loop 3 {
 		ToolTip("Looking for GTA5, waiting 60 seconds, loop #" . A_Index . " of 3")
-		w := WinWaitActive("ahk_exe GTA5.exe",,60) ; Set GTA in focus at start (but user can change focus)
+		w := WinWaitActive(GTAwindow,,60) ; Set GTA in focus at start (but user can change focus)
 		if w {
 			break
 		}
-		WinActivate("ahk_exe GTA5.exe")
+		WinActivate(GTAwindow)
 	}
 	ToolTip("")
-	if w && WinExist("ahk_exe GTA5.exe") {
+	if w && WinExist(GTAwindow) {
 		ToolTip("GTA5 window found, reloading script in 4 seconds...")
 		Sleep(4000)
 		ToolTip()
@@ -142,8 +164,8 @@ if ! WinExist("ahk_exe GTA5.exe") {
 ;WinGetPos(&WX, &WY, &WW, &WH)
 WinGetClientPostries := 0
 Loop {
-	TryWinActivate("ahk_exe GTA5.exe")
-	WinGetClientPos(&WX, &WY, &WW, &WH, "ahk_exe GTA5.exe")
+	TryWinActivate(GTAwindow)
+	WinGetClientPos(&WX, &WY, &WW, &WH, GTAwindow)
 	Sleep(100)
 	if WinGetClientPostries > 100 {
 		throw("can't get client window position/size, bombing out")
@@ -160,7 +182,7 @@ YToolTip := WH-20
 ; Old method of messaging the user was ToolTip, but I like WinSetTitle better
 ; although title bar usage requires windowed with borders
 ;ToolTip, Instructions for use`: %helptext%, XToolTip, YToolTip, 1
-WinSetTitle(GTAtitle "`: " helptext, "ahk_exe GTA5.exe")
+WinSetTitle(GTAtitle "`: " helptext, GTAwindow)
 startMission := 0
 
 GetAllKeyState() {
@@ -218,7 +240,7 @@ GetAllKeyState() {
 *^!NumLock::ClearAllKeyState()
 
 ClearAllKeyState() {
-	WinSetTitle("Clearing key state", "ahk_exe GTA5.exe")
+	WinSetTitle("Clearing key state", GTAwindow)
 	Loop 255 {
 		vk := Format("vk{:X}", A_Index)
 		p := GetKeyState(vk, "P")
@@ -240,7 +262,7 @@ updateTitleBar() {
 	}
 	if last_keystate != current_keystate  {
 		title := GTAtitle . "`: " . current_keystate
-		WinSetTitle(title, "ahk_exe GTA5.exe")
+		WinSetTitle(title, GTAwindow)
 		last_keystate := current_keystate
 	}
 }
@@ -302,7 +324,7 @@ StealthCircles(*)
 	Loop 300
 	{
 		remaining := 600 - A_Index * 2
-		WinSetTitle(remaining " seconds until start of automation", "ahk_exe GTA5.exe")
+		WinSetTitle(remaining " seconds until start of automation", GTAwindow)
 		Sleep(2000)
 	}
 	Start_AFK_Farming()
@@ -337,9 +359,9 @@ StealthCircles(*)
 }
 
 ; Avoid messing with application-specific hotkeys:
-#HotIf WinActive("ahk_exe GTA5.exe") ; //replaces #IfWinActive from AHK v1
+#HotIf WinActive(GTAwindow) ; //replaces #IfWinActive from AHK v1
 ; Try this ?
-; HotIfWinActive("ahk_exe GTA5.exe")
+; HotIfWinActive(GTAwindow)
 
 ; Pressing F8 hogs the thread so that F8 doesn't work again,
 ; until SetTimer and Return releases the thread
@@ -352,9 +374,9 @@ Start_AFK_Farming()
 	global gotoFreemode := ""
 	setdefaultkeydelay()
 	job_status := 0
-	TryWinActivate("ahk_exe GTA5.exe") ; GTA need to be on focus.
+	TryWinActivate(GTAwindow) ; GTA need to be on focus.
 	Sleep(10)
-	ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
+	ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
 	Sleep(10)
 	KeyWait("Ctrl", "T1")
 	KeyWait("Shift", "T2")
@@ -426,10 +448,10 @@ Resume_AFK_Farming2()
 		if (A_TimeIdlePhysical < UserIdleThreshold
 			&& (elapsedMission < MinMissionSeconds || elapsedMission >= MaxMissionSeconds ))
 		{
-			if (! WinActive("ahk_exe GTA5.exe") && WinExist("ahk_exe GTA5.exe")) {
+			if (! WinActive(GTAwindow) && WinExist(GTAwindow)) {
 				;ToolTip, %warning% User busy`:idle`=%idleSec%s, 750, 1, 1
 				kss := GetAllKeyState()
-				WinSetTitle(GTAtitle "`:" kss " " warning " User busy`:idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical " " gotoFreemode " elapseM=" elapsedMission " V" Volume, "ahk_exe GTA5.exe")
+				WinSetTitle(GTAtitle "`:" kss " " warning " User busy`:idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical " " gotoFreemode " elapseM=" elapsedMission " V" Volume, GTAwindow)
 			}
 		}
 		else
@@ -460,13 +482,13 @@ Resume_AFK_Farming2()
 				;~ ToolTip("")
 				;~ return
 			;~ }
-			TryWinActivate("ahk_exe GTA5.exe")
+			TryWinActivate(GTAwindow)
 			Sleep(200)
-			ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 2)
+			ErrorLevel := WinWaitActive(GTAwindow, , 2)
 			ErrorLevel := ErrorLevel = 0 ? 1 : 0
 		}
 		;ImageSearch is pointless if GTA not active window (it will fail)
-		If WinActive("ahk_exe GTA5.exe")
+		If WinActive(GTAwindow)
 		{
 			; Possibly reduce search area to lower CPU usage
 			; And/or change image search frequency depending on elapsed time in mission
@@ -480,13 +502,13 @@ Resume_AFK_Farming2()
 			; Some debugging information; status and image locations if found
 			global idleSec:=Round((A_TickCount - lastKick)/1000)
 			;ToolTip, %warning% SETTINGS`=%xSettings%`,%ySettings% INVITE=%xInvite%`,%yInvite% Replay=%xReplay%`,%yReplay% idle`=%idleSec%s %helptext%, XToolTip, YToolTip, 1
-			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " WW "x" WH, "ahk_exe GTA5.exe")
+			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " WW "x" WH, GTAwindow)
 
 
 			if (xSettings != "")
 			{
 				Sleep(MenuDelay)
-				TryWinActivate("ahk_exe GTA5.exe") ; GTA need to be on focus.
+				TryWinActivate(GTAwindow) ; GTA need to be on focus.
 				Send("{w}")
 				Send("{enter}")
 				if original > 0 {
@@ -501,10 +523,12 @@ Resume_AFK_Farming2()
 				Sleep(MenuDelay * 6) ; this seems necessary; play button doesnt appear immediately
 				; Experiment with leaving the mission open? (can make more with more players)
 				; No: they will often vote me into a real survival!
-				TryWinActivate("ahk_exe GTA5.exe") ; GTA need to be on focus.
+				TryWinActivate(GTAwindow) ; GTA need to be on focus.
 				CloseMission := True
-				if (CloseMission)
+				if (CloseMission) {
 					Send("{d}") ; Matchmaking: closed
+					Sleep(222)
+				}
 				Send("{w}")
 				Sleep(222)
 				Send("{w}")
@@ -522,7 +546,7 @@ Resume_AFK_Farming2()
 				Loop 50 ; because of "player joining" at times
                 {
     				Sleep(MenuDelay * 5)
-					if WinActive("ahk_exe GTA5.EXE")
+					if WinActive(GTAwindow)
 					{
 						if (A_TimeIdlePhysical > 10000) ; dont interrupt typing in chat, etc
 						{
@@ -532,7 +556,7 @@ Resume_AFK_Farming2()
 						; find the AFKMoney&RPv2 image and set the mission start time
 						Send("{z}")
 						Sleep(100)
-						TryWinActivate("ahk_exe GTA5.exe") ; GTA need to be on focus.
+						TryWinActivate(GTAwindow) ; GTA need to be on focus.
 						ErrorLevel := !ImageSearch(&xMission, &yMission, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\AFKMoney&RPv2" ImageResolution ".png")
 						if (xMission)
 						{
@@ -546,11 +570,15 @@ Resume_AFK_Farming2()
 							; or other drastic measures if we fail to find the mission we are looking for
 					}
 					SetCapsLockState("Off") ; instead of AlwaysOff; this is to prevent Social Club from popping up during automation
+					if A_LoopField == 50 {
+						; failed to find mission, need to exit after the end of this
+						global gotoFreemode := "Freemode"
+					}
                 }
 				global startMission := A_TickCount ; - 5 * 24 ; compensate for loop above
 				TryWinActivate("ahk_id " original)
 				Sleep(( MenuDelay * 10 ))
-				if WinActive("ahk_exe GTA5.EXE")
+				if WinActive(GTAwindow)
 				{
 					doSPAM() ; clue any joiners into the fact that I am likely AFK!
 					Send("t{Esc}")
@@ -571,6 +599,33 @@ Resume_AFK_Farming2()
 				Send("{enter}")
 				startMission := A_TickCount ; so that we stop bothering the user with window switching as soon as possible!
 				TryWinActivate("ahk_id " original)
+				if gotoFreemode && A_TimeIdlePhysical > 3600000 {
+					; user is very idle (over an hour) yet we are returning to freemode; not good!
+					; spending a long time in freemode while AFK can lead to raids, for example
+					; so just suspend the game until the user gets back
+					WinSetTitle("Idle>1hr while going Freemode; suspending game in 180 sec; ESC to abort",GTAwindow)
+					kw := KeyWait("{ESC}","DT180")
+					if !kw && A_TimeIdlePhysical > 3600000 {
+						PID_or_Name := GTAwindow
+						WinSetTitle("Suspending game...",PID_or_Name)
+						Sleep(200)
+						PID := (InStr(PID_or_Name, ".")) ? ProcExist(PID_or_Name) : PID_or_Name
+						h:=DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", pid)
+						If !h
+							Return -1
+						DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
+
+						mb := MsgBox("Resume game? (exit script if no)",,4)
+
+						if mb == "Yes" {
+							DllCall("ntdll.dll\NtResumeProcess", "Int", h)
+							DllCall("CloseHandle", "Int", h)
+						} else {
+
+							ExitApp()
+						}
+					}
+				}
 				job_status := 0
 				Sleep(( MenuDelay * 3 ))
 				Continue
@@ -582,18 +637,18 @@ Resume_AFK_Farming2()
 			|| A_TickCount > ( lastKick + MaxKickSeconds*1000) )
 		{
 			;WinGet, original, , ahk_exe GTA5.exe
-			TryWinActivate("ahk_exe GTA5.exe")
-			ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
-			if !WinActive("ahk_exe GTA5.exe")
+			TryWinActivate(GTAwindow)
+			ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
+			if !WinActive(GTAwindow)
 			{
 				; This code comes from a time when I thought WinActivate was failing. It could probably be deleted
-				if WinExist("ahk_exe GTA5.exe")
+				if WinExist(GTAwindow)
 				{
 					; WinMinimize, A
 					; Send {Alt Down}{Tab}{Alt Up}
 					; Sleep,50
-					TryWinActivate("ahk_exe GTA5.exe")
-					ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0 ; might be hanging?
+					TryWinActivate(GTAwindow)
+					ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0 ; might be hanging?
 				}
 				Else ; If GTA5 crashed, we might as well quit? Consider restarting GTA5?
 				{
@@ -603,7 +658,7 @@ Resume_AFK_Farming2()
 					ExitApp(1)
 				}
 			}
-			If WinActive("ahk_exe GTA5.exe")
+			If WinActive(GTAwindow)
 			{
 				if (A_TimeIdlePhysical > 4*60*1000) ; when *very* AFK, but hopefully not about to get kicked (ESC can interfere with some things)
 				{
@@ -639,9 +694,9 @@ Resume_AFK_Farming2()
 					; EMERGENCY! Warn user that idle kick timeout may be coming quickly
 					Loop 10
 					{
-						TryWinActivate("ahk_exe GTA5.exe")
-						ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
-						If WinActive("ahk_exe GTA5.exe")
+						TryWinActivate(GTAwindow)
+						ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
+						If WinActive(GTAwindow)
 						{
 							Send("{z}")
 							; Sleep, MenuDelay * 10
@@ -652,7 +707,7 @@ Resume_AFK_Farming2()
 						}
 						else
 						{
-							If (!WinExist("ahk_exe GTA5.exe"))
+							If (!WinExist(GTAwindow))
 							{
 								;ToolTip, "GTA5.exe does not exist; crashed? Exiting..."
 								;sleep,3000
@@ -685,10 +740,10 @@ Shutdown_AFK_Farming()
 
 Shutdown_AFK_Farming1:
 	;ToolTip, Shutting down AFK_Farming..., XToolTip, YToolTip, 1
-	WinSetTitle(GTAtitle "`: Shutting down AFKmoney...", "ahk_exe GTA5.exe")
+	WinSetTitle(GTAtitle "`: Shutting down AFKmoney...", GTAwindow)
 	Sleep(MenuDelay * 2) ; Just so the user can read the message
 	;ToolTip, , , , 1
-	WinSetTitle("Grand Theft Auto V", "ahk_exe GTA5.exe")
+	WinSetTitle("Grand Theft Auto V", GTAwindow)
 	ExitApp() ; stop the macro
 }
 
@@ -718,7 +773,7 @@ F11::doSPAM()
 
 doSPAM()
 {
-  if (WinActive("ahk_exe GTA5.exe") )
+  if (WinActive(GTAwindow) )
   {
 	SetKeyDelay(3, 1)
 	Send("t{Esc}")
@@ -771,6 +826,7 @@ F12::toggleReturnToFreemode()
 
 toggleReturnToFreemode()
 {
+	global gotoFreemode
 	ErrorLevel := !KeyWait("Ctrl", "T2")
 	ErrorLevel := !KeyWait("Alt", "T2")
 	ErrorLevel := !KeyWait("F12", "T1")
@@ -780,18 +836,20 @@ toggleReturnToFreemode()
 	Return
 }
 
-^m::
-{
-	SetCapsLockState("AlwaysOff")
-	ErrorLevel := !KeyWait("Alt", "T2")
-	SetKeyDelay(10, 200) ;delay,pressDuration
-	Send("{up}")
-	Sleep(666)
-	Send("{right}{up}{enter}")
-	Sleep(666)
-	Send("{up 16}{enter}")
-	setdefaultkeydelay()
-}
+; old call mors insurance; only works in freemode
+; so use dialNumber instead
+;~ ^m::
+;~ {
+	;~ SetCapsLockState("AlwaysOff")
+	;~ ErrorLevel := !KeyWait("Alt", "T2")
+	;~ SetKeyDelay(10, 200) ;delay,pressDuration
+	;~ Send("{up}")
+	;~ Sleep(666)
+	;~ Send("{right}{up}{enter}")
+	;~ Sleep(666)
+	;~ Send("{up 16}{enter}")
+	;~ setdefaultkeydelay()
+;~ }
 
 ; get oppressor mk2 from mechanic (last vehicle in arcade)
 ^o::
@@ -803,7 +861,8 @@ toggleReturnToFreemode()
 	Sleep(666)
 	Send("{right}{up}{enter}")
 	Sleep(777)
-	Send("{up 18}{enter}") ; sometimes 17
+	;Send("{up 18}{enter}") ; sometimes 17
+	Send("{left 4}{down 2}{enter}")
 	Sleep(5250) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
 	Send("{up 8}{enter}{up}") ; {enter}
 	setdefaultkeydelay()
@@ -880,13 +939,13 @@ WaitTimer_Start() {
 
 WaitTimer_Stop() {
 	SetTimer(WaitTimer,0)
-	WinSetTitle("t=" . gWaitTimer, "ahk_exe GTA5.exe")
+	WinSetTitle("t=" . gWaitTimer, GTAwindow)
 }
 
 WaitTimer() {
 	global gWaitTimer += 1
 	if Mod(gWaitTimer,5)==0 {
-		WinSetTitle("t=" . gWaitTimer, "ahk_exe GTA5.exe")
+		WinSetTitle("t=" . gWaitTimer, GTAwindow)
 	}
 }
 
@@ -953,7 +1012,7 @@ endflight:
     Loop ;,10000 ; make it longer after tuning
     {
         Sleep(480)
-        if WinActive("ahk_exe GTA5.exe")
+        if WinActive(GTAwindow)
 		{
             Click()
 			Send("{Space}")
@@ -1004,7 +1063,7 @@ endflight:
 ; New session:
 ^!n::
 {
-	If(!WinActive("ahk_exe GTA5.exe"))
+	If(!WinActive(GTAwindow))
 		Return
 	SetKeyDelay(10, 90) ;delay,pressDuration
 	KeyWait("Ctrl", "T3")
@@ -1038,8 +1097,8 @@ deleteToolTip2:
 ResolutionUp(n)
 {
 	global MenuDelay
-	TryWinActivate("ahk_exe GTA5.exe")
-	ErrorLevel := WinWaitActive("ahk_exe GTA5.exe", , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
+	TryWinActivate(GTAwindow)
+	ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
 	ErrorLevel := !KeyWait("Ctrl", "T2")
 	ErrorLevel := !KeyWait("Shift", "T2")
 	setdefaultkeydelay()
@@ -1153,7 +1212,7 @@ ResolutionUp(n)
 {
 	RunWait("pskill GTA5")
 	; this didn't work:
-	; el:=WinKill("ahk_exe GTA5.exe")
+	; el:=WinKill(GTAwindow)
 	; ToolTip("WinKill ErrorLevel=" . el)
 	;Sleep(5000)
 	;ToolTip()
@@ -1290,7 +1349,7 @@ VolumeUp(n)
 
 ShowVolume()
 {
-	WinSetTitle(GTAtitle "`: V" Volume, "ahk_exe GTA5.exe")
+	WinSetTitle(GTAtitle "`: V" Volume, GTAwindow)
 	Return
 }
 
@@ -1430,18 +1489,23 @@ TryWinActivate(w)
 
 ; lucky wheel; these settings arent working yet
 ^!L:: {
-    delay := 1800 ;Edit this value to change the spinning speed: higher value = slower spin
-	WinSetTitle("Lucky Wheel...e", "ahk_exe GTA5.exe")
+    delay := 2500 ;Edit this value to change the spinning speed: higher value = slower spin
+	WinSetTitle("Lucky Wheel...e", GTAwindow)
+	KeyWait("Ctrl", "T2")
+	KeyWait("Alt", "T2")
+	KeyWait("l", "T2")
     SetKeyDelay(10,90)
-    Send("e")
+    Send("{e down}")
+	sleep(200)
+	Send("{e up}")
     Sleep(4800)
-	WinSetTitle("Lucky Wheel...enter", "ahk_exe GTA5.exe")
+	WinSetTitle("Lucky Wheel...enter", GTAwindow)
     Send("{enter down}")
 	Sleep(200)
 	Send("{enter up}")
-	WinSetTitle("Lucky Wheel: Waiting " delay " ms...before s", "ahk_exe GTA5.exe")
+	WinSetTitle("Lucky Wheel: Waiting " delay " ms...before s", GTAwindow)
     Sleep(delay)
-    WinSetTitle("Lucky Wheel: s(spinning)", "ahk_exe GTA5.exe")
+    WinSetTitle("Lucky Wheel: s(spinning)", GTAwindow)
     Send("{s down}")
     Sleep(55)
     Send("{s up}")
