@@ -1,4 +1,6 @@
 ﻿#Requires AutoHotkey v2.0
+#SingleInstance force
+
 ; AFKMoney_v2 moved to github on 8/14/2023:
 ; https://github.com/tallpeak/AHK/tree/main/GTA/AFKMoney
 ; Also linked from QOMPH.com/gta ; ignore the ZIP of the v1 version
@@ -29,7 +31,6 @@ InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-d
 hideMouseWheelUpDownPhysical := false ; hide this apparent bug (whether in AHK, Windows, bluetooth mouse driver, or game); it seems to go away after resetting bluetooth.
 KeyHistory(100)
 Persistent
-#SingleInstance force
 
 #Include "AppVol.AHK"
 #Include "dialer.AHK"
@@ -40,6 +41,15 @@ global gWaitTimer := 0
 Debug_KeyState := true
 KeyState_Update_Interval := 500
 AttemptLaunch := true   ; Run steam game
+
+; only if running as admin...
+; slow-limit
+global Ryzen_milliwatts := 15000 ; slow-limit
+global Ryzen_milliwatts_last_set := Ryzen_milliwatts
+global Ryzen_milliwatt_increment := 250
+global Ryzen_milliwatts_min := 3500  ; I don't want to go much below 3.5 watts
+global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for HP 17
+
 
 launch_dir := A_ScriptDir
 SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
@@ -173,6 +183,8 @@ Loop {
 	WinGetClientPostries += 1
 } until WW > 0 && WH > 0
 
+full_command_line := DllCall("GetCommandLine", "str")
+
 WinSetAlwaysOnTop(false) ; bug I hit once after alt-enter to go fullscreen; it was stuck on top after returning to windowed
 ; ImageResolution := "_1280x720" ;  screen resolution at which the image was clipped
 ; bug in 2.0.7? ImageResolution == _0x0 WX: -32000 WY: -32000 WH: 0 WW: 0
@@ -185,7 +197,10 @@ YToolTip := WH-20
 WinSetTitle(GTAtitle "`: " helptext, GTAwindow)
 startMission := 0
 
+ListLines false
+
 GetAllKeyState() {
+	ListLines false
 	freq := 0
 	CounterBefore := 0
 	CounterAfter := 0
@@ -231,8 +246,10 @@ GetAllKeyState() {
 		;~ kss .= "" . Format("{:d} µs", (CounterAfter - CounterBefore) * 1000000 / freq)
 	;~ }
 	;Critical "Off"
+	ListLines true
 	return kss
 }
+	ListLines true
 
 ; Reload clears logical keystate, so this may not be very useful,
 ; or only useful when "physical" keystate is stuck down
@@ -596,7 +613,8 @@ Resume_AFK_Farming2()
 					SoundBeep(444, 20)
 				}
 				Sleep(MenuDelay)
-				Send("{enter}")
+				Send("{enter}")  ; vote for replay or freemode
+				Sleep(60000) ; wait a minute! To prevent possible re-vote
 				startMission := A_TickCount ; so that we stop bothering the user with window switching as soon as possible!
 				TryWinActivate("ahk_id " original)
 				if gotoFreemode && A_TimeIdlePhysical > 3600000 {
@@ -606,6 +624,13 @@ Resume_AFK_Farming2()
 					WinSetTitle("Idle>1hr while going Freemode; suspending game in 180 sec; ESC to abort",GTAwindow)
 					kw := KeyWait("{ESC}","DT180")
 					if !kw && A_TimeIdlePhysical > 3600000 {
+
+						; copy-paste coding (sorry!)
+						Thread("NoTimers")
+						Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
+						global last_kss := "suspended"
+						Critical "On"
+
 						PID_or_Name := GTAwindow
 						WinSetTitle("Suspending game...",PID_or_Name)
 						Sleep(200)
@@ -621,9 +646,12 @@ Resume_AFK_Farming2()
 							DllCall("ntdll.dll\NtResumeProcess", "Int", h)
 							DllCall("CloseHandle", "Int", h)
 						} else {
-
 							ExitApp()
 						}
+						Critical "Off"
+						global last_kss := ""
+						Suspend(false)
+						Thread("NoTimers",false)
 					}
 				}
 				job_status := 0
@@ -1207,7 +1235,7 @@ ResolutionUp(n)
 	; RunWait("cmd /c suspend_for_seconds.bat gta5 10")
 }
 
-; control shift alt end to end GTA5
+; control shift alt delete to end GTA5
 ^+!Del::
 {
 	RunWait("pskill GTA5")
@@ -1300,17 +1328,17 @@ VolumeUp(n)
 	Send("{w down}")
 }
 
-; (slow) Volume up
-^!NumpadAdd::
-{
-	VolumeUp(3)
-}
+;~ ; (slow) Volume up
+;~ ^!NumpadAdd::
+;~ {
+	;~ VolumeUp(3)
+;~ }
 
-; (slow) Volume down
-^!NumpadSub::
-{
-	VolumeUp(-10)
-}
+;~ ; (slow) Volume down
+;~ ^!NumpadSub::
+;~ {
+	;~ VolumeUp(-10)
+;~ }
 
 ;; cant figure out how to get GetNum to work in v2
 ;; but SoundSetVolume exists so no need
@@ -1350,7 +1378,6 @@ VolumeUp(n)
 ShowVolume()
 {
 	WinSetTitle(GTAtitle "`: V" Volume, GTAwindow)
-	Return
 }
 
 
@@ -1418,6 +1445,66 @@ TryWinActivate(w)
 		return win
 	} catch Error as err {
 		return 0 ; err.Message
+	}
+}
+
+^!NumPadAdd::
+{
+	global
+	Ryzen_milliwatts += Ryzen_milliwatt_increment
+	update_milliwatts()
+}
+
+^!NumPadSub::
+{
+	global
+	Ryzen_milliwatts -= Ryzen_milliwatt_increment
+	update_milliwatts()
+}
+
+update_milliwatts() {
+	SetTimer(set_milliwatts, -500, 0)
+	WinSetTitle(GTAtitle "`: adjusting to "  (Ryzen_milliwatts * 0.001) " watts", GTAwindow)
+}
+
+set_milliwatts() {
+	global
+	local cmd
+	OutputDebug "A_IsAdmin: " A_IsAdmin "`nCommand line: " full_command_line
+	if A_IsAdmin {
+		if Ryzen_milliwatts_last_set != Ryzen_milliwatts {
+			cmd := "C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts
+			WinSetTitle("running: " cmd, GTAwindow)
+			Run(cmd)
+			Sleep(2000)
+			WinSetTitle(cmd, GTAwindow)
+			Ryzen_milliwatts_last_set := Ryzen_milliwatts
+		}
+	} else {
+		WinSetTitle("Can't run RyzenAdj; not admin! Reloading macros as admin...", GTAwindow)
+		Sleep(2000)
+		reload_as_admin()
+	}
+}
+
+reload_as_admin()
+{
+	; the RegExMatch was supposed to prevent accidental endless loop,
+	; but not needed for my use-case
+	if not (A_IsAdmin ) ;;;; or RegExMatch(full_command_line, " /restart(?!\S)"))
+	{
+		try
+		{
+			if A_IsCompiled {
+				Run('*RunAs "' A_ScriptFullPath '" /restart')
+			} else {
+				Run('*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"')
+			}
+		}
+		catch as e {
+			MsgBox(e.Message)
+		}
+		ExitApp
 	}
 }
 
@@ -1489,7 +1576,7 @@ TryWinActivate(w)
 
 ; lucky wheel; these settings arent working yet
 ^!L:: {
-    delay := 2500 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 3500 ;Edit this value to change the spinning speed: higher value = slower spin
 	WinSetTitle("Lucky Wheel...e", GTAwindow)
 	KeyWait("Ctrl", "T2")
 	KeyWait("Alt", "T2")
