@@ -864,6 +864,25 @@ toggleReturnToFreemode()
 	Return
 }
 
+; get oppressor mk2 from mechanic using dialNumber (last vehicle in arcade)
+^o::{
+	dialMechanic_getCar(-8,-1)
+}
+
+; -1 means last garage or last car
+; 0 should be first garage or first car
+; +1 is second garage or second car
+dialMechanic_getCar(garage,car) {
+	CallMechanic("")
+	Sleep(5250)
+	Send("{" (garage >= 0 ? "down" : "up") " " abs(garage) "}")
+	Send("{enter}")
+	Send("{" (car >= 0 ? "down" : "up") " " abs(car) "}")
+	; Send("{enter}")
+	setdefaultkeydelay()
+}
+
+
 ; old call mors insurance; only works in freemode
 ; so use dialNumber instead
 ;~ ^m::
@@ -879,22 +898,22 @@ toggleReturnToFreemode()
 	;~ setdefaultkeydelay()
 ;~ }
 
-; get oppressor mk2 from mechanic (last vehicle in arcade)
-^o::
-{
-	SetCapsLockState("AlwaysOff")
-	ErrorLevel := !KeyWait("Alt", "T2")
-	SetKeyDelay(15, 200) ;delay,pressDuration
-	Send("{up}")
-	Sleep(666)
-	Send("{right}{up}{enter}")
-	Sleep(777)
-	;Send("{up 18}{enter}") ; sometimes 17
-	Send("{left 4}{down 2}{enter}")
-	Sleep(5250) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
-	Send("{up 8}{enter}{up}") ; {enter}
-	setdefaultkeydelay()
-}
+;~ ; get oppressor mk2 from mechanic (last vehicle in arcade)
+;~ ^o::
+;~ {
+	;~ SetCapsLockState("AlwaysOff")
+	;~ ErrorLevel := !KeyWait("Alt", "T2")
+	;~ SetKeyDelay(15, 200) ;delay,pressDuration
+	;~ Send("{up}")
+	;~ Sleep(666)
+	;~ Send("{right}{up}{enter}")
+	;~ Sleep(777)
+	;~ ;Send("{up 18}{enter}") ; sometimes 17
+	;~ Send("{left 4}{down 2}{enter}")
+	;~ Sleep(5250) ; or up 9 instead of {down 5(assoc) or 6(ceo)}
+	;~ Send("{up 8}{enter}{up}") ; {enter}
+	;~ setdefaultkeydelay()
+;~ }
 
 ; Oppressor Mk2 get ??? seems to be  return to garage
 	;~ ErrorLevel := !KeyWait("Alt", "T2")
@@ -1473,7 +1492,7 @@ set_milliwatts() {
 	OutputDebug "A_IsAdmin: " A_IsAdmin "`nCommand line: " full_command_line
 	if A_IsAdmin {
 		if Ryzen_milliwatts_last_set != Ryzen_milliwatts {
-			cmd := "C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts
+			cmd := "C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts " --power-saving"
 			WinSetTitle("running: " cmd, GTAwindow)
 			Run(cmd)
 			Sleep(2000)
@@ -1576,7 +1595,8 @@ reload_as_admin()
 
 ; lucky wheel; these settings arent working yet
 ^!L:: {
-    delay := 3500 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 2500 ;Edit this value to change the spinning speed: higher value = slower spin
+	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel...e", GTAwindow)
 	KeyWait("Ctrl", "T2")
 	KeyWait("Alt", "T2")
@@ -1598,6 +1618,7 @@ reload_as_admin()
     Send("{s up}")
 	setdefaultkeydelay()
 	WinSetTitle("GTA5: Lucky Wheel completed")
+	global last_keystate := ""
 }
 
 #HotIf
