@@ -44,7 +44,7 @@ AttemptLaunch := true   ; Run steam game
 
 ; only if running as admin...
 ; slow-limit
-global Ryzen_milliwatts := 15000 ; slow-limit
+global Ryzen_milliwatts := 0 ; slow-limit
 global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
 global Ryzen_milliwatts_min := 3500  ; I don't want to go much below 3.5 watts
@@ -840,15 +840,16 @@ pasteToChat(msg)
 	;SendMode("Event")
 }
 
-/* ^+F11::{
+/*
+^+F11::{
 	msg := ( "Public service announcement, to help PC users with griefing modders"
 			"|To escape from a session, get pssuspend from Microsoft.com and run this command:"
 			"|pssuspend gta5 && timeout -T 10 && pssuspend -r gta5"
 			"|See https://learn.microsoft.com/en-us/sysinternals/downloads/pssuspend{enter}" )
 	pasteToChat(msg)
 	setdefaultkeydelay()
-} */
-
+}
+*/
 
 F12::toggleReturnToFreemode()
 
@@ -874,10 +875,11 @@ toggleReturnToFreemode()
 ; +1 is second garage or second car
 dialMechanic_getCar(garage,car) {
 	CallMechanic("")
-	Sleep(5250)
-	Send("{" (garage >= 0 ? "down" : "up") " " abs(garage) "}")
+	Sleep(5400)
+	Send("{" (garage >= 0 ? "down " : "up ") abs(garage) "}")
 	Send("{enter}")
-	Send("{" (car >= 0 ? "down" : "up") " " abs(car) "}")
+	Sleep(100)
+	Send("{" (car >= 0 ? "down " : "up ")  abs(car) "}")
 	; Send("{enter}")
 	setdefaultkeydelay()
 }
@@ -1467,9 +1469,55 @@ TryWinActivate(w)
 	}
 }
 
+
+;~ | STAPM LIMIT         |    30.000 | stapm-limit        |
+;~ | PPT LIMIT FAST      |    30.000 | fast-limit         |
+;~ | PPT LIMIT SLOW      |     7.750 | slow-limit         |
+;~ | StapmTimeConst      |     1.000 | stapm-time         |
+;~ | SlowPPTTimeConst    |     5.000 | slow-time          |
+;~ | PPT LIMIT APU       |    25.000 | apu-slow-limit     |
+;~ | TDC LIMIT VDD       |    33.000 | vrm-current        |
+;~ | TDC LIMIT SOC       |    13.000 | vrmsoc-current     |
+;~ | EDC LIMIT VDD       |    70.001 | vrmmax-current     |
+;~ | EDC LIMIT SOC       |    17.000 | vrmsocmax-current  |
+;~ | THM LIMIT CORE      |    80.001 | tctl-temp          |
+;~ | STT LIMIT APU       |    35.000 | apu-skin-temp      |
+;~ | STT LIMIT dGPU      |     0.000 | dgpu-skin-temp     |
+
+get_Ryzen_adj_info() {
+	if ! A_IsAdmin {
+		reload_as_admin()
+	}
+	outputfile := A_Temp "/ryzenadj-info.txt"
+	cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --info > " outputfile
+	RunWait(cmd)
+	text := FileRead(outputfile)
+	slowLimit := 0
+	Loop Parse text, "`r`n" {
+		pos := RegExMatch(A_LoopField, "[|][^|]+[|]([^|]+)[|]([^|]+)[|]", &m)
+		if pos && m.Count >= 2 {
+			v := m[1]
+			p := trim(m[2])
+			switch(p) {
+				case "slow-limit":
+					slowLimit := Integer(Float(v) * 1000)
+					; MsgBox("slowLimit=" slowLimit)
+			}
+		}
+	}
+	if slowLimit > 0
+	{
+		global Ryzen_milliwatts := slowLimit
+		global Ryzen_milliwatts_last_set := Ryzen_milliwatts
+	}
+}
+
 ^!NumPadAdd::
 {
 	global
+	if (Ryzen_milliwatts < Ryzen_milliwatts_min) {
+		get_Ryzen_adj_info()
+	}
 	Ryzen_milliwatts += Ryzen_milliwatt_increment
 	update_milliwatts()
 }
@@ -1477,6 +1525,9 @@ TryWinActivate(w)
 ^!NumPadSub::
 {
 	global
+	if (Ryzen_milliwatts < Ryzen_milliwatts_min) {
+		get_Ryzen_adj_info()
+	}
 	Ryzen_milliwatts -= Ryzen_milliwatt_increment
 	update_milliwatts()
 }
@@ -1490,14 +1541,31 @@ set_milliwatts() {
 	global
 	local cmd
 	OutputDebug "A_IsAdmin: " A_IsAdmin "`nCommand line: " full_command_line
+	if Ryzen_milliwatts == 0 && Ryzen_milliwatts_last_set == 0 {
+		get_Ryzen_adj_info()
+	}
 	if A_IsAdmin {
 		if Ryzen_milliwatts_last_set != Ryzen_milliwatts {
-			cmd := "C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts " --power-saving"
+			if Ryzen_milliwatts < Ryzen_milliwatts_min {
+				Ryzen_milliwatts := Ryzen_milliwatts_min
+			}
+			if Ryzen_milliwatts > Ryzen_milliwatts_max {
+				Ryzen_milliwatts := Ryzen_milliwatts_max
+			}
+			global last_keystate := "suspended"
+			outputfile := A_Temp "/ryzenadj-output.txt"
+			cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts " --power-saving > " outputfile
 			WinSetTitle("running: " cmd, GTAwindow)
 			Run(cmd)
-			Sleep(2000)
-			WinSetTitle(cmd, GTAwindow)
 			Ryzen_milliwatts_last_set := Ryzen_milliwatts
+			Sleep(1500)
+			; OutputDebug outputfile
+			try {
+				text := FileRead(outputfile)
+				WinSetTitle(SubStr(StrReplace(StrReplace(text,"`r"," "),"`n"," "),1,120), GTAwindow)
+				Sleep(5000)
+			}
+			global last_keystate := ""
 		}
 	} else {
 		WinSetTitle("Can't run RyzenAdj; not admin! Reloading macros as admin...", GTAwindow)
@@ -1594,8 +1662,9 @@ reload_as_admin()
 }
 
 ; lucky wheel; these settings arent working yet
+; I will NEVER get this working!!!
 ^!L:: {
-    delay := 2500 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 3500 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel...e", GTAwindow)
 	KeyWait("Ctrl", "T2")
