@@ -33,7 +33,7 @@ KeyHistory(100)
 Persistent
 
 #Include "AppVol.AHK"
-#Include "dialer.AHK"
+#Include "dialer.AHK" ; stolen from https://github.com/2called-chaos/gtav-online-ahk
 
 global gWaitTimer := 0
 
@@ -273,9 +273,16 @@ global current_keystate := ""
 global last_keystate  := ""
 
 updateTitleBar() {
-	global last_keystate
+	global last_keystate, lastKick
 	if last_keystate == "suspended" {
 		return
+	}
+	if WinActive(GTAwindow) {
+		; if idle 5 minutes and more than 5 minutes since last anti-idle event:
+		if A_TimeIdle > 300000 && lastKick < A_TickCount - 300000 {
+			Send("{blind}z")
+			lastKick := A_TickCount
+		}
 	}
 	if last_keystate != current_keystate  {
 		title := GTAtitle . "`: " . current_keystate
@@ -726,7 +733,7 @@ Resume_AFK_Farming2()
 						ErrorLevel := WinWaitActive(GTAwindow, , 1) , ErrorLevel := ErrorLevel = 0 ? 1 : 0
 						If WinActive(GTAwindow)
 						{
-							Send("{z}")
+							Send("{blind}{z}")
 							; Sleep, MenuDelay * 10
 							lastKick := A_TickCount
 							warning := ""
@@ -875,7 +882,7 @@ toggleReturnToFreemode()
 ; +1 is second garage or second car
 dialMechanic_getCar(garage,car) {
 	CallMechanic("")
-	Sleep(5400)
+	Sleep(5600)
 	Send("{" (garage >= 0 ? "down " : "up ") abs(garage) "}")
 	Send("{enter}")
 	Sleep(100)
@@ -900,6 +907,8 @@ dialMechanic_getCar(garage,car) {
 	;~ setdefaultkeydelay()
 ;~ }
 
+; it was working fine in freemode but not missions;
+; hence the switch to using the dialer
 ;~ ; get oppressor mk2 from mechanic (last vehicle in arcade)
 ;~ ^o::
 ;~ {
@@ -959,20 +968,18 @@ dialMechanic_getCar(garage,car) {
 	Send("{w down}")
 }
 
-;Drive slowly for nightclub VIP to hosp or home, etc
-^!+w::
-{
-	;~ global TBmode
-	;~ TBmode := "driving slowly"
-	Loop 999 {
-		Send("{w down}")
-		Sleep(444)
-		Send("{w up}")
-		Sleep(333)
-		if GetKeyState("w","P") || GetKeyState("Shift","P")
-			return
-	}
-}
+;~ ;Drive slowly for nightclub VIP to hosp or home, etc
+;~ ^!+w::
+;~ {
+	;~ Loop 300 {
+		;~ Send("{w down}")
+		;~ Sleep(444)
+		;~ Send("{w up}")
+		;~ Sleep(333)
+		;~ if GetKeyState("w","P") || GetKeyState("Shift","P")
+			;~ return
+	;~ }
+;~ }
 
 ; Run or swim straight
 ^!r::
@@ -1490,7 +1497,7 @@ get_Ryzen_adj_info() {
 	}
 	outputfile := A_Temp "/ryzenadj-info.txt"
 	cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --info > " outputfile
-	RunWait(cmd)
+	RunWait(cmd,,"Hide")
 	text := FileRead(outputfile)
 	slowLimit := 0
 	Loop Parse text, "`r`n" {
@@ -1512,29 +1519,52 @@ get_Ryzen_adj_info() {
 	}
 }
 
+; adjust power (mostly for throttling down)
 ^!NumPadAdd::
 {
 	global
 	if (Ryzen_milliwatts < Ryzen_milliwatts_min) {
 		get_Ryzen_adj_info()
 	}
-	Ryzen_milliwatts += Ryzen_milliwatt_increment
-	update_milliwatts()
+	Loop {
+		global Ryzen_milliwatts += Ryzen_milliwatt_increment
+		show_milliwatts()
+		Sleep(10)
+		if (! GetKeyState("NumPadAdd", "P") )
+			break
+	}
+	KeyWait("Ctrl")
+	KeyWait("Alt")
+    update_milliwatts()
 }
 
-^!NumPadSub::
-{
+^!NumPadSub::{
 	global
-	if (Ryzen_milliwatts < Ryzen_milliwatts_min) {
+	if (Ryzen_milliwatts = 0) {
+		Ryzen_milliwatts := Ryzen_milliwatts_min
 		get_Ryzen_adj_info()
 	}
-	Ryzen_milliwatts -= Ryzen_milliwatt_increment
-	update_milliwatts()
+	Loop {
+		global Ryzen_milliwatts -= Ryzen_milliwatt_increment
+		if Ryzen_milliwatts < Ryzen_milliwatts_min {
+			Ryzen_milliwatts := Ryzen_milliwatts_min
+		}
+		show_milliwatts()
+		Sleep(10)
+		if (! GetKeyState("NumPadSub", "P") )
+			break
+	}
+    update_milliwatts()
+}
+
+show_milliwatts() {
+	WinSetTitle(GTAtitle "`: adjusting to "  (Ryzen_milliwatts * 0.001) " watts", GTAwindow)
 }
 
 update_milliwatts() {
-	SetTimer(set_milliwatts, -500, 0)
-	WinSetTitle(GTAtitle "`: adjusting to "  (Ryzen_milliwatts * 0.001) " watts", GTAwindow)
+	; SetTimer(set_milliwatts, -500, 0)
+	show_milliwatts()
+	set_milliwatts()
 }
 
 set_milliwatts() {
@@ -1556,7 +1586,7 @@ set_milliwatts() {
 			outputfile := A_Temp "/ryzenadj-output.txt"
 			cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts " --power-saving > " outputfile
 			WinSetTitle("running: " cmd, GTAwindow)
-			Run(cmd)
+			Run(cmd,,"Hide")
 			Ryzen_milliwatts_last_set := Ryzen_milliwatts
 			Sleep(1500)
 			; OutputDebug outputfile
@@ -1594,64 +1624,6 @@ reload_as_admin()
 		ExitApp
 	}
 }
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;; I'm double-NATted so this probably wouldn't do anything anyway
-;; might work if administrator; turn on/off blocking of UDP ports 61455-61458
-;;^!F7::Run,netsh advfirewall firewall set rule name="GTA5:block-spectator-mode-hackers" new enable=no
-;;^!F8::Run,netsh advfirewall firewall set rule name="GTA5:block-spectator-mode-hackers" new enable=yes
-
-;; https://www.irisclasson.com/2015/01/30/creating-a-dynamic-hotkey-window-overlay-with-autohotkey/
-
-; displayOverlay(msg,xpos,ypos){
-; 	;GetTextSize(msg,35,"Verdana",theight,twidth)
-; 	; msg = %msg%h=%height%,w=%width%
-; 	msg := msg . "   "
-; 	theight := "40"
-; 	twidth := "100"
-; 	bgTopPadding := "20"
-; 	bgWidthPadding := "50"
-; 	bgHeight := theight + bgTopPadding
-; 	bgWidth := twidth + bgWidthPadding
-; 	padding := "20"
-; 	; yPlacement = % A_ScreenHeight - bgHeight - padding
-; 	; xPlacement = % A_ScreenWidth - bgWidth - padding
-; 	yPlacement := ypos ; + 50
-; 	xPlacement := xpos ; + 20
-; 	myGui := Gui()
-; 	myGui.BackColor := "46bfec"
-; 	myGui.MarginX := "20", myGui.MarginY := "20"
-; 	; Gui, Add, Picture, x0 y0 w%bgWidth% h%bgHeight%, img\black.png
-; 	myGui.Opt("+LastFound +AlwaysOnTop -Border -SysMenu +Owner -Caption +ToolWindow")
-; 	myGui.SetFont("s18 cWhite", "Verdana")
-; 	myGui.Add("Text", "xm y5 x5", msg)
-; 	myGui.Show("x" . xPlacement . " y" . yPlacement)
-; 	;WinActivate, AHK_EXE GTA5.EXE
-; 	SetTimer(RemoveGui,1000)
-; }
-
-; GetTextSize_broken(str, size, font,&height,&width) {
-; 	temp := Gui()
-; 	temp.Font("s" . size, font)
-; 	temp.Add("Text", , str)
-; 	; GuiControlGet T, temp:Pos, Static1
-; 	; ogcStatic1.GetPos(&TX, &TY, &TW, &TH)
-
-; 	temp.Destroy()
-; 	height := TH
-; 	width := TW
-; }
-
-; RemoveGui()
-; {
-; 	temp.Destroy()
-; 	;WinActivate, AHK_EXE GTA5.EXE
-; 	return
-; }
-
-;!7::
-;	CreateWindow("Win + 7")
-;	return
 
 ; EDIT NOW!!!
 ^!E:: {
