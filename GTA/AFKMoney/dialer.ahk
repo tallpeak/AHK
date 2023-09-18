@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
-; v1.3.1
+; from v1.3.1 of GTA V Online AHK-Macros; see below
 #SingleInstance force
-#MaxThreadsPerHotkey 2
+;#MaxThreadsPerHotkey 2 ; no thanks; this was causing my hotkeys to run twice
 
 SendMode("Event") ; default, and only working method
 
