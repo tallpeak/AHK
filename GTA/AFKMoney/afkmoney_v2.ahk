@@ -1,6 +1,6 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance force
-
+;Version 0.5
 ; AFKMoney_v2 moved to github on 8/14/2023:
 ; https://github.com/tallpeak/AHK/tree/main/GTA/AFKMoney
 ; Also linked from QOMPH.com/gta ; ignore the ZIP of the v1 version
@@ -9,18 +9,19 @@
 ; If you want to use F8 to start looping the
 ; AFKMoney & RP mission, you will need to make screenshots
 ; of some appropriate portion of the screen used to identify
-; the corresponding screen
+; the corresponding screen area
 ; representing where in the process the game currently is.
 ;
 ; These files must be placed in the "img" subdirectory.
 ;
 ; My resolution is 1280x720, so my screen clippings are named as follows:
-; AFKMoney&RPv2_1280x720.png
-; ConfirmSettings_1280x720.png
-; INVITE_1280x720.png
-; Play_1280x720.png
-; Replay_1280x720.png
-; SETTINGS_1280x720.png
+; AFKMoney&RPv2_1280x720.png   -- the name of the mission to be bookmarked from social club; can be found in the upper-left corner of the screen after pressing z, while in the AFK survival mission
+; Play_1280x720.png    -- Play button to start mission
+; SETTINGS_1280x720.png -- SETTINGS header of first screen after Play/Replay button
+; INVITE_1280x720.png  -- "INVITE" header of the second screen after Play/Replay button
+; Replay_1280x720.png  -- Large Replay button on voting screen after mission over
+
+; Not needed: ConfirmSettings_1280x720.png  -- "Confirm Settings"
 ;
 ; And yes, I know this process could use some
 ; better error detection and documentation... maybe tomorrow.
