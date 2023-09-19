@@ -367,7 +367,8 @@ DialDialog(ThisHotkey)
 DIAL.OnEvent("Escape", DIALGuiEscape)
 DIAL.add("Text", , "double click item")
   DIAL.SetFont(, "Courier New")
-  ogcListBoxPhoneNumberSelect := DIAL.add("ListBox", "w500 h250 vPhoneNumberSelect", [pbl])
+ ; ogcListBoxPhoneNumberSelect := DIAL.add("ListBox", "w500 h250 vPhoneNumberSelect", [pbl])
+  ogcListBoxPhoneNumberSelect := DIAL.add("ListBox", "w500 h250 vPhoneNumberSelect", ArrayPhonebook )
   ogcListBoxPhoneNumberSelect.OnEvent("DoubleClick", _DialDialogMakeCallFromSelect.Bind("DoubleClick"))
   DIAL.SetFont(, "Arial")
   DIAL.add("Text", , "or type number:")
@@ -395,7 +396,7 @@ DIALGuiClose(*)
 _DialDialogMakeCallFromSelect(A_GuiEvent, GuiCtrlObj, Info, *)
 {
   if(A_GuiEvent = "DoubleClick") {
-    Goto(_DialDialogMakeCall)
+    _DialDialogMakeCall(A_GuiEvent, GuiCtrlObj, Info)
   }
 }
 
@@ -418,23 +419,19 @@ CallPegasus(ThisHotkey)
   dialNumber("328-555-0122", true)
 }
 
-CallMerryweather(ThisHotkey)
-{
+CallMerryweather(ThisHotkey) {
   dialNumber("273-555-0120", true)
 }
 
-CallInsurance(ThisHotkey)
-{
+CallInsurance(ThisHotkey) {
   dialNumber("611-555-0149", true)
 }
 
-CallLester(ThisHotkey)
-{
+CallLester(ThisHotkey) {
   dialNumber("346-555-0102", true)
 }
 
-CallAssistant(ThisHotkey)
-{
+CallAssistant(ThisHotkey) {
   dialNumber("346-555-0137", true)
 }
 
@@ -453,3 +450,13 @@ CallMors(ThisHotkey) {
 }
 
 Hotkey(CallMorsKey, CallMors)
+
+CallLamar(ThisHotkey) {
+	dialNumber("346-555-0141", true)
+}
+
+CallLamarKey := "^+l"
+Hotkey(CallLamarKey, CallLamar)
+
+DialDialogKey        := "+F5" ; Call GUI with a list of almost all numbers
+Hotkey(DialDialogKey, DialDialog)
