@@ -9,7 +9,7 @@ if InStr(A_ScriptFullPath, "RyzenAdj.ahk") {
 global Ryzen_milliwatts := 0 ; slow-limit
 global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
-global Ryzen_milliwatts_min := 3500  ; I don't want to go much below 3.5 watts
+global Ryzen_milliwatts_min := 1000  ; I don't want to go much below 3.5 watts
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
 
 reload_as_admin() {
@@ -112,6 +112,34 @@ get_Ryzen_adj_info() {
     update_milliwatts()
 }
 
+update_titlebar_inputhook(_InputHook, txt) {
+	outMessage(txt)
+}
+
+; holding control-alt-NumPadAdd or Sub to select wattage works ok but feels goofy
+; This seems better:
+; ^!p = power, select 01 to 99 watts (limited by min and max above)
+^!p::{
+	; hacky; need to change all settitles to use a single function that uses globals
+	global last_keystate := "suspended"
+	outMessage("Type 01 to 99 for watts,00/x/esc to abort")
+	ih := InputHook("L2T5","{Esc}{Del}")
+	ih.Start()
+	ih.OnChar := update_titlebar_inputhook
+	ih.Wait()
+	if ih.EndReason == "Max" {
+		try {
+			watts := Integer(ih.Input)
+			if watts > 0 {
+				global Ryzen_milliwatts := watts * 1000
+				update_milliwatts()
+			}
+		}
+	}
+	global last_keystate := ""
+}
+
+
 outMessage(msg) {
 	if outputTitle {
 		WinSetTitle(GTAtitle . msg, GTAwindow)
@@ -156,13 +184,15 @@ set_milliwatts() {
 			try {
 				text := FileRead(outputfile)
 				WinSetTitle(SubStr(StrReplace(StrReplace(text,"`r"," "),"`n"," "),1,120), GTAwindow)
-				Sleep(5000)
+				Sleep(1000)
 			}
 			global last_keystate := ""
 		}
 	} else {
 		WinSetTitle("Can't run RyzenAdj; not admin! Reloading macros as admin...", GTAwindow)
-		Sleep(2000)
+		Sleep(1000)
 		reload_as_admin()
 	}
 }
+
+
