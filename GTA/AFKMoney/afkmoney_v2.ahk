@@ -35,8 +35,7 @@ Persistent
 
 #Include "AppVol.AHK"
 #Include "dialer.AHK" ; stolen from https://github.com/2called-chaos/gtav-online-ahk
-;#Include *i "RyzenAdj.AHK"  ; *i for optional include seems to make it not work:
-#Include "RyzenAdj.AHK" ; for controlling milliwatts on my AMD 5625U CPU
+#Include "*i RyzenAdj.AHK" ; for controlling milliwatts on my AMD 5625U CPU
 
 global gWaitTimer := 0
 
@@ -191,8 +190,6 @@ YToolTip := WH-20
 WinSetTitle(GTAtitle "`: " helptext, GTAwindow)
 startMission := 0
 
-ListLines false
-
 GetAllKeyState() {
 	ListLines false
 	freq := 0
@@ -243,7 +240,6 @@ GetAllKeyState() {
 	ListLines true
 	return kss
 }
-	ListLines true
 
 ; Reload clears logical keystate, so this may not be very useful,
 ; or only useful when "physical" keystate is stuck down
@@ -1481,18 +1477,19 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 200 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 210 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
-	WinSetTitle("Lucky Wheel...e (5 seconds)", GTAwindow)
+	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
 	KeyWait("Alt", "T2")
 	KeyWait("l", "T2")
     SetKeyDelay(10,90)
+	Sleep(200)
     Send("{e down}")
 	sleep(200)
 	Send("{e up}")
     Sleep(5000)
-	WinSetTitle("Lucky Wheel...enter", GTAwindow)
+	WinSetTitle("Lucky Wheel; enter", GTAwindow)
     Send("{enter down}")
 	Sleep(200)
 	Send("{enter up}")

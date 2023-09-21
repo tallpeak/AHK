@@ -9,7 +9,7 @@ if InStr(A_ScriptFullPath, "RyzenAdj.ahk") {
 global Ryzen_milliwatts := 0 ; slow-limit
 global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
-global Ryzen_milliwatts_min := 1000  ; I don't want to go much below 3.5 watts
+global Ryzen_milliwatts_min := 6000  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
 
 reload_as_admin() {
@@ -84,13 +84,14 @@ get_Ryzen_adj_info() {
 	Loop {
 		global Ryzen_milliwatts += Ryzen_milliwatt_increment
 		show_milliwatts()
-		Sleep(10)
+		;Sleep(100)
+		KeyWait("NumPadAdd","T0.1")
 		if (! GetKeyState("NumPadAdd", "P") )
 			break
 	}
-	KeyWait("Ctrl")
-	KeyWait("Alt")
-    update_milliwatts()
+	;KeyWait("Ctrl")
+	;KeyWait("Alt")
+	SetTimer(update_milliwatts, -500, 0)
 }
 
 ^!NumPadSub::{
@@ -105,11 +106,14 @@ get_Ryzen_adj_info() {
 			Ryzen_milliwatts := Ryzen_milliwatts_min
 		}
 		show_milliwatts()
-		Sleep(10)
+		;Sleep(100)
+		KeyWait("NumPadSub","T0.1")
 		if (! GetKeyState("NumPadSub", "P") )
 			break
 	}
-    update_milliwatts()
+    ;update_milliwatts()
+	; make it async to make it possible to tap +/- as well as hold them down
+	SetTimer(update_milliwatts, -500, 0)
 }
 
 update_titlebar_inputhook(_InputHook, txt) {
