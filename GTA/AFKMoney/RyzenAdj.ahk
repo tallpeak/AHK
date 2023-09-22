@@ -1,7 +1,8 @@
 #Requires AutoHotkey v2.0
 #SingleInstance force
 ; Version 0.2
-; Edit the following line per your system:
+; Get ryzenadj.exe from https://github.com/FlyGoat/RyzenAdj
+; Then edit the following line per your system:
 global RYZENADJ := "C:/tools/bin/ryzenadj-win64/ryzenadj.exe"
 global outputTitle := true  ; update the title bar if AHK_EXE GTA5.EXE
 
