@@ -131,26 +131,26 @@ Volume := 50 ; I like starting volume to be lower than other apps (for the first
 ProcessId := 0
 gotoFreemode := ""
 setdefaultkeydelay()
-WX := 0
-WY := 0
-WW := 0
-WH := 0
+gtaWX := 0
+gtaWY := 0
+gtaWW := 0
+gtaWH := 0
 if ! WinExist(GTAwindow) {
 	if AttemptLaunch {
 		Run("steam://rungameid/271590") ; RunWait sometimes gets stuck
 	}
 	; If the user alt-tabs away while the launcher is loading, this can take a long time
-	w := 0
+	gtawindowfound := 0
 	Loop 3 {
 		ToolTip("Looking for GTA5, waiting 60 seconds, loop #" . A_Index . " of 3")
-		w := WinWaitActive(GTAwindow,,60) ; Set GTA in focus at start (but user can change focus)
-		if w {
+		gtawindowfound := WinWaitActive(GTAwindow,,60) ; Set GTA in focus at start (but user can change focus)
+		if gtawindowfound {
 			break
 		}
 		WinActivate(GTAwindow)
 	}
 	ToolTip("")
-	if w && WinExist(GTAwindow) {
+	if gtawindowfound && WinExist(GTAwindow) {
 		ToolTip("GTA5 window found, reloading script in 4 seconds...")
 		Sleep(4000)
 		ToolTip()
@@ -164,26 +164,26 @@ if ! WinExist(GTAwindow) {
 		ExitApp(1)
 	}
 }
-;WinGetPos(&WX, &WY, &WW, &WH)
+;WinGetPos(&gtaWX, &gtaWY, &gtaWW, &gtaWH)
 WinGetClientPostries := 0
 Loop {
 	TryWinActivate(GTAwindow)
-	WinGetClientPos(&WX, &WY, &WW, &WH, GTAwindow)
+	WinGetClientPos(&gtaWX, &gtaWY, &gtaWW, &gtaWH, GTAwindow)
 	Sleep(100)
 	if WinGetClientPostries > 100 {
 		throw("can't get client window position/size, bombing out")
 	}
 	WinGetClientPostries += 1
-} until WW > 0 && WH > 0
+} until gtaWW > 0 && gtaWH > 0
 
 full_command_line := DllCall("GetCommandLine", "str")
 
 WinSetAlwaysOnTop(false) ; bug I hit once after alt-enter to go fullscreen; it was stuck on top after returning to windowed
 ; ImageResolution := "_1280x720" ;  screen resolution at which the image was clipped
-; bug in 2.0.7? ImageResolution == _0x0 WX: -32000 WY: -32000 WH: 0 WW: 0
-ImageResolution := "_" . WW . "x" . WH ; current screen resolution; look for images recorded at same
+; bug in 2.0.7? ImageResolution == _0x0 gtaWX: -32000 gtaWY: -32000 gtaWH: 0 gtaWW: 0
+ImageResolution := "_" . gtaWW . "x" . gtaWH ; current screen resolution; look for images recorded at same
 XToolTip := 200
-YToolTip := WH-20
+YToolTip := gtaWH-20
 ; Old method of messaging the user was ToolTip, but I like WinSetTitle better
 ; although title bar usage requires windowed with borders
 ;ToolTip, Instructions for use`: %helptext%, XToolTip, YToolTip, 1
@@ -516,7 +516,7 @@ Resume_AFK_Farming2()
 			; Some debugging information; status and image locations if found
 			global idleSec:=Round((A_TickCount - lastKick)/1000)
 			;ToolTip, %warning% SETTINGS`=%xSettings%`,%ySettings% INVITE=%xInvite%`,%yInvite% Replay=%xReplay%`,%yReplay% idle`=%idleSec%s %helptext%, XToolTip, YToolTip, 1
-			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " WW "x" WH, GTAwindow)
+			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " gtaWW "x" gtaWH, GTAwindow)
 
 
 			if (xSettings != "")
@@ -1517,6 +1517,49 @@ TryWinActivate(w)
 ^!v::{
 	pasteToChat(A_Clipboard)
 }
+
+; First attempt to use FindText_v2; did not work
+; (not needed for this anyway)
+#Include "*i FindText_v2.ahk"
+
+; exit game with control-alt-F4
+^!F4::{
+	Send("{alt down}{F4 down}")
+	Sleep(1000)
+	Send("{alt up}{F4 up}")
+
+	;optional imagesearch with FindText
+	if ImageResolution == "_1280x720" && IsSet(FindText) {
+		; search for Yes <-- (enter arrow)
+		X:="wait"
+		Y:=10
+		Text:="|<>*115$41.CTzy001Rzzw00+HXVs00KiHPk00gtozU01Rk4D002vbzC305riaQTzvjXVsQ07zzzk808"
+		ok:=FindText(&X, &Y, 1407-150, 810-150, 1407+150, 810+150, 0, 0, Text)
+		if ok != 0 {
+			ToolTip("X=" X "Y=" Y)
+		}
+	}
+	Loop 60 {
+		Sleep(500)
+		Send("{Enter}")
+	} while (WinExist(GTAwindow) )
+
+	; if the window is *truly* hung, WinActive might not work...
+	; but the script would probably be hung too by now if so
+	If WinActive(GTAwindow) {
+		ToolTip("About to kill GTA5 in 5 seconds...")
+		Sleep(5000)
+		Run("pskill gta5") ; just in case
+	}
+
+	ToolTip()
+	ExitApp
+}
+
+
+
+
+
 
 ;~ ; This might work well if you are not in full-screen mode (avoid running in full-screen mode!)
 ;~ ; https://www.reddit.com/r/software/comments/lt0ai9/is_there_a_alternative_to_chevolume_and_audio/

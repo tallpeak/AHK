@@ -97,7 +97,7 @@ get_Ryzen_adj_info() {
 ; To use, hold down control-alt-+ or - until you reach the desired wattage
 ^!NumPadAdd::
 {
-	global
+	global Ryzen_milliwatts, Ryzen_milliwatts_last_set, Ryzen_milliwatts_max,  Ryzen_milliwatts_min, Ryzen_milliwatt_increment
 	if (Ryzen_milliwatts == 0) {
 		Ryzen_milliwatts := Ryzen_milliwatts_min
 		get_Ryzen_adj_info()
@@ -117,7 +117,7 @@ get_Ryzen_adj_info() {
 
 ; Reduce power in 0.25 watt increments, until minimum is reached
 ^!NumPadSub::{
-	global
+	global Ryzen_milliwatts, Ryzen_milliwatts_last_set, Ryzen_milliwatts_max,  Ryzen_milliwatts_min, Ryzen_milliwatt_increment
 	if (Ryzen_milliwatts == 0) {
 		get_Ryzen_adj_info()
 	}
@@ -194,8 +194,7 @@ update_milliwatts() {
 }
 
 set_milliwatts() {
-	global
-	local cmd
+	global Ryzen_milliwatts, Ryzen_milliwatts_last_set, Ryzen_milliwatts_max,  Ryzen_milliwatts_min, Ryzen_milliwatt_increment
 	;OutputDebug "A_IsAdmin: " A_IsAdmin "`nCommand line: " full_command_line
 	if Ryzen_milliwatts == 0 {
 		get_Ryzen_adj_info()
