@@ -1,15 +1,33 @@
 #Requires AutoHotkey v2.0
 #SingleInstance force
+; Version 0.2
+; Edit the following line per your system:
+global RYZENADJ := "C:/tools/bin/ryzenadj-win64/ryzenadj.exe"
+global outputTitle := true  ; update the title bar if AHK_EXE GTA5.EXE
 
-global outputTitle := true
+; stream outline (twitch.tv/sqlexpert on 9/21/2023; will expire in 2 weeks) :
+; What is RyzenAdj.exe? (for AMD APUs; eg. laptop CPUs)
+; What is the SMU? system management unit? 32-CPU
+; Why RyzenAdj, and this script? (save power when looping AFK mission overnight)
+; Why target 6 watts, <15 watts, etc (avoid thermal throttle when running @25W target)
+; Why use title bar for output? (in case user goes full-screen, as I have not found a good overlay solution)
+; Why initial UI (looping while holding a key)? (easy to use and understand)
+; Why later UI (two digits)? (less clunky)
+; How I supported both UIs...
+; Why reload_as_admin? (and how...)
+; Walkthrough of some parts of the script.
 
+; for running as a standalone script:
 if InStr(A_ScriptFullPath, "RyzenAdj.ahk") {
 	outputTitle := false
+	global GTAtitle := "unknown"
+	global GTAwindow := "A"
 }
+
 global Ryzen_milliwatts := 0 ; slow-limit
 global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
-global Ryzen_milliwatts_min := 6000  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
+global Ryzen_milliwatts_min := 4500  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
 
 reload_as_admin() {
@@ -51,7 +69,7 @@ get_Ryzen_adj_info() {
 		reload_as_admin()
 	}
 	outputfile := A_Temp "/ryzenadj-info.txt"
-	cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --info > " outputfile
+	cmd := A_ComSpec " /c " RYZENADJ " --info > " outputfile
 	RunWait(cmd,,"Hide")
 	text := FileRead(outputfile)
 	slowLimit := 0
@@ -75,10 +93,12 @@ get_Ryzen_adj_info() {
 }
 
 ; adjust power (mostly for throttling down)
+; To use, hold down control-alt-+ or - until you reach the desired wattage
 ^!NumPadAdd::
 {
 	global
-	if (Ryzen_milliwatts < Ryzen_milliwatts_min) {
+	if (Ryzen_milliwatts == 0) {
+		Ryzen_milliwatts := Ryzen_milliwatts_min
 		get_Ryzen_adj_info()
 	}
 	Loop {
@@ -94,10 +114,10 @@ get_Ryzen_adj_info() {
 	SetTimer(update_milliwatts, -500, 0)
 }
 
+; Reduce power in 0.25 watt increments, until minimum is reached
 ^!NumPadSub::{
 	global
-	if (Ryzen_milliwatts = 0) {
-		Ryzen_milliwatts := Ryzen_milliwatts_min
+	if (Ryzen_milliwatts == 0) {
 		get_Ryzen_adj_info()
 	}
 	Loop {
@@ -123,11 +143,12 @@ update_titlebar_inputhook(_InputHook, txt) {
 ; holding control-alt-NumPadAdd or Sub to select wattage works ok but feels goofy
 ; This seems better:
 ; ^!p = power, select 01 to 99 watts (limited by min and max above)
+; Also, there is no minimum enforced (except 01 watt)
 ^!p::{
 	; hacky; need to change all settitles to use a single function that uses globals
 	global last_keystate := "suspended"
 	outMessage("Type 01 to 99 for watts,00/x/esc to abort")
-	ih := InputHook("L2T5","{Esc}{Del}")
+	ih := InputHook("L2T5","{Esc}x")
 	ih.Start()
 	ih.OnChar := update_titlebar_inputhook
 	ih.Wait()
@@ -143,17 +164,26 @@ update_titlebar_inputhook(_InputHook, txt) {
 	global last_keystate := ""
 }
 
+clearToolTip() {
+	ToolTip()
+}
+
+clearToolTipAfterDelay(ms) {
+	SetTimer(clearToolTip, -ms, 0)
+}
 
 outMessage(msg) {
 	if outputTitle {
-		WinSetTitle(GTAtitle . msg, GTAwindow)
+		WinSetTitle(GTAtitle . ":" . msg, GTAwindow)
 	} else {
+		; TrayTip(msg,,4) ; too annoying to have multiple badges
 		ToolTip(msg)
+		clearToolTipAfterDelay(2500)
 	}
 }
 
 show_milliwatts() {
-	outMessage("`: adjusting to "  (Ryzen_milliwatts * 0.001) " watts")
+	outMessage("adjusting to "  (Ryzen_milliwatts * 0.001) " watts")
 }
 
 update_milliwatts() {
@@ -166,34 +196,34 @@ set_milliwatts() {
 	global
 	local cmd
 	;OutputDebug "A_IsAdmin: " A_IsAdmin "`nCommand line: " full_command_line
-	if Ryzen_milliwatts == 0 && Ryzen_milliwatts_last_set == 0 {
+	if Ryzen_milliwatts == 0 {
 		get_Ryzen_adj_info()
 	}
 	if A_IsAdmin {
 		if Ryzen_milliwatts_last_set != Ryzen_milliwatts {
-			if Ryzen_milliwatts < Ryzen_milliwatts_min {
-				Ryzen_milliwatts := Ryzen_milliwatts_min
-			}
+			;~ if Ryzen_milliwatts < Ryzen_milliwatts_min {
+				;~ Ryzen_milliwatts := Ryzen_milliwatts_min
+			;~ }
 			if Ryzen_milliwatts > Ryzen_milliwatts_max {
 				Ryzen_milliwatts := Ryzen_milliwatts_max
 			}
 			global last_keystate := "suspended"
 			outputfile := A_Temp "/ryzenadj-output.txt"
-			cmd := A_ComSpec " /c C:/tools/bin/ryzenadj-win64\ryzenadj.exe --slow-limit=" Ryzen_milliwatts " --power-saving > " outputfile
-			WinSetTitle("running: " cmd, GTAwindow)
+			cmd := A_ComSpec " /c " RYZENADJ " --slow-limit=" Ryzen_milliwatts " --power-saving > " outputfile
+			outMessage("running: " cmd)
 			Run(cmd,,"Hide")
 			Ryzen_milliwatts_last_set := Ryzen_milliwatts
 			Sleep(1500)
 			; OutputDebug outputfile
 			try {
 				text := FileRead(outputfile)
-				WinSetTitle(SubStr(StrReplace(StrReplace(text,"`r"," "),"`n"," "),1,120), GTAwindow)
+				outMessage(SubStr(StrReplace(StrReplace(text,"`r"," "),"`n"," "),1,120))
 				Sleep(1000)
 			}
 			global last_keystate := ""
 		}
 	} else {
-		WinSetTitle("Can't run RyzenAdj; not admin! Reloading macros as admin...", GTAwindow)
+		outMessage("Can't run RyzenAdj; not admin! Reloading macros as admin...")
 		Sleep(1000)
 		reload_as_admin()
 	}
