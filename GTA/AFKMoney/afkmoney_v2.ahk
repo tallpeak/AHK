@@ -1549,9 +1549,12 @@ TryWinActivate(w)
 	Loop 60 {
 		Sleep(500)
 		if WinExist(GTAwindow) {
-			if WinActive(GTAwindow)
+			if WinActive(GTAwindow) {
 				Send("{Enter}")
-		} else break;
+			}
+		} else {
+			break
+		}
 	}
 
 	; if the window is *truly* hung, WinActive might not work...
