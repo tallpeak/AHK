@@ -625,7 +625,7 @@ Resume_AFK_Farming2()
 						; copy-paste coding (sorry!)
 						Thread("NoTimers")
 						Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
-						global last_kss := "suspended"
+						global last_keystate := "suspended"
 						Critical "On"
 
 						PID_or_Name := GTAwindow
@@ -1235,7 +1235,7 @@ ResolutionUp(n)
 	;this was hanging; probably updating the title bar while suspended lead to a deadlock
 	Thread("NoTimers")
 	Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
-	global last_kss := "suspended"
+	global last_keystate := "suspended"
 	Critical "On"
 	h := process_suspend_milliseconds("GTA5.exe",10000)
 	Critical "Off"
@@ -1477,7 +1477,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 210 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 55 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1534,22 +1534,33 @@ TryWinActivate(w)
 		X:="wait"
 		Y:=10
 		Text:="|<>*115$41.CTzy001Rzzw00+HXVs00KiHPk00gtozU01Rk4D002vbzC305riaQTzvjXVsQ07zzzk808"
-		ok:=FindText(&X, &Y, 1407-150, 810-150, 1407+150, 810+150, 0, 0, Text)
+		ok:=FindText(&X, &Y, 1407-150, 810-150, 1407+150, 810+150, 0.2, 0.2, Text)
 		if ok != 0 {
-			ToolTip("X=" X "Y=" Y)
+			ToolTip("Yes" Chr(0x21B5) " found: X=" X "Y=" Y) ; 0x23CE
+		} else {
+			ToolTip("Yes" Chr(0x21B5) " not found") ; or 0x21A9
 		}
 	}
+
+	Thread("NoTimers")
+	Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
+	global last_keystate := "suspended"
+
 	Loop 60 {
 		Sleep(500)
-		Send("{Enter}")
-	} while (WinExist(GTAwindow) )
+		if WinExist(GTAwindow) {
+			if WinActive(GTAwindow)
+				Send("{Enter}")
+		} else break;
+	}
 
 	; if the window is *truly* hung, WinActive might not work...
 	; but the script would probably be hung too by now if so
 	If WinActive(GTAwindow) {
-		ToolTip("About to kill GTA5 in 5 seconds...")
-		Sleep(5000)
-		Run("pskill gta5") ; just in case
+		ToolTip("About to kill GTA5 in 5 seconds, ESC to quit")
+		if !KeyWait("ESC","DT5") {
+			Run("pskill gta5") ; just in case
+		}
 	}
 
 	ToolTip()
