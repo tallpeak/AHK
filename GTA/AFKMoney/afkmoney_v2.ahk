@@ -1503,7 +1503,7 @@ TryWinActivate(w)
 	Sleep(delay)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
     Send("{s down}")
-    Sleep(55)
+    Sleep(40)
     Send("{s up}")
 	setdefaultkeydelay()
 	Sleep(3000)
@@ -1518,8 +1518,6 @@ TryWinActivate(w)
 	pasteToChat(A_Clipboard)
 }
 
-; First attempt to use FindText_v2; did not work
-; (not needed for this anyway)
 #Include "*i FindText_v2.ahk"
 
 ; exit game with control-alt-F4
@@ -1534,18 +1532,21 @@ TryWinActivate(w)
 		X:="wait"
 		Y:=10
 		Text:="|<>*115$41.CTzy001Rzzw00+HXVs00KiHPk00gtozU01Rk4D002vbzC305riaQTzvjXVsQ07zzzk808"
-		ok:=FindText(&X, &Y, 1407-150, 810-150, 1407+150, 810+150, 0.2, 0.2, Text)
+		ok:=FindText(&X, &Y, 1407-15000, 810-15000, 1407+15000, 810+15000, 0.2, 0.2, Text)
 		if ok != 0 {
-			ToolTip("Yes" Chr(0x21B5) " found: X=" X "Y=" Y) ; 0x23CE
+			ToolTip("Yes" Chr(0x21B5) " found: X=" X "Y=" Y ",clicking") ; 0x23CE
+			FindText().Click(X, Y, "L")
+			Sleep(2000)
 		} else {
 			ToolTip("Yes" Chr(0x21B5) " not found") ; or 0x21A9
 		}
 	}
 
+	ClearAllKeyState()
+	global last_keystate := "suspended"
+	SetTimer(UpdateTitleBar_KeyState, 0)
 	Thread("NoTimers")
 	Suspend(true) ; prevent hotkeys (Send to the window would cause a deadlock)
-	global last_keystate := "suspended"
-
 	Loop 60 {
 		Sleep(500)
 		if WinExist(GTAwindow) {
@@ -1570,16 +1571,9 @@ TryWinActivate(w)
 	ExitApp
 }
 
-
-
-
-
-
 ;~ ; This might work well if you are not in full-screen mode (avoid running in full-screen mode!)
 ;~ ; https://www.reddit.com/r/software/comments/lt0ai9/is_there_a_alternative_to_chevolume_and_audio/
 ;~ ^!V::
 ;~ {
 	;~ Run("ms-settings:apps-volume")
 ;~ }
-
-
