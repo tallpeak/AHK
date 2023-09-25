@@ -646,7 +646,7 @@ Resume_AFK_Farming2()
 							ExitApp()
 						}
 						Critical "Off"
-						global last_kss := ""
+						global last_keystate := ""
 						Suspend(false)
 						Thread("NoTimers",false)
 					}
@@ -946,9 +946,9 @@ dialMechanic_getCar(garage,car) {
 	KeyWait("Shift", "T1")
     KeyWait("Numpad8", "T1")
     KeyWait("NumpadUp", "T1")
-	Send("{w down}{numpad8 down}")
+	Send("{w down}{Numpad8 down}")
 	KeyWait("w","DT120") ;sleep(120000) or until w
-	Send("{w up}{numpad8 up}")
+	Send("{w up}{Numpad8 up}{NumpadUp up}")
 }
 
 ; walk or fly straight
@@ -1239,7 +1239,7 @@ ResolutionUp(n)
 	Critical "On"
 	h := process_suspend_milliseconds("GTA5.exe",10000)
 	Critical "Off"
-	global last_kss := ""
+	global last_keystate := ""
 	Suspend(false)
 	Thread("NoTimers",false)
 	ClearAllKeyState()
