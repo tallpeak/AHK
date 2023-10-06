@@ -27,7 +27,7 @@
 ; better error detection and documentation... maybe tomorrow.
 
 InstallKeybdHook
-InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
+;  InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
 ; but installing the mouse hook causes A_TimeIdlePhysical to revert to 0 when mouse is moving
 hideMouseWheelUpDownPhysical := false ; hide this apparent bug (whether in AHK, Windows, bluetooth mouse driver, or game); it seems to go away after resetting bluetooth.
 KeyHistory(100)
@@ -1477,7 +1477,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 55 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 2250 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1502,6 +1502,7 @@ TryWinActivate(w)
 	}
 	Sleep(delay)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
+	SetKeyDelay(0,0)
     Send("{s down}")
     Sleep(40)
     Send("{s up}")
@@ -1535,11 +1536,14 @@ TryWinActivate(w)
 		ok:=FindText(&X, &Y, 1407-15000, 810-15000, 1407+15000, 810+15000, 0.2, 0.2, Text)
 		if ok != 0 {
 			ToolTip("Yes" Chr(0x21B5) " found: X=" X "Y=" Y ",clicking") ; 0x23CE
-			FindText().Click(X, Y, "L")
+			FindText().Click(X, Y, "L") ; this moves the cursor but the click apparently didn't work
+			Sleep(200)
+			Click() ; this one worked
 			Sleep(2000)
 		} else {
 			ToolTip("Yes" Chr(0x21B5) " not found") ; or 0x21A9
 		}
+		; return ; for testing
 	}
 
 	ClearAllKeyState()

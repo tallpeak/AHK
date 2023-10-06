@@ -5,6 +5,8 @@
 ; Then edit the following line per your system:
 global RYZENADJ := "C:/tools/bin/ryzenadj-win64/ryzenadj.exe"
 global outputTitle := true  ; update the title bar if AHK_EXE GTA5.EXE
+; OnExit occurs upon Reload, which is one behavior I didn't like
+global revert_onexit := false ; if true, put it back to original slow_limit before exit
 
 ; stream outline (twitch.tv/sqlexpert on 9/21/2023; will expire in 2 weeks) :
 ; What is RyzenAdj.exe? (for AMD APUs; eg. laptop CPUs)
@@ -26,9 +28,10 @@ if InStr(A_ScriptFullPath, "RyzenAdj.ahk") {
 }
 
 global Ryzen_milliwatts := 0 ; slow-limit
+global Ryzen_milliwatts_default := 0
 global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
-global Ryzen_milliwatts_min := 4500  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
+global Ryzen_milliwatts_min := 5500  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
 
 reload_as_admin() {
@@ -89,7 +92,8 @@ get_Ryzen_adj_info() {
 	if slowLimit > 0
 	{
 		global Ryzen_milliwatts := slowLimit
-		global Ryzen_milliwatts_last_set := Ryzen_milliwatts
+		global Ryzen_milliwatts_default := slowLimit
+		global Ryzen_milliwatts_last_set := slowLimit
 	}
 }
 
@@ -174,13 +178,18 @@ clearToolTipAfterDelay(ms) {
 }
 
 outMessage(msg) {
+	global outputTitle
 	if outputTitle {
-		WinSetTitle(GTAtitle . ":" . msg, GTAwindow)
-	} else {
-		; TrayTip(msg,,4) ; too annoying to have multiple badges
-		ToolTip(msg)
-		clearToolTipAfterDelay(2500)
+		try {
+			WinSetTitle(GTAtitle . ":" . msg, GTAwindow)
+			return
+		} catch {
+			outputTitle := false
+		}
 	}
+	; TrayTip(msg,,4) ; too annoying to have multiple badges
+	ToolTip(msg)
+	clearToolTipAfterDelay(2500)
 }
 
 show_milliwatts() {
@@ -229,4 +238,15 @@ set_milliwatts() {
 	}
 }
 
+revert_milliwatts(ExitReason, ExitCode) {
+	global Ryzen_milliwatts, Ryzen_milliwatts_default, Ryzen_milliwatts_last_set
+	if Ryzen_milliwatts_last_set > 0 && Ryzen_milliwatts_last_set != Ryzen_milliwatts_default {
+		Ryzen_milliwatts := Ryzen_milliwatts_default
+		set_milliwatts()
+	}
+}
+
+if revert_onexit {
+	OnExit(revert_milliwatts , 1)
+}
 
