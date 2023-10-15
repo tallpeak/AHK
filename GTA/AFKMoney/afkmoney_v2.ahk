@@ -1477,7 +1477,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 2250 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 2200 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1504,7 +1504,7 @@ TryWinActivate(w)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
 	SetKeyDelay(0,0)
     Send("{s down}")
-    Sleep(40)
+    Sleep(20)
     Send("{s up}")
 	setdefaultkeydelay()
 	Sleep(3000)
