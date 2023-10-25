@@ -1,5 +1,8 @@
 #Requires AutoHotkey v2.0
 #SingleInstance force
+
+#Include "*i MyGlobalShortcuts.AHK" ; misc (Ctrl-Alt-T to open Windows Terminal, to start)
+
 ; Version 0.2
 ; Get ryzenadj.exe from https://github.com/FlyGoat/RyzenAdj
 ; Then edit the following line per your system:
@@ -33,6 +36,7 @@ global Ryzen_milliwatts_last_set := Ryzen_milliwatts
 global Ryzen_milliwatt_increment := 250
 global Ryzen_milliwatts_min := 5500  ; A reasonable minimum power level; for lower levels (eg 4 watts) use control-alt-p 0 4
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
+global Ryzen_milliwatts_min_restore := 13000  ; return to at least this wattage upon exit (only for my possibly-defective AMD 5625U!)
 
 reload_as_admin() {
 	; the RegExMatch was supposed to prevent accidental endless loop,
@@ -42,9 +46,11 @@ reload_as_admin() {
 		try
 		{
 			if A_IsCompiled {
-				Run('*RunAs "' A_ScriptFullPath '" /restart')
+				Run("thisisoneargument")
+				; Run('*RunAs "' . A_ScriptFullPath . '" /restart')
+				Run('*RunAs "' . A_AhkPath . '" /restart "' . A_ScriptFullPath . '"')
 			} else {
-				Run('*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"')
+				Run('*RunAs "' . A_AhkPath . '" /restart "' . A_ScriptFullPath . '"')
 			}
 		}
 		catch as e {
@@ -101,6 +107,7 @@ get_Ryzen_adj_info() {
 ; To use, hold down control-alt-+ or - until you reach the desired wattage
 ^!NumPadAdd::
 {
+	SetTimer(update_milliwatts, 0, 0)
 	global Ryzen_milliwatts, Ryzen_milliwatts_last_set, Ryzen_milliwatts_max,  Ryzen_milliwatts_min, Ryzen_milliwatt_increment
 	if (Ryzen_milliwatts == 0) {
 		Ryzen_milliwatts := Ryzen_milliwatts_min
@@ -116,7 +123,7 @@ get_Ryzen_adj_info() {
 	}
 	;KeyWait("Ctrl")
 	;KeyWait("Alt")
-	SetTimer(update_milliwatts, -500, 0)
+	SetTimer(update_milliwatts, -800, 0)
 }
 
 ; Reduce power in 0.25 watt increments, until minimum is reached
@@ -242,6 +249,9 @@ revert_milliwatts(ExitReason, ExitCode) {
 	global Ryzen_milliwatts, Ryzen_milliwatts_default, Ryzen_milliwatts_last_set
 	if Ryzen_milliwatts_last_set > 0 && Ryzen_milliwatts_last_set != Ryzen_milliwatts_default {
 		Ryzen_milliwatts := Ryzen_milliwatts_default
+		if Ryzen_milliwatts < Ryzen_milliwatts_min_restore {
+			Ryzen_milliwatts := Ryzen_milliwatts_min_restore
+		}
 		set_milliwatts()
 	}
 }
@@ -250,3 +260,15 @@ if revert_onexit {
 	OnExit(revert_milliwatts , 1)
 }
 
+; This is really just for me; my audio dies sometimes
+; (when on bluetooth and two applications contend for the audio),
+; and this restarts it
+^!PgUp::{
+	Run("*RunAs c:\tools\bin\ssaudio.bat")
+	return
+}
+; cat C:\tools\bin\ssaudio.bat
+; net stop "Realtek Audio Universal Service"
+; net stop "windows audio"
+; net start "Realtek Audio Universal Service"
+; net start "windows audio"

@@ -35,6 +35,7 @@ Persistent
 
 #Include "AppVol.AHK"
 #Include "dialer.AHK" ; stolen from https://github.com/2called-chaos/gtav-online-ahk
+
 #Include "*i RyzenAdj.AHK" ; for controlling milliwatts on my AMD 5625U CPU
 
 global gWaitTimer := 0
@@ -863,7 +864,9 @@ toggleReturnToFreemode()
 }
 
 ; get oppressor mk2 from mechanic using dialNumber (last vehicle in arcade)
-^o::{
+^o::getOppressor2_DialMechanic()
+
+getOppressor2_DialMechanic() {
 	dialMechanic_getCar(-8,-1)
 }
 
@@ -939,8 +942,10 @@ dialMechanic_getCar(garage,car) {
 }
 
 ;;helicopter fly forward 120 seconds
-^+NumpadUp::
-^+Numpad8::
+^+NumpadUp::flyHeli()
+^+Numpad8::flyHeli()
+
+flyHeli()
 {
     KeyWait("Control", "T1")
 	KeyWait("Shift", "T1")
@@ -953,8 +958,9 @@ dialMechanic_getCar(garage,car) {
 
 ; walk or fly straight
 ; for when up in the air on my oppressor mk2
-^!w::
-{
+^!w::walk()
+
+walk() {
 	Send("{w down}")
 }
 
@@ -972,8 +978,9 @@ dialMechanic_getCar(garage,car) {
 ;~ }
 
 ; Run or swim straight
-^!r::
-{
+^!r::runForward()
+
+runForward() {
 	Send("{w down}{ShiftDown}")
 	Return
 }
@@ -1000,11 +1007,14 @@ WaitTimer() {
 ; Originally: fly straight for 2 minutes; first up, then straight, then down partway
 ; Control-Shift W
 ; Now: Hold w for longer for a longer flight; 1 second held = t=100 = about a 45-second flight
-^+w::
+^+w::flyOppressor2()
+
+flyOppressor2()
 {
 	WaitTimer_Start()
 	global gWaitTimer := 50
 	KeyWait("w", "T10")
+	KeyWait("f", "T10")	; if we came from ;f:
 	WaitTimer_Stop()
 	t := gWaitTimer
     KeyWait("Shift", "T2")
@@ -1037,17 +1047,10 @@ endflight:
     Send("{Numpad5 Up}{Shift Up}{w up}{space up}")
 }
 
-; a simpler example:
-; danceOlder:
-;     Loop 10000 ; make it longer after tuning
-;     {
-;         Sleep,480
-;         Click
-; 	}
-; 	Return
-
 ; Dance!
-^!d::
+^!d::dance()
+
+dance()
 {
 	;Sleep(1600)
 	;ErrorLevel := !KeyWait("Control")
@@ -1072,11 +1075,17 @@ endflight:
 	ToolTip()
 }
 
-; walk in circles. Dangerous (breaks Replay)
-^+d::Send("{d down}")
+; walk in circles. Dangerous to do during "AFK Money" survival (breaks Replay)
+^+d::walkCircles()
+
+walkCircles(){
+	Send("{d down}")
+}
 
 ; get vehicle (when CEO/MC)
-^+v::
+^+v::getPersonalVehicle()
+
+getPersonalVehicle()
 {
 	SetKeyDelay(25, 15) ;delay,pressDuration
 	Send("{m}")
@@ -1107,8 +1116,9 @@ endflight:
 ;~ }
 
 ; New session:
-^!n::
-{
+^!n::NewSession()
+
+NewSession() {
 	If(!WinActive(GTAwindow))
 		Return
 	SetKeyDelay(10, 90) ;delay,pressDuration
@@ -1191,7 +1201,9 @@ ResolutionUp(n)
 }
 
 ;armor, verified working in Survival (only)
-!a::
+!a::getArmor()
+
+getArmor()
 {
 	SetKeyDelay(50, 30)
 	Send("m{Down 2}{Enter}{Down 3}{Enter}{Down 4}{Enter}{Esc 3}")
@@ -1199,22 +1211,26 @@ ResolutionUp(n)
 }
 
 ;armor, might work in other missions/heists (when associate/MC/CEO?)
-!+a::
-{
+!+a::getArmor2()
+
+getArmor2() {
 	SetKeyDelay(50, 30)
 	Send("m{Down 3}{Enter}{Down 3}{Enter}{Down 4}{Enter}{Esc 3}")
 	setdefaultkeydelay()
 }
 
 ; snacks, verified working in Survival (only)
-!s::
-{
+!s::getSnacks()
+
+getSnacks() {
 	SetKeyDelay(50, 30)
 	Send("`"m{Down 2}{Enter}{Down 4}{Enter}{Down 0}{Enter 2}{Esc 3}`"")
 }
 
 ;snack, but leave in menu for more
-!+s::
+!+s::getSnacks2()
+
+getSnacks2()
 {
 	SetKeyDelay(50, 30)
 	Send("`"m{Down 2}{Enter}{Down 4}{Enter}{Down 0}{Enter 2}`"")
@@ -1225,9 +1241,10 @@ ResolutionUp(n)
 ; pssuspend gta5 && sleep 10 && pssuspend -r gta5
 ; pssuspend gta5 && timeout -T 10 && pssuspend -r gta5
 ; Also helps for getting un-stuck when frozen entering Arcade or Casino
-*^!NumpadEnd::
-*^!End::
-{
+*^!NumpadEnd::GoSoloSession()
+*^!End::GoSoloSession()
+
+GoSoloSession() {
 	;UpdateTitleBar_KeyState()
 	global current_keystate := GetAllKeyState() . "Ending session (sleeping 10 seconds...)"
 	updateTitleBar()
@@ -1477,7 +1494,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 2200 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 1500 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1489,6 +1506,7 @@ TryWinActivate(w)
 	sleep(200)
 	Send("{e up}")
     Sleep(5000)
+	DllCall("timeBeginPeriod","UInt",1)
 	WinSetTitle("Lucky Wheel; enter", GTAwindow)
     Send("{enter down}")
 	Sleep(200)
@@ -1497,15 +1515,24 @@ TryWinActivate(w)
 	; wait for UseStoSpin_1280x720.png
 	WinSetTitle("Lucky Wheel: Waiting for: Use S to Spin / was " delay " ms...before s", GTAwindow)
 	; Sleep(delay)
-	while (!ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\UseStoSpin" ImageResolution ".png")) {
-		Sleep(10)
+	local spinSearchTries := 0
+	local xSpin := "wait1"
+	local ySpin := 4
+	while (! ; ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\UseStoSpin" ImageResolution ".png")&& spinSearchTries < 100
+		FindText().ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*50 " launch_dir "\img\UseStoSpin" ImageResolution ".png")
+		&& spinSearchTries < 1) {
+		Sleep(10) ; also imprecise
+		spinSearchTries += 1
 	}
 	Sleep(delay)
+	; or? DllCall("Sleep", "UInt", delay)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
 	SetKeyDelay(0,0)
     Send("{s down}")
-    Sleep(20)
+    ;Sleep(20) ; too imprecise
+	DllCall("Sleep", "UInt", 20) ; start high and work my way down?
     Send("{s up}")
+	DllCall("timeEndPeriod","UInt",1)
 	setdefaultkeydelay()
 	Sleep(3000)
 	WinSetTitle("GTA5: Lucky Wheel completed")
@@ -1561,6 +1588,10 @@ TryWinActivate(w)
 			break
 		}
 	}
+	if hasmethod(revert_milliwatts,"Call") {
+		ToolTip("reverting AMD Ryzen wattage setting")
+		revert_milliwatts(0,0)
+	}
 
 	; if the window is *truly* hung, WinActive might not work...
 	; but the script would probably be hung too by now if so
@@ -1581,3 +1612,81 @@ TryWinActivate(w)
 ;~ {
 	;~ Run("ms-settings:apps-volume")
 ;~ }
+
+^!PrintScreen::{
+	FindText().Gui("Show")
+}
+
+; start of PinkyMenu()
+#HotIf WinActive("ahk_exe GTA5.exe")
+
+HotstringIsQueued() {
+    static AHK_HOTSTRING := 1025
+    msg := Buffer(4*A_PtrSize+16)
+    return DllCall("PeekMessage", "ptr", msg, "ptr", A_ScriptHwnd
+        , "uint", AHK_HOTSTRING, "uint", AHK_HOTSTRING, "uint", 0)
+}
+
+;SC027 is the semicolon, also vkBA
+SC027::pinkyMenu()
+;vkBA::pinkyMenu()
+
+pinkyMenu() {
+    WinSetTitle("Fly Heli Vehicle Oppressor Walk Run Newsession Dance End=Solosession", "ahk_exe GTA5.exe")
+    ;Input, cmd, Options, EndKeys, MatchList
+	; ??? SacHook.MinSendLevel := 0    ;;;  https://www.autohotkey.com/boards/viewtopic.php?style=7&t=104538
+	if HotstringIsQueued() {
+		return
+	}
+    ih := InputHook("L1 T5 I", "{Esc}")
+    ;ih.EndKeys := "abcdefghijklmnopqrstuvwxyz"
+    ih.KeyOpt("{All}", "E")  ; End
+    ; ih.KeyOpt("{LCtrl}{RCtrl}{LAlt}{RAlt}{LShift}{RShift}{LWin}{RWin}", "-E")
+    ih.KeyOpt("0123456789,", "-E") ; for arguments like how long a flight for W on oppressor mk2
+    ih.Start()
+    errlvl := ih.Wait()
+    local cmd := ih.EndKey
+    ih.Stop()
+	Critical false ; Enable immediate thread interruption.
+	Sleep -1 ; Process any pending messages.
+    inp := ih.input
+    ;~ ps := StrSplit(inp, ",")
+    ;~ ; msgbox("inp=" inp ", ps.length=" ps.length)
+    ;~ p1 := 0
+    ;~ p2 := 0
+    ;~ p3 := 0
+    ;~ if (ps.length>=1) {
+        ;~ p1 := ps[1]
+    ;~ }
+    ;~ if (ps.length>=2) {
+        ;~ p2 := ps[2]
+    ;~ }
+    ;~ if (ps.length>=3) {
+        ;~ p3 := ps[3]
+    ;~ }
+    if (cmd = "Escape" )
+    {
+        Return
+    }
+    switch(cmd)
+    {
+        Case "a": 	getArmor()
+        Case "d": 	dance()
+        Case "f": 	flyOppressor2()
+		Case "h":	flyHeli()
+        Case "n": 	newSession()
+		case "o": 	getOppressor2_DialMechanic()
+        Case "r": 	KeyWait("w")
+					runForward()
+        ; Case "s": getSnacks()
+		Case "v": 	getPersonalVehicle()
+        Case "w": 	KeyWait("w")
+					walk()
+		Case "End": GoSoloSession()
+        ; Case "": get(p1)
+        Default:  WinSetTitle("invalid cmd:" cmd "inp=" inp, "ahk_exe GTA5.exe")
+    }
+}
+
+#HotIf
+

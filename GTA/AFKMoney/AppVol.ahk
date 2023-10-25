@@ -38,11 +38,11 @@ AppVol(Target := "A", Level := 0) {
                     ComCall(5, ISimpleAudioVolume, "Int", !isMuted, "Ptr", 0)
                 }
                 if (Level) {
-                    ComCall(4, ISimpleAudioVolume, "Float*", &levelOld := 0)
+                    ComCall(4, ISimpleAudioVolume, "Float*", &levelOld := 0.0)
                     if (Level ~= "^[-+]") {
-                        levelNew := Max(0.0, Min(1.0, levelOld + (Level / 100)))
+                        levelNew := Max(0.0, Min(1.0, levelOld + (Level * 0.01)))
                     } else {
-                        levelNew := Level / 100
+                        levelNew := Level * 0.01
                     }
                     if (levelNew != levelOld) {
                         ComCall(3, ISimpleAudioVolume, "Float", levelNew, "Ptr", 0)
