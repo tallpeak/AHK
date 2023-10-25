@@ -1505,7 +1505,10 @@ TryWinActivate(w)
     Send("{e down}")
 	sleep(200)
 	Send("{e up}")
-    Sleep(5000)
+	Loop 5 {
+		Sleep(1000)
+		Send("{enter}")
+	}
 	DllCall("timeBeginPeriod","UInt",1)
 	WinSetTitle("Lucky Wheel; enter", GTAwindow)
     Send("{enter down}")
@@ -1518,8 +1521,10 @@ TryWinActivate(w)
 	local spinSearchTries := 0
 	local xSpin := "wait1"
 	local ySpin := 4
+	UseStoSpin_Text:="|<>*108$98.zzzzw003zzzszzzzrnzzz000zzzw3ztzxwzzzk70DDzyQzzzzTAD3w383lkzbg3g3rm1YT0W0wM7sz0N0RwbHnkC0DCwz1nqHbT8A0w0s3nDDyAwYtrnV0D030wnnztD9CQwj3rk8kDCwySHqHb4MaNw1s3taTXANYt8D1kz000zADw70tCHzzzzk00Dzzzznzzzzzzzw003zzzzwzzzzzzzz000zzzzzDzzy"
 	while (! ; ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\UseStoSpin" ImageResolution ".png")&& spinSearchTries < 100
-		FindText().ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*50 " launch_dir "\img\UseStoSpin" ImageResolution ".png")
+		; FindText().ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\UseStoSpin" ImageResolution ".png")
+		( ok:=FindText(&xSpin, &ySpin, 318-1500, 104-1500, 318+1500, 104+1500, 0, 0, UseStoSpin_Text) )
 		&& spinSearchTries < 1) {
 		Sleep(10) ; also imprecise
 		spinSearchTries += 1
@@ -1627,18 +1632,35 @@ HotstringIsQueued() {
         , "uint", AHK_HOTSTRING, "uint", AHK_HOTSTRING, "uint", 0)
 }
 
+; would need to convert dllcall etc to v2:
+;;https://www.reddit.com/r/AutoHotkey/comments/iqesqb/if_process_exist_set_custom_affinity/
+
+setAffinityProcs(cores,window_search) {
+	mask := (1 << cores) - 1
+	script := "$gtas = Get-Process -ProcessName `"GTA5`" `; foreach ($p in $gtas) {$p.ProcessorAffinity=" mask "`; echo $p.ProcessorAffinity} `; Start-Sleep -s 2"
+	Run('"PowerShell.exe" -command "' script '"')
+	;~ try {
+		;~ ;pid := WinGetPID(window_search)
+		;~ ;SetProcessAffinityMask(pid, mask)
+	;~ } catch Error as e {
+		;~ ToolTip(e.Message)
+		;~ Sleep(5000)
+		;~ ToolTip()
+	;~ }
+}
+
+
 ;SC027 is the semicolon, also vkBA
 SC027::pinkyMenu()
 ;vkBA::pinkyMenu()
 
 pinkyMenu() {
-    WinSetTitle("Fly Heli Vehicle Oppressor Walk Run Newsession Dance End=Solosession", "ahk_exe GTA5.exe")
-    ;Input, cmd, Options, EndKeys, MatchList
-	; ??? SacHook.MinSendLevel := 0    ;;;  https://www.autohotkey.com/boards/viewtopic.php?style=7&t=104538
+    WinSetTitle("Flyop2 Heli Walk Run Dance get(Armor Vehicle Op2) End=solosession Newsession Slow(affinity=2 procs)", "ahk_exe GTA5.exe")
+    ; ih.MinSendLevel := 0 ; ?  https://www.autohotkey.com/boards/viewtopic.php?style=7&t=104538
 	if HotstringIsQueued() {
 		return
 	}
-    ih := InputHook("L1 T5 I", "{Esc}")
+    ih := InputHook("L1 T5 I1", "{Esc}")
     ;ih.EndKeys := "abcdefghijklmnopqrstuvwxyz"
     ih.KeyOpt("{All}", "E")  ; End
     ; ih.KeyOpt("{LCtrl}{RCtrl}{LAlt}{RAlt}{LShift}{RShift}{LWin}{RWin}", "-E")
@@ -1679,6 +1701,7 @@ pinkyMenu() {
         Case "r": 	KeyWait("w")
 					runForward()
         ; Case "s": getSnacks()
+		Case "s": 	setAffinityProcs(2,"AHK_EXE GTA5.EXE")
 		Case "v": 	getPersonalVehicle()
         Case "w": 	KeyWait("w")
 					walk()
