@@ -290,7 +290,7 @@ UpdateTitleBar_KeyState() {
 if Debug_KeyState {
 	SetTimer(UpdateTitleBar_KeyState, KeyState_Update_Interval, 0)
 }
-Return
+;Return ;; used to end running the script here
 
 ;Hotkey, F8, Start_AFK_Farming
 ;Hotkey, F9, Resume_AFK_Farming
@@ -1635,10 +1635,19 @@ HotstringIsQueued() {
 ; would need to convert dllcall etc to v2:
 ;;https://www.reddit.com/r/AutoHotkey/comments/iqesqb/if_process_exist_set_custom_affinity/
 
+; made this a toggle, but the valid mask value seems dependent on my processor
 setAffinityProcs(cores,window_search) {
-	mask := (1 << cores) - 1
+	static mask := 63 ; my 6-core processor only
+	if mask != 63 {
+		mask := 63
+	} else {
+		mask := (1 << cores) - 1
+	}
 	script := "$gtas = Get-Process -ProcessName `"GTA5`" `; foreach ($p in $gtas) {$p.ProcessorAffinity=" mask "`; echo $p.ProcessorAffinity} `; Start-Sleep -s 2"
+	WinSetTitle(script)
 	Run('"PowerShell.exe" -command "' script '"')
+	Sleep(5000)
+	global lastSetMask := mask
 	;~ try {
 		;~ ;pid := WinGetPID(window_search)
 		;~ ;SetProcessAffinityMask(pid, mask)
