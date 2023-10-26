@@ -1635,7 +1635,7 @@ HotstringIsQueued() {
 ; would need to convert dllcall etc to v2:
 ;;https://www.reddit.com/r/AutoHotkey/comments/iqesqb/if_process_exist_set_custom_affinity/
 
-; const MAXAFFINITY := 4095 ; my 6-core processor only. Generally, [Math]::Pow(2, [Environment]::ProcessorCount)-1
+; const MAXAFFINITY := 4095 ; my 6-core 12-thread processor only. Generally, [Math]::Pow(2, [Environment]::ProcessorCount)-1
 
 ; made this a toggle
 setAffinityProcs(cores,window_search) {
@@ -1661,13 +1661,16 @@ setAffinityProcs(cores,window_search) {
 	;~ }
 }
 
+getSparrow() {
+	Send("m{down 5}{enter}{down 4}{enter}{down}{enter}")
+}
 
 ;SC027 is the semicolon, also vkBA
 SC027::pinkyMenu()
 ;vkBA::pinkyMenu()
 
 pinkyMenu() {
-    WinSetTitle("Flyop2 Heli Walk Run Dance get(Armor Vehicle Op2) End=solosession Newsession Slow(affinity=2 procs)", "ahk_exe GTA5.exe")
+    WinSetTitle(">Get >Set Flyop2 Heli Walk Run Dance End=solosession Newsession", "ahk_exe GTA5.exe")
     ; ih.MinSendLevel := 0 ; ?  https://www.autohotkey.com/boards/viewtopic.php?style=7&t=104538
 	if HotstringIsQueued() {
 		return
@@ -1705,23 +1708,74 @@ pinkyMenu() {
     switch(cmd)
     {
         Case "a": 	getArmor()
-        Case "d": 	dance()
         Case "f": 	flyOppressor2()
+		case "g":	getMenu()
 		Case "h":	flyHeli()
         Case "n": 	newSession()
 		case "o": 	getOppressor2_DialMechanic()
-        Case "r": 	KeyWait("w")
-					runForward()
         ; Case "s": getSnacks()
-		Case "s": 	setAffinityProcs(2,"AHK_EXE GTA5.EXE")
+		;Case "s": 	setAffinityProcs(2,"AHK_EXE GTA5.EXE")
+		case "s":	setMenu()
 		Case "v": 	getPersonalVehicle()
-        Case "w": 	KeyWait("w")
-					walk()
 		Case "End": GoSoloSession()
         ; Case "": get(p1)
         Default:  WinSetTitle("invalid cmd:" cmd "inp=" inp, "ahk_exe GTA5.exe")
     }
 }
+
+getMenu() {
+	WinSetTitle("Get>Armor Vehicle Op2 Sparrow", "ahk_exe GTA5.exe")
+	if HotstringIsQueued() {
+		return
+	}
+    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih.KeyOpt("{All}", "E")  ; End
+    ih.Start()
+    errlvl := ih.Wait()
+    local cmd := ih.EndKey
+    ih.Stop()
+	Critical false ; Enable immediate thread interruption.
+	Sleep -1 ; Process any pending messages.
+    inp := ih.input
+	switch(cmd) {
+        Case "a": 	getArmor()
+		Case "v": 	getPersonalVehicle()
+		case "o": 	getOppressor2_DialMechanic()
+		case "s": 	getSparrow()
+	}
+}
+
+setMenu() {
+	WinSetTitle("Set>Walking Running Dancing ENDsession Newsession Lowspeed Afk$ 4resumeafk$ Shutdownafk$ Freemode", "ahk_exe GTA5.exe")
+	if HotstringIsQueued() {
+		return
+	}
+    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih.KeyOpt("{All}", "E")  ; End
+    ih.Start()
+    errlvl := ih.Wait()
+    local cmd := ih.EndKey
+    ih.Stop()
+	Critical false ; Enable immediate thread interruption.
+	Sleep -1 ; Process any pending messages.
+    inp := ih.input
+	switch(cmd) {
+		Case "w": 	KeyWait("w")
+					walk()
+        Case "r": 	KeyWait("w")
+					runForward()
+        Case "d": 	dance()
+		case "l": setAffinityProcs(2,"AHK_EXE GTA5.EXE")
+		case "n": NewSession()
+		case "End": GoSoloSession()
+		case "a":	Start_AFK_Farming()
+		case "4":	Resume_AFK_Farming()
+		case "s":	Shutdown_AFK_Farming()
+		case "f":	toggleReturnToFreemode()
+	}
+}
+
+;setWattage()
 
 #HotIf
 
