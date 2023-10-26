@@ -1635,11 +1635,14 @@ HotstringIsQueued() {
 ; would need to convert dllcall etc to v2:
 ;;https://www.reddit.com/r/AutoHotkey/comments/iqesqb/if_process_exist_set_custom_affinity/
 
-; made this a toggle, but the valid mask value seems dependent on my processor
+; const MAXAFFINITY := 4095 ; my 6-core processor only. Generally, [Math]::Pow(2, [Environment]::ProcessorCount)-1
+
+; made this a toggle
 setAffinityProcs(cores,window_search) {
-	static mask := 63 ; my 6-core processor only
-	if mask != 63 {
-		mask := 63
+	static MAXAFFINITY := RunWait('"PowerShell.exe" -command "exit $([Math]::Pow(2, [Environment]::ProcessorCount)-1)"')
+	static mask := MAXAFFINITY
+	if mask != MAXAFFINITY {
+		mask := MAXAFFINITY
 	} else {
 		mask := (1 << cores) - 1
 	}
