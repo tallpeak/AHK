@@ -156,7 +156,9 @@ update_titlebar_inputhook(_InputHook, txt) {
 ; This seems better:
 ; ^!p = power, select 01 to 99 watts (limited by min and max above)
 ; Also, there is no minimum enforced (except 01 watt)
-^!p::{
+^!p::setWattage()
+
+setWattage() {
 	; hacky; need to change all settitles to use a single function that uses globals
 	global last_keystate := "suspended"
 	outMessage("Type 01 to 99 for watts,00/x/esc to abort")

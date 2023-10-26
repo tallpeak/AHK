@@ -5,79 +5,19 @@
 
 SendMode("Event") ; default, and only working method
 
-;
+; stolen (or borrowed) from:
 ; GTA V Online AHK-Macros v1.3.0 by 2called-chaos
 ; based on/inspired by GTA V Useful Macros v4.21 by twentyafterfour
+; [...] at  https://github.com/2called-chaos/gtav-online-ahk
 ;
-; # Description
-;
-; Provides hotkeys for opening snack menu, equipping armor, entering passive mode and much more.
-;
-;
-; # General Notes
-;
-;   * Read the god damn readme, please! https://github.com/2called-chaos/gtav-online-ahk/blob/master/README.md
-;   * After cutscenes or just from time to time the interaction menu lags
-;     and the macro won't work. Periodically, especially after loading/cutscenes
-;     press m and backspace (aka open the menu once)
-;   * If you add something consider committing a pull request so we can all enjoy (VIP stuff for example)
-;
-;
-; # Hotkeys / Binding:
-;
-; To change a hotkey for a macro change the configuration section at the top of the file
-; or even better copy the line to your config.ahk (see Readme) and change it there.
-; A list of keynames for the non-alphanumeric can be found in the autohotkey help under
-; the heading "Basic Usage and Syntax" with the name "Key List".
-; They can also be found at https://www.autohotkey.com/docs/KeyList.htm
-;
-;
-; # FAQ, Docs, Source, Bugs, etc.
-;
-; Read the wiki, propose features, fix and/or report bugs... it's all yours at
-;
-;     https://github.com/2called-chaos/gtav-online-ahk
-;
-
-; ==============================
-; === CONFIGURATION GOES vvv ===
-; ==============================
-
-; Bindings (bind the desired functions to a key of your choice)
-;   https://www.autohotkey.com/docs/KeyList.htm
-; WARNING: If you don't want to use a certain binding use "F24"
-;          or any other valid key or it will break!
-; Consider using a config.ahk!
-SnackMenuKey         := "+#" ; Open Snack menu (+ = shift, rtfm).
-AutoHealthKey        := "#" ; Automatic snacking. Eats 2 snacks from second snack slot.
-ArmorMenuKey         := "+F1" ; Open Armor menu.
-AutoArmorKey         := "F1" ; Automatic armor equip (uses super heavy armor only).
-RetrieveCarKey       := "F2" ; Request currently active Personal Vehicle.
-ToggleRadarKey       := "+F2" ; Toggle between extended and standar radar.
-CEOBuzzardKey        := "F3" ; Spawn free CEO buzzard
-RequestSparrowKey    := "+F3" ; Call in your Sparrow (or whatever you last requested moon pool vehicle was)
-ReturnSparrowKey     := "^F3" ; Return your Sparrow to the Kosatka
-ForceDisconnectKey   := "F12" ; Force disconnect by suspending process for 10s, requires pssuspend.exe
-KillGameKey          := "+F12" ; Kill game process, requires pskill.exe
-ToggleVIPKey         := "NumpadMult" ; Toggle VIP mode (required when VIP/CEO/MC).  Won't have effect if using ManualInventoryLocation option.
-ToggleCPHKey         := "^NumpadMult" ; Toggle Cayo Perico Heist Final mode (extra menu entry), also see DoToggleCPHWithVIP.  Won't have effect if using ManualInventoryLocation option.
-ToggleAFKKey         := "+NumpadMult" ; Toggle AFK mode
-
-TogglePassiveKey     := "F24" ; Toggle passive mode.
-ToggleClickerKey     := "F24" ; Toggle Clicker (XButton2 = Mouse5)
-ToggleAutoHeliKey    := "F24" ; Keeps throttle and pitch forward pressed, First take heli to sufficient height and then use this as autopilot
-ChatSnippetsKey      := "F24" ; Gives you a few text snippets to put in chat (chat must be already open)
-CycleOutfitKey       := "F24" ; Equip next/cycle through saved outfits.
-RandomHeistKey       := "F24" ; Chooses on-call random heist from phone options
-EquipScarfKey        := "F24" ; Equip first scarf (heist outfit glitch, see readme/misc).
 
 DialDialogKey        := "+F5" ; Call GUI with a list of almost all numbers
-CallMechanicKey      := "^F5" ; Call Mechanic
-CallPegasusKey       := "F24" ; Call Pegasus
-CallMerryweatherKey  := "F24" ; Call Merryweather
-CallInsuranceKey     := "F6" ; Call Insurance
-CallLesterKey        := "+F6" ; Call Lester
-CallAssistantKey     := "^F6" ; Call Assistant
+;CallMechanicKey      := "^F5" ; Call Mechanic
+;CallPegasusKey       := "F24" ; Call Pegasus
+;CallMerryweatherKey  := "F24" ; Call Merryweather
+;CallInsuranceKey     := "F6" ; Call Insurance
+;CallLesterKey        := "+F6" ; Call Lester
+;CallAssistantKey     := "^F6" ; Call Assistant
 
 CheckForUpdatesKey   := "F24" ; Checks on startup by default, see DoCheckForUpdates option
 

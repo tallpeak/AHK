@@ -780,8 +780,9 @@ reloadscript()
 	Reload()
 	Sleep(1000) ; If successful, the reload will close this instance during the Sleep, so the line below will never be reached.
 	msgResult := MsgBox("The script could not be reloaded. Would you like to open it for editing?", "", 4)
-	if (msgResult = "Yes")
+	if (msgResult = "Yes") {
 		Edit()
+	}
 }
 
 ^!+r::Reload()  ; Ctrl+Alt+R
@@ -1665,18 +1666,22 @@ getSparrow() {
 	Send("m{down 5}{enter}{down 4}{enter}{down}{enter}")
 }
 
+getBuzzard() {
+}
+
 ;SC027 is the semicolon, also vkBA
 SC027::pinkyMenu()
 ;vkBA::pinkyMenu()
 
 pinkyMenu() {
-    WinSetTitle(">Get >Set Flyop2 Heli Walk Run Dance End=solosession Newsession", "ahk_exe GTA5.exe")
+	KeyWait(";")
+    WinSetTitle(">Get >Set >Cmd Flyop2 Heli Walk Run Dance End=solosession Newsession", "ahk_exe GTA5.exe")
     ; ih.MinSendLevel := 0 ; ?  https://www.autohotkey.com/boards/viewtopic.php?style=7&t=104538
 	if HotstringIsQueued() {
 		return
 	}
     ih := InputHook("L1 T5 I1", "{Esc}")
-    ;ih.EndKeys := "abcdefghijklmnopqrstuvwxyz"
+    ih.EndKeys := "abcdefghijklmnopqrstuvwxyz"
     ih.KeyOpt("{All}", "E")  ; End
     ; ih.KeyOpt("{LCtrl}{RCtrl}{LAlt}{RAlt}{LShift}{RShift}{LWin}{RWin}", "-E")
     ih.KeyOpt("0123456789,", "-E") ; for arguments like how long a flight for W on oppressor mk2
@@ -1707,16 +1712,13 @@ pinkyMenu() {
     }
     switch(cmd)
     {
-        Case "a": 	getArmor()
-        Case "f": 	flyOppressor2()
+		case "c":	cmdMenu()
 		case "g":	getMenu()
+		case "s":	setMenu()
+
+        Case "f": 	flyOppressor2()
 		Case "h":	flyHeli()
         Case "n": 	newSession()
-		case "o": 	getOppressor2_DialMechanic()
-        ; Case "s": getSnacks()
-		;Case "s": 	setAffinityProcs(2,"AHK_EXE GTA5.EXE")
-		case "s":	setMenu()
-		Case "v": 	getPersonalVehicle()
 		Case "End": GoSoloSession()
         ; Case "": get(p1)
         Default:  WinSetTitle("invalid cmd:" cmd "inp=" inp, "ahk_exe GTA5.exe")
@@ -1724,7 +1726,8 @@ pinkyMenu() {
 }
 
 getMenu() {
-	WinSetTitle("Get>Armor Vehicle Op2 Sparrow", "ahk_exe GTA5.exe")
+	KeyWait("g")
+	WinSetTitle("Get>Vehicle Op2 Buzzard Sparrow", "ahk_exe GTA5.exe")
 	if HotstringIsQueued() {
 		return
 	}
@@ -1738,15 +1741,17 @@ getMenu() {
 	Sleep -1 ; Process any pending messages.
     inp := ih.input
 	switch(cmd) {
-        Case "a": 	getArmor()
+        ; Case "a": 	getArmor()
 		Case "v": 	getPersonalVehicle()
 		case "o": 	getOppressor2_DialMechanic()
 		case "s": 	getSparrow()
+		case "b":   getBuzzard()
 	}
 }
 
 setMenu() {
-	WinSetTitle("Set>Walking Running Dancing ENDsession Newsession Lowspeed Afk$ 4resumeafk$ Shutdownafk$ Freemode", "ahk_exe GTA5.exe")
+	KeyWait("s")
+	WinSetTitle("Set>Walking Running Dancing Freemode", "ahk_exe GTA5.exe")
 	if HotstringIsQueued() {
 		return
 	}
@@ -1765,17 +1770,57 @@ setMenu() {
         Case "r": 	KeyWait("w")
 					runForward()
         Case "d": 	dance()
-		case "l": setAffinityProcs(2,"AHK_EXE GTA5.EXE")
-		case "n": NewSession()
-		case "End": GoSoloSession()
-		case "a":	Start_AFK_Farming()
-		case "4":	Resume_AFK_Farming()
-		case "s":	Shutdown_AFK_Farming()
 		case "f":	toggleReturnToFreemode()
 	}
 }
 
-;setWattage()
+cmdMenu() {
+	KeyWait("c")
+	WinSetTitle("Cmd> Wattage ENDsession Newsession toggleLowspeed Reload >AFKmenu", "ahk_exe GTA5.exe")
+	if HotstringIsQueued() {
+		return
+	}
+    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih.KeyOpt("{All}", "E")  ; End
+    ih.Start()
+    errlvl := ih.Wait()
+    local cmd := ih.EndKey
+    ih.Stop()
+	Critical false ; Enable immediate thread interruption.
+	Sleep -1 ; Process any pending messages.
+    inp := ih.input
+	switch(cmd) {
+		Case "w": 	setWattage()
+		case "l": 	setAffinityProcs(2,"AHK_EXE GTA5.EXE")
+		case "n": 	NewSession()
+		case "End": GoSoloSession()
+		case "r":	ClearAllKeyState()
+					reloadscript()
+		case "a": 	afkMenu()
+	}
+}
+
+afkMenu() {
+	WinSetTitle("Afkstart Resume Shutdown Freemode(toggle)")
+	if HotstringIsQueued() {
+		return
+	}
+    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih.KeyOpt("{All}", "E")  ; End
+    ih.Start()
+    errlvl := ih.Wait()
+    local cmd := ih.EndKey
+    ih.Stop()
+	Critical false ; Enable immediate thread interruption.
+	Sleep -1 ; Process any pending messages.
+    inp := ih.input
+	switch(cmd) {
+		case "a":	Start_AFK_Farming()
+		case "r":	Resume_AFK_Farming()
+		case "s":	Shutdown_AFK_Farming()
+		case "f":	toggleReturnToFreemode()
+	}
+}
 
 #HotIf
 
