@@ -1,6 +1,12 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance force
 ;Version 0.5
+; 10/28/2023: gradually learning to use FindText(); the GUI is still a bit confusing to me
+; TODO: replace all ImageSearch with FindText()'s version
+; Eventually maybe: store several resolutions of FindText
+; A setup wizard would be nice, that leads the user through the screenshotting process.
+; A single key to screenshot each relevant screen, followed by later snipping, makes sense to me.
+
 ; AFKMoney_v2 moved to github on 8/14/2023:
 ; https://github.com/tallpeak/AHK/tree/main/GTA/AFKMoney
 ; Also linked from QOMPH.com/gta ; ignore the ZIP of the v1 version
@@ -27,7 +33,7 @@
 ; better error detection and documentation... maybe tomorrow.
 
 InstallKeybdHook
-;  InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
+InstallMouseHook ; causes WheelDown and WheelUp to remain "physically" pressed-down, according to GetKeyState
 ; but installing the mouse hook causes A_TimeIdlePhysical to revert to 0 when mouse is moving
 hideMouseWheelUpDownPhysical := false ; hide this apparent bug (whether in AHK, Windows, bluetooth mouse driver, or game); it seems to go away after resetting bluetooth.
 KeyHistory(100)
@@ -44,6 +50,8 @@ global gWaitTimer := 0
 AttemptLaunch := true   ; Run steam game
 Debug_KeyState := true
 KeyState_Update_Interval := 500
+
+global Mouse_Blocked := false
 
 launch_dir := A_ScriptDir
 SetWorkingDir(A_ScriptDir)  ; Ensures a consistent starting directory.
@@ -287,8 +295,21 @@ UpdateTitleBar_KeyState() {
 	updateTitleBar()
 }
 
-if Debug_KeyState {
-	SetTimer(UpdateTitleBar_KeyState, KeyState_Update_Interval, 0)
+UpdateTimer() {
+	if Debug_KeyState {
+		SetTimer(UpdateTitleBar_KeyState, KeyState_Update_Interval, 0)
+	} else {
+		SetTimer(UpdateTitleBar_KeyState, 0, 0)
+	}
+}
+
+UpdateTimer()
+
+^!u:: {
+	global
+	Debug_KeyState := !Debug_KeyState
+	WinSetTitle("Debug_KeyState=" Debug_KeyState , GTAwindow )
+	UpdateTimer()
 }
 ;Return ;; used to end running the script here
 
@@ -505,19 +526,35 @@ Resume_AFK_Farming2()
 		;ImageSearch is pointless if GTA not active window (it will fail)
 		If WinActive(GTAwindow)
 		{
-			; Possibly reduce search area to lower CPU usage
-			; And/or change image search frequency depending on elapsed time in mission
-			ErrorLevel := !ImageSearch(&xSettings, &ySettings, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\SETTINGS" ImageResolution ".png")
-			ErrorLevel := !ImageSearch(&xInvite, &yInvite, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\INVITE" ImageResolution ".png")
-			; ImageSearch, xPlay, yPlay, 1, 1, A_ScreenWidth, A_ScreenHeight, *80 %launch_dir%\img\Play800.png
+			; the time has come! to switch to FindText() ...
+			;~ ; Possibly reduce search area to lower CPU usage
+			;~ ; And/or change image search frequency depending on elapsed time in mission
+			;~ ImageSearch(&xSettings, &ySettings, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\SETTINGS" ImageResolution ".png")
+			;~ ImageSearch(&xInvite, &yInvite, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\INVITE" ImageResolution ".png")
+			;~ ; Replay=534,694; *50 because it has to be higher than 30, because Replay is on a changing background, I think
+			;~ ImageSearch(&xReplay, &yReplay, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\Replay" ImageResolution ".png")
 
-			; Replay=534,694; *50 because it has to be higher than 30, because Replay is on a changing background, I think
-			ErrorLevel := !ImageSearch(&xReplay, &yReplay, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\Replay" ImageResolution ".png")
+			xSettings:=ySettings:=xInvite:=yInvite:=xReplay:=yReplay:=""
+			Text:="|<SETTINGS>*133$60.Vk001BxsT3ArzDbAxkCNSrzTbARbawTrzTbBRjqT3kDTbBBjz3krzTbBZi3lyrzTbBpjnwSrzTbBljmwArzTbBtbWQVk7TbBts31U"
+			Text.="|<INVITE>*131$38.NtT+0U6CHqwtxXaxjSTMNiPrbqKNixs5abPjSTNVovrbqQQSxtxb7bjSTNttvrU8"
+			Text.="|<Replay>*123$55.zUzzzyTzzy0DzzyDzzz3rzzz7zzznvzzz/zzzntzzz5zzztwzzzZzzzswsybasjSwssi9msXCQktqAmsnCS1snCMstbC3wn7AwtbD9y3b4wwn6iSTXaSQna7DjXaCQNXLnnWW6AMXPxw10MlV0zzztzzzzszzzwzzzzkzzzyzzzzmTzzyTzzzmTzzzDzzzvDzzzjzzztDy"
+			tStart := FindText().QPC()
+			if (ok:=FindText(&X, &Y, 1, 1, A_ScreenWidth, A_ScreenHeight, 0, 0, Text)) {
+				switch(ok[1].id) {
+					case "SETTINGS"	: xSettings := ok[1].1, ySettings := ok[1].2
+					case "INVITE" 	: xInvite   := ok[1].1, yInvite   := ok[1].2
+					case "Replay" 	: xReplay   := ok[1].1, yReplay   := ok[1].2
+				}
+			}
+			tEnd := FindText().QPC()
+			tElapsed := tEnd - tStart
+			;~ positions last found for Replay: if (ok:=FindText(&X, &Y, 693-150000, 579-150000, 693+150000, 579+150000, 0, 0, Text))
+
 
 			; Some debugging information; status and image locations if found
 			global idleSec:=Round((A_TickCount - lastKick)/1000)
 			;ToolTip, %warning% SETTINGS`=%xSettings%`,%ySettings% INVITE=%xInvite%`,%yInvite% Replay=%xReplay%`,%yReplay% idle`=%idleSec%s %helptext%, XToolTip, YToolTip, 1
-			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " gtaWW "x" gtaWH, GTAwindow)
+			WinSetTitle(GTAtitle "`:" gotoFreemode " " warning " SETTINGS`=" xSettings "," ySettings " INVITE=" xInvite "," yInvite " Replay=" xReplay "," yReplay " idle`=" idleSec "s idle=" A_TimeIdle " phys=" A_TimeIdlePhysical  " elapM=" elapsedMission " " helptext " V" Volume " " gtaWW "x" gtaWH ", t=" Round(tElapsed) "ms", GTAwindow)
 
 
 			if (xSettings != "")
@@ -569,15 +606,25 @@ Resume_AFK_Farming2()
 						}
 						; for more accurate mission timing,
 						; find the AFKMoney&RPv2 image and set the mission start time
-						Send("{z}")
 						Sleep(100)
 						TryWinActivate(GTAwindow) ; GTA need to be on focus.
-						ErrorLevel := !ImageSearch(&xMission, &yMission, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\AFKMoney&RPv2" ImageResolution ".png")
-						if (xMission)
+						Send("{z}")
+						;~ ImageSearch(&xMission, &yMission, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\AFKMoney&RPv2" ImageResolution ".png")
+						;~ if (xMission)
+						;~ {
+							;~ ;ToolTip, AFKMoney`&RPv2_800x600=(%xMission%`,%yMission%), xMission, yMission, 2
+							;~ ; (x,y)=(14,29)
+							;~ ;SetTimer, deleteToolTip2, -30000
+							;~ break ; so that we can set startMission
+						;~ }
+
+
+						t1:=A_TickCount, Text:=X:=Y:=""
+
+						Text:="|<>*177$115.zsBzzyzzzzzzbz7lzztttytySTzzzzzfzQnjzvQRzNzDDzzzzzozjfvzvqizdzjb3UsPrszrpxxrur0kzpfCrPqrwzvqQyvvRjtTupjPg3Pxfw30zPnUrxrxerhqzhylyxbzprjPytynPqvStzQzSrztrrpzSzNinRqQzaTjPzwtw"
+						if (ok:=FindText(&X:="wait", &Y:=3, 247-150000, 113-150000, 247+150000, 113+150000, 0, 0, Text))
 						{
-							;ToolTip, AFKMoney`&RPv2_800x600=(%xMission%`,%yMission%), xMission, yMission, 2
-							; (x,y)=(14,29)
-							;SetTimer, deleteToolTip2, -30000
+						  ; FindText().Click(X, Y, "L")
 							break ; so that we can set startMission
 						}
 							; consider killing GTA5,
@@ -1495,7 +1542,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 1500 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 1700 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1599,6 +1646,11 @@ TryWinActivate(w)
 		revert_milliwatts(0,0)
 	}
 
+	ToolTip("Loading RyzenAdj...")
+	;Run("RyzenAdj.AHK")
+	Run('*RunAs "' . A_AhkPath . '" /restart "RyzenAdj.AHK"')
+
+	Sleep(2000)
 	; if the window is *truly* hung, WinActive might not work...
 	; but the script would probably be hung too by now if so
 	If WinActive(GTAwindow) {
@@ -1607,7 +1659,6 @@ TryWinActivate(w)
 			Run("pskill gta5") ; just in case
 		}
 	}
-
 	ToolTip()
 	ExitApp
 }
@@ -1620,8 +1671,84 @@ TryWinActivate(w)
 ;~ }
 
 ^!PrintScreen::{
-	FindText().Gui("Show")
+	;WinSetTitle("Blocking mouse input", GTAwindow)
+	; BlockMouseInput()
+	ft := FindText()
+	ft.SetCaptureKey1("NumPadSub")
+	ft.SetCaptureKey2("NumPadAdd")
+	ft.Gui("Show") ; , CaptureKey1 := "F11", CaptureKey2 := "F12"
+	;WinSetTitle("win + m to un-blocking mouse input, or press delete, or wait 2 minutes", GTAwindow)
+	;KeyWait("Del","DT300")
+	;WinSetTitle("Un-blocking mouse input", GTAwindow)
+	; UnblockMouseInput()
 }
+
+^!+PrintScreen::{
+	FindText().ScreenShot(0,0,gtaWW,gtaWH)
+}
+
+; '::FindText().GetRange("'")
+
+; Does not work with GTA5; apparently
+; Looks like the game uses DirectInput for mouse
+; intercept driver might:
+; https://github.com/evilC/AutoHotInterception
+
+; Intent was to prevent left-click from affecting the game window
+; using a custom block input
+
+;~ ;global Mouse_Blocked := false
+;~ ;win + m hotkey
+;~ ^!+m::ToggleMouseInput()
+
+;~ ToggleMouseInput() {
+	;~ global
+	;~ Mouse_Blocked := !Mouse_Blocked
+	;~ WinSetTitle("Mouse_Blocked=" . Mouse_Blocked, GTAwindow)
+	;~ if Mouse_Blocked {
+		;~ BlockMouseInput()
+	;~ } else {
+		;~ UnblockMouseInput()
+	;~ }
+;~ }
+
+;~ BlockMouseInput() {
+	;~ global
+	;~ Mouse_Blocked := true
+
+	;~ ; BlockInput("MouseMove")
+	;~ HotIfWinActive GTAwindow
+	;~ Hotkey("RButton", DoNothing, "On")
+	;~ ;Hotkey("LButton", DoNothing)
+	;~ ;Hotkey("XButton1", DoNothing)
+	;~ ;Hotkey("XButton2", DoNothing)
+	;~ ;HotIfWinActive
+
+	;~ ;WinSetEnabled 0, GTAwindow
+
+;~ }
+
+;~ UnblockMouseInput() {
+	;~ global
+	;~ Mouse_Blocked:= false
+	;~ HotIfWinActive GTAwindow
+	;~ Hotkey("RButton",,"Off")
+;~ ;	Hotkey("LButton",,"Off")
+;~ ;	Hotkey("XButton1",,"Off")
+;~ ;	Hotkey("XButton2",,"Off")
+	;~ ;HotIfWinActive
+	;~ ;WinSetEnabled 1, GTAwindow
+
+;~ }
+
+;~ #HotIf Mouse_Blocked && WinActive("ahk_exe GTA5.exe")
+;~ ;    LButton::DoNothing("LButton")
+    ;~ RButton::DoNothing("RButton")
+;~ #HotIf
+
+;~ DoNothing(HotkeyName) {
+	;~ WinSetTitle("Ignored:" . HotkeyName . ", Mouse_Blocked=" . Mouse_Blocked . ", press ctrl-alt-shift-m to toggle")
+;~ }
 
 ; start of PinkyMenu()
 #HotIf WinActive("ahk_exe GTA5.exe")
@@ -1727,7 +1854,7 @@ pinkyMenu() {
 
 getMenu() {
 	KeyWait("g")
-	WinSetTitle("Get>Vehicle Op2 Buzzard Sparrow", "ahk_exe GTA5.exe")
+	WinSetTitle("Get> Vehicle Op2 Buzzard Sparrow", "ahk_exe GTA5.exe")
 	if HotstringIsQueued() {
 		return
 	}
@@ -1751,7 +1878,7 @@ getMenu() {
 
 setMenu() {
 	KeyWait("s")
-	WinSetTitle("Set>Walking Running Dancing Freemode", "ahk_exe GTA5.exe")
+	WinSetTitle("Set> Dancing Freemode Helifly Running Walking", "ahk_exe GTA5.exe")
 	if HotstringIsQueued() {
 		return
 	}
@@ -1765,21 +1892,22 @@ setMenu() {
 	Sleep -1 ; Process any pending messages.
     inp := ih.input
 	switch(cmd) {
-		Case "w": 	KeyWait("w")
-					walk()
-        Case "r": 	KeyWait("w")
-					runForward()
         Case "d": 	dance()
 		case "f":	toggleReturnToFreemode()
+		case "h": 	flyHeli()
+        Case "r": 	KeyWait("w")
+					runForward()
+		Case "w": 	KeyWait("w")
+					walk()
 	}
 }
 
 cmdMenu() {
 	KeyWait("c")
 	WinSetTitle("Cmd> Wattage ENDsession Newsession toggleLowspeed Reload >AFKmenu", "ahk_exe GTA5.exe")
-	if HotstringIsQueued() {
-		return
-	}
+	;~ if HotstringIsQueued() {
+		;~ return
+	;~ }
     ih := InputHook("L1 T5 I1", "{Esc}")
     ih.KeyOpt("{All}", "E")  ; End
     ih.Start()
@@ -1801,6 +1929,7 @@ cmdMenu() {
 }
 
 afkMenu() {
+	KeyWait("a")
 	WinSetTitle("Afkstart Resume Shutdown Freemode(toggle)")
 	if HotstringIsQueued() {
 		return

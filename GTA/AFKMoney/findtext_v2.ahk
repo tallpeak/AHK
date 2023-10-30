@@ -1,3 +1,6 @@
+;~ global gCaptureKey1 := "LButton"
+;~ global gCaptureKey2 := "RButton"
+
 ;/*
 ;===========================================
 ;  FindText - Capture screen image into text and then find it
@@ -46,6 +49,8 @@ Floor(i) => IsNumber(i) ? i+0 : 0
 
 __New()
 {
+  this.CaptureKey1 := "LButton"
+  this.CaptureKey2 := "RButton"
   this.bits:={ Scan0: 0, hBM: 0, oldzw: 0, oldzh: 0 }
   this.bind:={ id: 0, mode: 0, oldStyle: 0 }
   this.Lib:=Map()
@@ -56,6 +61,13 @@ __Delete()
 {
   if (this.bits.hBM)
     DllCall("DeleteObject", "Ptr",this.bits.hBM)
+}
+
+SetCaptureKey1(key) {
+  this.CaptureKey1 := key
+}
+SetCaptureKey2(key) {
+  this.CaptureKey2 := key
 }
 
 help()
@@ -2422,7 +2434,7 @@ Gui(cmd, arg1:="", args*)
     h:=FindText_Main["Myhh"].Value
     if (!show_gui)
       w:=20, h:=8
-    p:=this.GetRange("RButton", Lang["s5"], 0, w, h)
+    p:=this.GetRange(this.CaptureKey2, Lang["s5"], 0, w, h)
     if (ShowScreenShot)
       this.ShowPic()
     if (!show_gui)
@@ -2603,7 +2615,7 @@ Gui(cmd, arg1:="", args*)
     if (show_gui_range:=(WinExist()=FindText_Main.Hwnd))
       FindText_Main.Hide
     ;---------------------
-    p:=this.GetRange("LButton", Lang["s7"], 1)
+    p:=this.GetRange(this.CaptureKey1, Lang["s7"], 1)
     A_Clipboard:=v:=p[1] ", " p[2] ", " p[3] ", " p[4]
     if (!show_gui_range)
       return p
@@ -3326,7 +3338,7 @@ Gui(cmd, arg1:="", args*)
     ControlSend("{Home}", hscr)
     return
   Case "Load_Language_Text":
-    s:="
+    s:=format("
     (
 Myww       = Width = Adjust the width of the capture range
 Myhh       = Height = Adjust the height of the capture range
@@ -3407,7 +3419,7 @@ s1  = FindText
 s2  = Gray|GrayDiff|Color|ColorPos|ColorDiff|MultiColor
 s3  = Capture Image To Text
 s4  = Capture Image To Text and Find Text Tool
-s5  = Position|First click RButton\nMove the mouse away\nSecond click RButton
+s5  = Position|First click {1}\nMove the mouse away\nSecond click {1}
 s6  = Unbind Window using
 s7  = Please drag a range with the LButton\nCoordinates are copied to clipboard
 s8  = Found|Time|ms|Pos|Result|value can be get from|Wait 3 seconds for appear|Wait indefinitely for disappear
@@ -3419,6 +3431,7 @@ s13 = Please convert the image to black or white first
 s14 = Can't be used in ColorPos mode, because it can cause position errors
 s15 = Are you sure about the scope of your choice?\n\nIf not, you can choose again
     )"
+, this.CaptureKey2)
     Lang:=Map(), Lang.Default:="", Tip_Text:=Map(), Tip_Text.Default:=""
     Loop Parse, s, "`n", "`r"
       if InStr(v:=A_LoopField, "=")
