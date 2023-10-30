@@ -1,6 +1,3 @@
-;~ global gCaptureKey1 := "LButton"
-;~ global gCaptureKey2 := "RButton"
-
 ;/*
 ;===========================================
 ;  FindText - Capture screen image into text and then find it
