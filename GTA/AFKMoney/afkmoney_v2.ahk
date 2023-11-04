@@ -609,6 +609,7 @@ Resume_AFK_Farming2()
 						Sleep(100)
 						TryWinActivate(GTAwindow) ; GTA need to be on focus.
 						Send("{z}")
+						Sleep(200)
 						;~ ImageSearch(&xMission, &yMission, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\AFKMoney&RPv2" ImageResolution ".png")
 						;~ if (xMission)
 						;~ {
@@ -622,7 +623,7 @@ Resume_AFK_Farming2()
 						t1:=A_TickCount, Text:=X:=Y:=""
 
 						Text:="|<>*177$115.zsBzzyzzzzzzbz7lzztttytySTzzzzzfzQnjzvQRzNzDDzzzzzozjfvzvqizdzjb3UsPrszrpxxrur0kzpfCrPqrwzvqQyvvRjtTupjPg3Pxfw30zPnUrxrxerhqzhylyxbzprjPytynPqvStzQzSrztrrpzSzNinRqQzaTjPzwtw"
-						if (ok:=FindText(&X:="wait", &Y:=3, 247-150000, 113-150000, 247+150000, 113+150000, 0, 0, Text))
+						if (ok:=FindText(&X:="wait", &Y:=3, 1, 1, 247+150, 113+150, 0, 0, Text))
 						{
 						  ; FindText().Click(X, Y, "L")
 							break ; so that we can set startMission
@@ -1542,7 +1543,7 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 1700 ;Edit this value to change the spinning speed: higher value = slower spin
+    delay := 2120 ;Edit this value to change the spinning speed: higher value = slower spin
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1553,15 +1554,15 @@ TryWinActivate(w)
     Send("{e down}")
 	sleep(200)
 	Send("{e up}")
-	Loop 5 {
-		Sleep(1000)
-		Send("{enter}")
-	}
+	Sleep(3000)
 	DllCall("timeBeginPeriod","UInt",1)
 	WinSetTitle("Lucky Wheel; enter", GTAwindow)
-    Send("{enter down}")
-	Sleep(200)
-	Send("{enter up}")
+	Loop 10 {
+		Send("{enter}")
+	}
+    ;~ Send("{enter down}")
+	;~ Sleep(200)
+	;~ Send("{enter up}")
 
 	; wait for UseStoSpin_1280x720.png
 	WinSetTitle("Lucky Wheel: Waiting for: Use S to Spin / was " delay " ms...before s", GTAwindow)
@@ -1570,20 +1571,21 @@ TryWinActivate(w)
 	local xSpin := "wait1"
 	local ySpin := 4
 	UseStoSpin_Text:="|<>*108$98.zzzzw003zzzszzzzrnzzz000zzzw3ztzxwzzzk70DDzyQzzzzTAD3w383lkzbg3g3rm1YT0W0wM7sz0N0RwbHnkC0DCwz1nqHbT8A0w0s3nDDyAwYtrnV0D030wnnztD9CQwj3rk8kDCwySHqHb4MaNw1s3taTXANYt8D1kz000zADw70tCHzzzzk00Dzzzznzzzzzzzw003zzzzwzzzzzzzz000zzzzzDzzy"
+	Send("{enter}")
 	while (! ; ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\UseStoSpin" ImageResolution ".png")&& spinSearchTries < 100
 		; FindText().ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\UseStoSpin" ImageResolution ".png")
-		( ok:=FindText(&xSpin, &ySpin, 318-1500, 104-1500, 318+1500, 104+1500, 0, 0, UseStoSpin_Text) )
+		( ok:=FindText(&xSpin, &ySpin, 318-150, 104-150, 318+150, 104+150, 0, 0, UseStoSpin_Text) )
 		&& spinSearchTries < 1) {
 		Sleep(10) ; also imprecise
 		spinSearchTries += 1
 	}
-	Sleep(delay)
-	; or? DllCall("Sleep", "UInt", delay)
+	;Sleep(delay)
+	DllCall("Sleep", "UInt", delay)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
 	SetKeyDelay(0,0)
     Send("{s down}")
     ;Sleep(20) ; too imprecise
-	DllCall("Sleep", "UInt", 20) ; start high and work my way down?
+	DllCall("Sleep", "UInt", 50) ; start high and work my way down?
     Send("{s up}")
 	DllCall("timeEndPeriod","UInt",1)
 	setdefaultkeydelay()
@@ -1807,15 +1809,28 @@ pinkyMenu() {
 	if HotstringIsQueued() {
 		return
 	}
-    ih := InputHook("L1 T5 I1", "{Esc}")
+	;~ tStart := FindText().QPC()
+    ih := InputHook("L1 T5", "{Esc}")
     ih.EndKeys := "abcdefghijklmnopqrstuvwxyz"
     ih.KeyOpt("{All}", "E")  ; End
     ; ih.KeyOpt("{LCtrl}{RCtrl}{LAlt}{RAlt}{LShift}{RShift}{LWin}{RWin}", "-E")
     ih.KeyOpt("0123456789,", "-E") ; for arguments like how long a flight for W on oppressor mk2
     ih.Start()
+	;~ tEnd := FindText().QPC()
+	;~ tElapsed := tEnd - tStart ; about 0.6 milliseconds
+	;~ ;ToolTip("inputhook timing up to Start()=" tElapsed)
+    ;~ WinSetTitle(">Get >Set >Cmd Flyop2 Heli Walk Run Dance End=solosession Newsession `; inputhook t=" tElapsed, "ahk_exe GTA5.exe")
+
     errlvl := ih.Wait()
+	;~ tStart := FindText().QPC()
     local cmd := ih.EndKey
     ih.Stop()
+
+	;~ tEnd := FindText().QPC()
+	;~ tElapsed := tEnd - tStart
+    ;~ WinSetTitle(">Get >Set >Cmd Flyop2 Heli Walk Run Dance End=solosession Newsession `; inputhook t=" tElapsed, "ahk_exe GTA5.exe")
+	;~ ; t=0.15 (milliseconds)
+
 	Critical false ; Enable immediate thread interruption.
 	Sleep -1 ; Process any pending messages.
     inp := ih.input
@@ -1858,7 +1873,7 @@ getMenu() {
 	if HotstringIsQueued() {
 		return
 	}
-    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih := InputHook("L1 T5", "{Esc}")
     ih.KeyOpt("{All}", "E")  ; End
     ih.Start()
     errlvl := ih.Wait()
@@ -1882,7 +1897,7 @@ setMenu() {
 	if HotstringIsQueued() {
 		return
 	}
-    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih := InputHook("L1 T5", "{Esc}")
     ih.KeyOpt("{All}", "E")  ; End
     ih.Start()
     errlvl := ih.Wait()
@@ -1908,7 +1923,7 @@ cmdMenu() {
 	;~ if HotstringIsQueued() {
 		;~ return
 	;~ }
-    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih := InputHook("L1 T5", "{Esc}")
     ih.KeyOpt("{All}", "E")  ; End
     ih.Start()
     errlvl := ih.Wait()
@@ -1930,11 +1945,11 @@ cmdMenu() {
 
 afkMenu() {
 	KeyWait("a")
-	WinSetTitle("Afkstart Resume Shutdown Freemode(toggle)")
+	WinSetTitle("Cmd>Afk> Afkstart Resume Shutdown Freemode(toggle)")
 	if HotstringIsQueued() {
 		return
 	}
-    ih := InputHook("L1 T5 I1", "{Esc}")
+    ih := InputHook("L1 T5", "{Esc}")
     ih.KeyOpt("{All}", "E")  ; End
     ih.Start()
     errlvl := ih.Wait()
