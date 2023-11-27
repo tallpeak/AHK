@@ -2842,7 +2842,11 @@ Gui(cmd, arg1:="", args*)
     }
     c:=c="Black" ? 0x000000 : c="White" ? 0xFFFFFF
       : ((c&0xFF)<<16)|(c&0xFF00)|((c&0xFF0000)>>16)
-    SendMessage 0x2001, 0, c, C_[tk]
+    try {
+      SendMessage 0x2001, 0, c, C_[tk]  ; target window not found coming from Bindwindow1+
+    } catch Error as e {
+      Log(e.message)
+    }
     return
   Case "RepColor":
     show[k]:=1, c:=(bg="" ? cors[k] : ascii[k] ? "Black":"White")

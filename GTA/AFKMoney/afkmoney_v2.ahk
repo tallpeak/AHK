@@ -116,7 +116,7 @@ myTimeIdlePhysical() {
 GTAwindow := "ahk_exe GTA5.exe" ; or "ahk_class grcWindow"
 
 ;Sky Fall Fast AFK Test = 8
-WhichJob := 0 ; (only upload this as #0, first job) move down how many times in the bookmarked Survivals?
+WhichJob := 1 ; (only upload this as #0, first job) move down how many times in the bookmarked Survivals?
 helptext:=" F8 Start,F9 Resume,F10 Exit,F12 Freemode "
 UserIdleThreshold := 122 * 1000 ; (milliseconds) At least 10 to 60 seconds, to avoid interrupting the user
 ; Tweak this for your system, based on highest elapsed value seen during wave 20:
@@ -437,11 +437,13 @@ Start_AFK_Farming()
 	Send("{enter}") 	; select Bookmarked
 	Sleep( MenuDelay * 4 ) ; it can take a long time for this menu to come up
 	Send("{w 5}") 		; Survivals
+	Sleep(100)
 	Send("{enter}")	; Select Survivals
-	Sleep(66)
+	Sleep(400)
 	Loop WhichJob ; which survival
 	{
 		Send("{s}")
+		Sleep(66)
 	}
 	Send("{enter}")
 	Loop 5
@@ -1073,7 +1075,7 @@ flyOppressor2()
     Sleep(5000)
 	Send("{space down}")
     ;Sleep(25000)
-	el:=KeyWait("w","DT" . (t / 2 + 5)) ; DT25
+	el:=KeyWait("w","DT" . (t / 2 + 6)) ; DT25
 	Send("{space up}")
 	if GetKeyState("w","P")
 		goto endflight ;return
@@ -1082,13 +1084,13 @@ flyOppressor2()
     Sleep(20)
 	;Sleep(10000)
 	; doesnt seem to work: el:=KeyWait("w","T10")
-	el:=KeyWait("w","DT" . (t / 4)) ; DT10
+	el:=KeyWait("w","DT" . (t / 3)) ; DT10
 	if GetKeyState("w","P")
 		goto endflight ;return
 	;Input(l,"L10")
     Send("{Shift Down}{w Down}")
     ;Sleep(20000)
-	el:=KeyWait("w","DT" . (t / 4)) ; DT10
+	el:=KeyWait("w","DT" . (t / 6)) ; DT10
 	if GetKeyState("w","P")
 		return
 	;Input(l,"L20")
@@ -1543,7 +1545,8 @@ TryWinActivate(w)
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
 ^!L:: {
-    delay := 2120 ;Edit this value to change the spinning speed: higher value = slower spin
+	LuckyDelay1 := 2225 ;Edit this value to change the spinning speed: higher value = slower spin
+	LuckyDelay2 := 5
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1565,12 +1568,12 @@ TryWinActivate(w)
 	;~ Send("{enter up}")
 
 	; wait for UseStoSpin_1280x720.png
-	WinSetTitle("Lucky Wheel: Waiting for: Use S to Spin / was " delay " ms...before s", GTAwindow)
-	; Sleep(delay)
+	WinSetTitle("Lucky Wheel: Waiting for: Use S to Spin", GTAwindow)
+	; Sleep(LuckyDelay1)
 	local spinSearchTries := 0
 	local xSpin := "wait1"
 	local ySpin := 4
-	UseStoSpin_Text:="|<>*108$98.zzzzw003zzzszzzzrnzzz000zzzw3ztzxwzzzk70DDzyQzzzzTAD3w383lkzbg3g3rm1YT0W0wM7sz0N0RwbHnkC0DCwz1nqHbT8A0w0s3nDDyAwYtrnV0D030wnnztD9CQwj3rk8kDCwySHqHb4MaNw1s3taTXANYt8D1kz000zADw70tCHzzzzk00Dzzzznzzzzzzzw003zzzzwzzzzzzzz000zzzzzDzzy"
+	UseStoSpin_Text:="|<UseStoSpin>*108$98.zzzzw003zzzszzzzrnzzz000zzzw3ztzxwzzzk70DDzyQzzzzTAD3w383lkzbg3g3rm1YT0W0wM7sz0N0RwbHnkC0DCwz1nqHbT8A0w0s3nDDyAwYtrnV0D030wnnztD9CQwj3rk8kDCwySHqHb4MaNw1s3taTXANYt8D1kz000zADw70tCHzzzzk00Dzzzznzzzzzzzw003zzzzwzzzzzzzz000zzzzzDzzy"
 	Send("{enter}")
 	while (! ; ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*80 " launch_dir "\img\UseStoSpin" ImageResolution ".png")&& spinSearchTries < 100
 		; FindText().ImageSearch(&xSpin, &ySpin, 1, 1, A_ScreenWidth, A_ScreenHeight, "*30 " launch_dir "\img\UseStoSpin" ImageResolution ".png")
@@ -1580,12 +1583,12 @@ TryWinActivate(w)
 		spinSearchTries += 1
 	}
 	;Sleep(delay)
-	DllCall("Sleep", "UInt", delay)
     WinSetTitle("Lucky Wheel: s(spinning); found S to Spin at:" xSpin "," ySpin, GTAwindow)
+	DllCall("Sleep", "UInt", LuckyDelay1)
 	SetKeyDelay(0,0)
     Send("{s down}")
     ;Sleep(20) ; too imprecise
-	DllCall("Sleep", "UInt", 50) ; start high and work my way down?
+	DllCall("Sleep", "UInt", LuckyDelay2) ; start high and work my way down?
     Send("{s up}")
 	DllCall("timeEndPeriod","UInt",1)
 	setdefaultkeydelay()
@@ -1593,8 +1596,6 @@ TryWinActivate(w)
 	WinSetTitle("GTA5: Lucky Wheel completed")
 	global last_keystate := ""
 }
-
-#HotIf
 
 ;;paste
 ^!v::{
@@ -1688,6 +1689,8 @@ TryWinActivate(w)
 ^!+PrintScreen::{
 	FindText().ScreenShot(0,0,gtaWW,gtaWH)
 }
+
+#HotIf
 
 ; '::FindText().GetRange("'")
 
@@ -1964,6 +1967,10 @@ afkMenu() {
 		case "s":	Shutdown_AFK_Farming()
 		case "f":	toggleReturnToFreemode()
 	}
+}
+
+^!t::{
+	Run("C:\Program Files\Core Temp\Core Temp.exe")
 }
 
 #HotIf

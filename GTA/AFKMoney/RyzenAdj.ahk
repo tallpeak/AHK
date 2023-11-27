@@ -38,6 +38,7 @@ global Ryzen_milliwatts_min := 5500  ; A reasonable minimum power level; for low
 global Ryzen_milliwatts_max := 30000 ; AMD 5625U default stapm_limit for my HP 17
 global Ryzen_milliwatts_min_restore := 13000  ; return to at least this wattage upon exit (only for my possibly-defective AMD 5625U!)
 
+; elevate by restarting the script with *RunAs
 reload_as_admin() {
 	; the RegExMatch was supposed to prevent accidental endless loop,
 	; but not needed for my use-case
@@ -274,3 +275,11 @@ if revert_onexit {
 ; net stop "windows audio"
 ; net start "Realtek Audio Universal Service"
 ; net start "windows audio"
+
+; google: turn bluetooth off and on windows 11 powershell https://techcommunity.microsoft.com/t5/windows-powershell/switch-bluetooth-off-and-on-via-powershell/m-p/2275616
+; -->  https://superuser.com/questions/1168551/turn-on-off-bluetooth-radio-adapter-from-cmd-powershell-in-windows-10/1293303#1293303
+;bluetooth off on
+^!b::{
+	RunWait("powershell bluetoothonoff.ps1 off")
+	RunWait("powershell bluetoothonoff.ps1 on")
+}
