@@ -5,54 +5,66 @@
 ; City Tycoon is badly-made, in my opinion; population grows too slowly
 ; too much waiting for population so this doesn't help
 ; Although it seems like population went up faster during Pizza-serving?
+#Requires AutoHotkey v2.0
 #SingleInstance Force
+; InstallMouseHook true ; doesnt seem to help
+SendMode("Input")
 
-InstallMouseHook true
+FORTNITEWINDOW := "AHK_CLASS UnrealWindow"
+WinActivate(FORTNITEWINDOW)
 
-Loop 1000 {
-    ; wait 3 seconds for serving to start
-    ; Sleep(222)
-    kw := KeyWait("RCtrl","DT0.5")
-		if kw { 
-      ToolTip("RCtrl found, stopping serving")
-      Sleep(3000)
-      ToolTip()
-      break
-    }
-    ; if A_TimeIdle < 3000 {
-    ;   ToolTip("wait 3 seconds to start; A_TimeIdle="  A_TimeIdle)    
-    ;   continue
-    ; }
-    ToolTip("serving, hold Right Control to stop")      
+ToolTip("Press Control-P to start serving pizza")
 
-    ; Search for big letters at top announcing which type of pizza to make:
-    Text:="|<CH>*128$71.1zzzzkTzzbU07y00zkzzzj00Tk00Tls0DS01y000Dnk0Sw03s000DrU0xs0DU000Dj01vk0y0000Dy03rU1s0000Dw07j03k0000Ts0DS0700C00Tk0Sw0C00y00zU0xs0M03y00z01vk0k0Dy01y03rU1U0Tw03w07j0300xs07s0DS0403nk0Dk0Sw0807bnzzU0zs0E0D7zzz01zk0U0SDzzy03zU100wDzyw07z0201sDk1s0000403kzzvk0000807VzzzU0000E0D7zzz00000U0SDzzy00001"
-    Text.="|<DIA>*129$71.zzzzw0Dzzk7zzzzzy0TzzUDzs00Ty1w0DUy70003z3k0D1sC0001z7U0S3kQ0000zD00w7Us0000zS01sT1k0000yw03kw3U0000zs07Vs700000zs0D3kC00001zk0SDUQ07s01zU0wS0s0Ds03z01sw1k0Ts03y03ls3U0zs07w07bk701vk0Ds0DD0C03rk0Dk0SS0Q07bU0TU0ww0s0DD00z01vs1k0SS01y03rU3U0ww03w07j0701ts07s0DS0C03nk0Dk0Tw0Q07bU0TU0zk0s0DD00z01zU1"
-    Text.="|<HA>*130$71.01vk0S3k00D603rU0w7U00SA07j01sD000wM0DS03ky001sE0Sw07Vs003sU0xs0D3k003l01vk0S7U207W03rU0wT040D407j01sw080T80DS03ls0M0SE0Sw07Xk1k0wU0xs0DDU3U1s01vk0SS0703s03rU0ww0C03k07z01ts0y07U0Dy03rk1w0D00Tw07j03s0T00zs0DS07k0S00000Sw0DU0w00000zs0zU1s00001zU1z03s00003z03y03k00007y07w07U0000Dw0Ds0D00000Tk0Tk0T"
-    Text.="|<PE>*131$71.000zsw0000T0000Dxs0000y00007zk0001w00003zU0003s00003z00007k00003y0000DU00003w0000T000007s0000y00DU07k0Tzzw00Tk0DU0zzzs00zk0T01zzzk01zU0y03zzzU03zU1w07zzj007j01s0Dzzy00DS03k0Tzzw00Tw0DU0zzTs00zk0T0000zk01zU0y0001zU03y01w0003z007s03s0007y00C00Dk000Dw00000TU000Ts00001z0000zk00007y0001zUU"
-    ; if (ok:=FindText(&X, &Y, 1088-150000, 587-150000, 1088+150000, 587+150000, 0, 0, Text))
-    ; if (ok:=FindText(&X, &Y, 696-150000, 587-150000, 696+150000, 587+150000, 0, 0, Text))
-    ; if (ok:=FindText(&X, &Y, 736-150000, 267-150000, 736+150000, 267+150000, 0, 0, Text))
-    ; if (ok:=FindText(&X, &Y, 898-150000, 587-150000, 898+150000, 587+150000, 0, 0, Text)) {
-    tStart := FindText().QPC()
-    if (ok:=FindText(&X, &Y, 1, 1, A_ScreenWidth, A_ScreenHeight, 0, 0, Text)) {
-        tEnd := FindText().QPC()
-        Text := ""
-        switch(ok[1].id) {
-            case "CH" : Text:="|<CHEESE>*101$65.znltznzbzDzzbXnzbzDyTzDj7bUD0SSw6DTzD0S0y1sA0zyTszlzXzM1zwzlzUzbylvlts3k0Dj1brXnk7UCDS3zD7bzDyTyzzySDDyTwztzs"
-            case "DIA": Text:="|<DIAVOLO>*106$71.zkS3sS7ky3k1zswDsSD7z7UDztsTkwSTyD0zXnkzVswwyS1z7bXrXllsww3yDD7j3rXlts7wSSDS7j7XnkDswwzyDSD7bUTlttzwDsSTD0zznnzsTkzwTtzz7bXkzUzszlzsDS3ky0T1zUU"
-            case "HA" : Text:="|<HAWAII>*104$65.swDswSD7wDDlsTkwySDsSTXkzVvwsTkwzzXrXrvlvltzz7j7jrXrXnzyDS7Rj7j7bswzyDnwTzDDltzwTbszySTXnzszDlzwwz7bXlyTXltts"
-            case "PE" : Text:="|<PEPERONI>*134$71.nvk7brUDDjDbXryD7jwSTSDDDjySTTwzxwSTzTwzyztznswzww1zts3znltzls3zXk7bbbnk3zbU7zDDjzb"
-            Default: Text:=""
-        }
-        if StrLen(Text) > 0 {
-            if (ok:=FindText(&X, &Y, 1, 1, A_ScreenWidth, A_ScreenHeight, 0, 0, Text)) {
-              ; Sleep(222)
-              FindText().Click(X, Y, "L")
-            }
-        }
-    }
+^r::Reload
 
+^p::ServePizza()
+
+ServePizza() {
+  Loop {
+      ; wait 3 seconds for serving to start
+      ; Sleep(222)
+      kw := KeyWait("RCtrl","DT0.5")
+          if kw {
+        ToolTip("RCtrl found, stopping serving")
+        Sleep(3000)
+        ToolTip()
+        break
+      }
+      ; Unfortunately, Click resets both A_TimeIdle and A_TimeIdlePhysical (strangely?)
+      ; if A_TimeIdle < 3000 {
+      ;   ToolTip("wait 3 seconds to start; A_TimeIdle="  A_TimeIdle)
+      ;   continue
+      ; }
+      ToolTip("serving, hold Right Control to stop")
+
+      ; Search for big letters at top announcing which type of pizza to make:
+      Text:="|<CH>*128$71.1zzzzkTzzbU07y00zkzzzj00Tk00Tls0DS01y000Dnk0Sw03s000DrU0xs0DU000Dj01vk0y0000Dy03rU1s0000Dw07j03k0000Ts0DS0700C00Tk0Sw0C00y00zU0xs0M03y00z01vk0k0Dy01y03rU1U0Tw03w07j0300xs07s0DS0403nk0Dk0Sw0807bnzzU0zs0E0D7zzz01zk0U0SDzzy03zU100wDzyw07z0201sDk1s0000403kzzvk0000807VzzzU0000E0D7zzz00000U0SDzzy00001"
+      Text.="|<DIA>*129$71.zzzzw0Dzzk7zzzzzy0TzzUDzs00Ty1w0DUy70003z3k0D1sC0001z7U0S3kQ0000zD00w7Us0000zS01sT1k0000yw03kw3U0000zs07Vs700000zs0D3kC00001zk0SDUQ07s01zU0wS0s0Ds03z01sw1k0Ts03y03ls3U0zs07w07bk701vk0Ds0DD0C03rk0Dk0SS0Q07bU0TU0ww0s0DD00z01vs1k0SS01y03rU3U0ww03w07j0701ts07s0DS0C03nk0Dk0Tw0Q07bU0TU0zk0s0DD00z01zU1"
+      Text.="|<HA>*130$71.01vk0S3k00D603rU0w7U00SA07j01sD000wM0DS03ky001sE0Sw07Vs003sU0xs0D3k003l01vk0S7U207W03rU0wT040D407j01sw080T80DS03ls0M0SE0Sw07Xk1k0wU0xs0DDU3U1s01vk0SS0703s03rU0ww0C03k07z01ts0y07U0Dy03rk1w0D00Tw07j03s0T00zs0DS07k0S00000Sw0DU0w00000zs0zU1s00001zU1z03s00003z03y03k00007y07w07U0000Dw0Ds0D00000Tk0Tk0T"
+      Text.="|<PE>*131$71.000zsw0000T0000Dxs0000y00007zk0001w00003zU0003s00003z00007k00003y0000DU00003w0000T000007s0000y00DU07k0Tzzw00Tk0DU0zzzs00zk0T01zzzk01zU0y03zzzU03zU1w07zzj007j01s0Dzzy00DS03k0Tzzw00Tw0DU0zzTs00zk0T0000zk01zU0y0001zU03y01w0003z007s03s0007y00C00Dk000Dw00000TU000Ts00001z0000zk00007y0001zUU"
+      ; if (ok:=FindText(&X, &Y, 1088-150000, 587-150000, 1088+150000, 587+150000, 0, 0, Text))
+      ; if (ok:=FindText(&X, &Y, 696-150000, 587-150000, 696+150000, 587+150000, 0, 0, Text))
+      ; if (ok:=FindText(&X, &Y, 736-150000, 267-150000, 736+150000, 267+150000, 0, 0, Text))
+      ; if (ok:=FindText(&X, &Y, 898-150000, 587-150000, 898+150000, 587+150000, 0, 0, Text)) {
+      tStart := FindText().QPC()
+      if (ok:=FindText(&X, &Y, 1, 1, A_ScreenWidth, A_ScreenHeight, 0, 0, Text)) {
+          tEnd := FindText().QPC()
+          Text := ""
+          switch(ok[1].id) {
+              case "CH" : Text:="|<CHEESE>*101$65.znltznzbzDzzbXnzbzDyTzDj7bUD0SSw6DTzD0S0y1sA0zyTszlzXzM1zwzlzUzbylvlts3k0Dj1brXnk7UCDS3zD7bzDyTyzzySDDyTwztzs"
+              case "DIA": Text:="|<DIAVOLO>*106$71.zkS3sS7ky3k1zswDsSD7z7UDztsTkwSTyD0zXnkzVswwyS1z7bXrXllsww3yDD7j3rXlts7wSSDS7j7XnkDswwzyDSD7bUTlttzwDsSTD0zznnzsTkzwTtzz7bXkzUzszlzsDS3ky0T1zUU"
+              case "HA" : Text:="|<HAWAII>*104$65.swDswSD7wDDlsTkwySDsSTXkzVvwsTkwzzXrXrvlvltzz7j7jrXrXnzyDS7Rj7j7bswzyDnwTzDDltzwTbszySTXnzszDlzwwz7bXlyTXltts"
+              case "PE" : Text:="|<PEPERONI>*134$71.nvk7brUDDjDbXryD7jwSTSDDDjySTTwzxwSTzTwzyztznswzww1zts3znltzls3zXk7bbbnk3zbU7zDDjzb"
+              Default: Text:=""
+          }
+          if StrLen(Text) > 0 {
+              if (ok:=FindText(&X, &Y, 1, 1, A_ScreenWidth, A_ScreenHeight, 0, 0, Text)) {
+                ; Sleep(222)
+                FindText().Click(X, Y, "L")
+              }
+          }
+      }
+  }
 }
 
 
