@@ -1544,7 +1544,6 @@ TryWinActivate(w)
 
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
-l::
 ^!l:: {
 	LuckyDelay1 := 2222 ;Edit this value to change the spinning speed: higher value = slower spin
 	LuckyDelay2 := 10
