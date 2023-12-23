@@ -1544,9 +1544,10 @@ TryWinActivate(w)
 
 ; lucky wheel; these settings arent working yet
 ; I will NEVER get this working!!!
-^!L:: {
-	LuckyDelay1 := 2225 ;Edit this value to change the spinning speed: higher value = slower spin
-	LuckyDelay2 := 5
+l::
+^!l:: {
+	LuckyDelay1 := 2222 ;Edit this value to change the spinning speed: higher value = slower spin
+	LuckyDelay2 := 10
 	global last_keystate := "suspended"
 	WinSetTitle("Lucky Wheel; press e (5 seconds)", GTAwindow)
 	KeyWait("Ctrl", "T2")
@@ -1756,7 +1757,7 @@ TryWinActivate(w)
 ;~ }
 
 ; start of PinkyMenu()
-#HotIf WinActive("ahk_exe GTA5.exe")
+#HotIf WinActive(GTAwindow)
 
 HotstringIsQueued() {
     static AHK_HOTSTRING := 1025

@@ -3,6 +3,8 @@
 
 #Include "*i MyGlobalShortcuts.AHK" ; misc (Ctrl-Alt-T to open Windows Terminal, to start)
 
+#Include "AppVol.AHK"
+
 ; Version 0.2
 ; Get ryzenadj.exe from https://github.com/FlyGoat/RyzenAdj
 ; Then edit the following line per your system:
@@ -23,12 +25,80 @@ global revert_onexit := false ; if true, put it back to original slow_limit befo
 ; Why reload_as_admin? (and how...)
 ; Walkthrough of some parts of the script.
 
+global Volume := 50
+global VolumeIncrement := 5
+
 ; for running as a standalone script:
 if InStr(A_ScriptFullPath, "RyzenAdj.ahk") {
 	outputTitle := false
 	global GTAtitle := "unknown"
 	global GTAwindow := "A"
+	Hotkey("CTRL & ALT & UP",AppVolUp)
+	Hotkey("CTRL & ALT & DOWN",AppVolDown)
 }
+
+
+rShowVolume()
+{
+	WinSetTitle(GTAtitle "`: V" Volume, GTAwindow)
+}
+
+
+; hold shift down for slowly changing volume:
+AppVolUp(hknm) {
+	;ttl := WinGetTitle("A")
+	;if ttl.Contains("Chrome") {
+	;	Send "{Ctrl Up}"
+	;}
+	Loop
+	{
+		if (GetKeyState("Shift", "P")) {
+			global Volume:=Volume + 1
+		} else
+			global Volume:=Volume + VolumeIncrement
+		If (Volume > 100)
+			global Volume := 100
+		rShowVolume()
+		rSetVolume()
+		Sleep(10)
+		if (! GetKeyState("Up", "P") )
+			break
+	}
+    rsetVolume()
+}
+
+AppVolDown(hknm) {
+	Loop
+	{
+		if (GetKeyState("Shift", "P")) {
+			global Volume:=Volume - 1
+		} else
+			global Volume:=Volume - VolumeIncrement
+
+		If (Volume < 0)
+			global Volume := 0
+		rShowVolume()
+		rSetVolume()
+		Sleep(10)
+		if (! GetKeyState("Down", "P") )
+			break
+	}
+    rsetVolume()
+}
+
+rsetVolume()
+{
+	ErrorLevel := ProcessExist("GTA5.exe")
+	global ProcessId := ErrorLevel
+    rSetAppVolume(ProcessId, Volume)
+}
+
+rSetAppVolume(PID, MasterVolume)    ; WIN_V+
+{
+	AppVol("A",MasterVolume)
+}
+
+
 
 global Ryzen_milliwatts := 0 ; slow-limit
 global Ryzen_milliwatts_default := 0
@@ -124,7 +194,7 @@ get_Ryzen_adj_info() {
 	}
 	;KeyWait("Ctrl")
 	;KeyWait("Alt")
-	SetTimer(update_milliwatts, -800, 0)
+	SetTimer(update_milliwatts, -1500, 0)
 }
 
 ; Reduce power in 0.25 watt increments, until minimum is reached
@@ -146,7 +216,7 @@ get_Ryzen_adj_info() {
 	}
     ;update_milliwatts()
 	; make it async to make it possible to tap +/- as well as hold them down
-	SetTimer(update_milliwatts, -500, 0)
+	SetTimer(update_milliwatts, -1500, 0)
 }
 
 update_titlebar_inputhook(_InputHook, txt) {
