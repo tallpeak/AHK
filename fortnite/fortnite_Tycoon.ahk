@@ -7,7 +7,7 @@
 global Volume := 50
 VolumeIncrement := 5
 
-SendMode("Input")
+SendMode("Event")
 
 FORTNITEWINDOW := "ahk_class UnrealWindow"
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
@@ -18,7 +18,10 @@ If(! WinExist(FORTNITEWINDOW) ) {
 	Sleep(90000)
 }
 
+WinShow(FORTNITEWINDOW)
+WinWaitActive(FORTNITEWINDOW)
 WinActivate(FORTNITEWINDOW)
+WinWaitActive(FORTNITEWINDOW)
 SetKeyDelay(11,5)
 
 ^!e::InteractionLoop()
@@ -35,7 +38,7 @@ InteractionLoop() {
 				Sleep(222)
 				ToolTip()
 			}
-		Sleep(555)
+		Sleep(2222)
 	}
 }
 
@@ -44,6 +47,7 @@ InteractionLoop() {
 +e::Send "{e 100}"
 
 ;^!+e::Send "{e 1000}"
+^!+e::Edit()
 
 ^F6::Reload
 ^r::Reload
@@ -80,23 +84,128 @@ InteractionLoop() {
 	}
 }
 
-; clickdown
-^!+c::
-{
-	ToolTip("Press RCtrl to stop clicking")
-	;Send("{LClick Down}")
-	Loop {
-		Click()
-		kw := KeyWait("RCtrl","DT0.05")
-		if kw {
-			ToolTip("RCtrl found, stopping clicking")
-			Sleep(3000)
-			ToolTip()
-			break
+;~ fastclick for sword tycoon
+^+f::{
+	;~ loop 10 {
+		;~ Send "e"
+		;~ sleep(2000)
+		loop 999 {
+			if WinActive(FORTNITEWINDOW) {
+				Click()
+			}
+			kw := KeyWait("RCtrl","DT0.005")
+			rb := GetKeyState("RButton")
+			f := GetKeyState("F","P")
+			if kw or rb or f==0 {
+				ToolTip("RCtrl/RButton/!f found; stopping clicking")
+				Sleep(1500)
+				ToolTip()
+				break
+			}
 		}
-
-	}
+		;~ Sleep(5000)
+	;~ }
 }
+
+;~ cant seem to post to a window not in focus
+;~ NumpadEnd::
+;~ {
+	;~ WM_LBUTTONDOWN := 0x0201
+	;~ WM_LBUTTONUP := 0x0202
+	;~ WM_NCLBUTTONDOWN := 0x00A1
+	;~ WM_NCLBUTTONUP := 0x00A2
+	;~ PostMessage(WM_LBUTTONDOWN,0,0,,"ahk_exe FortniteClient-Win64-Shipping.exe")
+	;~ Sleep(1111)
+	;~ WinHide(FORTNITEWINDOW)
+;~ }
+
+
+NumpadDiv::
+{
+	WM_LBUTTONDOWN := 0x0201
+	WM_LBUTTONUP := 0x0202
+	WM_NCLBUTTONDOWN := 0x00A1
+	WM_NCLBUTTONUP := 0x00A2
+	WM_SETFOCUS := 0x0007
+	WM_KILLFOCUS := 0x0008
+	WinActivate(FORTNITEWINDOW)
+	WinWaitActive(FORTNITEWINDOW)
+	PostMessage(WM_LBUTTONDOWN,0,0,,FORTNITEWINDOW)
+	Sleep(111)
+	PostMessage(WM_KILLFOCUS)
+	Sleep(111)
+	PostMessage(WM_KILLFOCUS,0,0,,FORTNITEWINDOW)
+	Sleep(111)
+	PostMessage(WM_SETFOCUS,0,0,,"ahk_exe chrome.exe")
+	Sleep(111)
+	WinActivate("ahk_exe chrome.exe")
+;~ /	Sleep(1111)
+	;~ WinHide(FORTNITEWINDOW)
+	;Send("{tab down}")
+	;PostMessage(WM_LBUTTONUP)
+	;Click("Down")
+
+	;~ ToolTip("Press RCtrl to stop clicking")
+	;~ ;Send("{LClick Down}")
+	;~ Loop {
+		;~ ;Send("{LClick Down}")
+		;~ Click("Down")
+		;~ kw := KeyWait("RCtrl","DT0.3")
+		;~ if kw {
+			;~ ToolTip("RCtrl found, stopping clicking")
+			;~ Sleep(3000)
+			;~ ToolTip()
+			;~ break
+		;~ }
+
+	;~ }
+}
+
+; new clicker?? not tested yet
+;RCtrl & RShift & vk43::
+;>^>+c::
+NumpadMult::
+{
+	SetKeyDelay(11,1)
+	;WinActivate(FORTNITEWINDOW)
+	;KeyWait("RCtrl")
+	;KeyWait("RShift")
+	;KeyWait("c")i
+	;KeyWait("NumpadMult")
+	Click "Down"
+	;~ Sleep 1
+	Send "{Blind}{i Down}"
+	;Sleep 11
+	Click "Up"
+	Send "{Blind}{i Up}"
+	;Sleep 11
+	Sleep 888
+	Send "{Esc}"
+}
+
+WinSetEnabled 1,FORTNITEWINDOW
+
+NumpadSub::
+{
+	Click "Down"
+	Sleep(20)
+	WinSetEnabled 0,FORTNITEWINDOW
+	Click "Down"
+	Sleep(20)
+	WinActivate("Google Chrome")
+	sleep(2000)
+	WinSetEnabled 1,FORTNITEWINDOW
+}
+;~ MouseClick, L, 264, 148,,, D
+;~ Send, {Blind}i
+;~ MouseClick, L, 264, 148,,, U
+;~ Sleep, 492
+;~ Send, {Blind}ii
+;~ MouseClick, L, 264, 148
+;~ Sleep, 1000
+
+
+^!r::Reload()
 
 ^!b::
 {
@@ -165,6 +274,15 @@ LCTRL & Down::
 }
 
 #HotIf
+
+^!+h::{
+	try {
+		WinHide(FORTNITEWINDOW)
+	}
+}
+^!+s::{
+	WinShow(FORTNITEWINDOW)
+}
 
 setVolume()
 {
