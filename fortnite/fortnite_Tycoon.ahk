@@ -88,7 +88,7 @@ clicker_unfocused(hideWindow) {
 
 	ToolTip("AFK clicker on! To switch windows, tap the Windows key." 
 			. "`nAvoid alt-tab. Use RCtrl/Click to stop clicking." 
-	        . (hideWindow ? "`nWindow hides in 15 seconds (use Control-C to start clicker without auto-hide behavior);
+	        . (hideWindow ? "`nWindow hides in 15 seconds (use Control-C to start clicker without auto-hide behavior)"
 					        . "`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"") ,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
