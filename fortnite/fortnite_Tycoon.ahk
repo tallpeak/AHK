@@ -5,7 +5,7 @@
 ; #InstallMouseHook
 
 ; maybe lower this once used to the auto-hide behavior:
-HIDE_SECONDS := 15
+HIDE_SECONDS := 10
 ; Some users won't like these enabled
 ENABLE_AUTO_HIDE := true 
 ENABLE_RESIZE := true 
@@ -29,26 +29,30 @@ FORTNITEWINDOW := "ahk_class UnrealWindow"
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
 
+ToolTip("Loading macros...")
+
 If(! WinExist(FORTNITEWINDOW) ) {
 	RunWait("com.epicgames.launcher://apps/fn%3A4fe75bbc5a674f4f9b356b5c90567da5%3AFortnite?action=launch&silent=true")
-	Sleep(90000)
+	Sleep(1000)
 }
 
-WinShow(FORTNITEWINDOW)
-WinWaitActive(FORTNITEWINDOW)
-WinActivate(FORTNITEWINDOW)
-WinWaitActive(FORTNITEWINDOW)
+Try {
+	WinActivate(FORTNITEWINDOW)
+	WinWaitActive(FORTNITEWINDOW)
+	WinShow(FORTNITEWINDOW)
+	WinActivate(FORTNITEWINDOW)
+	WinWaitActive(FORTNITEWINDOW)
+}
+
 SetKeyDelay(11,5)
 
 #HotIf WinActive(FORTNITEWINDOW)
-
-; key bindings
-; NumPadDel key-binding has been removed
-
+; active/focused window key bindings
+^End::Reload
+^r::Reload
+^+r::Reload
 ^+e::InteractionLoop()
 ^!+e::Edit()
-^End::Reload
-^+r::Reload
 ^+f::fastclicker() ; sword tycoon
 ^+o::oldclicker()  ; requires window focus
 ^c::clicker_unfocused(false)  ; without hide
@@ -64,23 +68,32 @@ LCTRL & Down::VolumeDownLoop()
 
 +e::Send "{e 100}"  ; was {e 100}
 ;^!+e::Send "{e 1000}"
-
 #HotIf
 
 ; Global hotkeys:
-; control alt shift h to toggle window-hidden state:
+^!+r::Reload
 #HotIf !WinActive(FORTNITEWINDOW)
-^!+h::WindowHideToggle()
+^!+h::WindowHideToggle() ; control alt shift h to toggle window-hidden state:
 #HotIf
-; ^!+s::WindowShow() ; redundant
+
+^!+s::WindowShowAndFocus() 
 
 MoveWindowToUpperRight() {
 	WinMove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)	
+	;no... unfocus()
+}
+
+unfocus() {
+	; Send("{AltTab}") ; didnt work
+	TryWinActivate("ahk_exe chrome.exe")
+	TryWinActivate("ahk_exe msedge.exe")
+	TryWinActivate("ahk_exe firefox.exe")
+	TryWinActivate("Visual Studio") ; I like VS Code showing on top
+	TryWinActivate("ahk_exe explorer.exe") ; I think this does nothing?
+	TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
 }
 
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-;~ VK_TAB := 0x09
-;~ VK_OEM_2 := 0xBF ; slash
 ; might want to try other bindings but so far only enter seems to work
 
 ; only seems to work out-of-focus when firekey = enter
@@ -102,38 +115,32 @@ clicker_unfocused(hideWindow) {
 	if ENABLE_RESIZE {
 		MoveWindowToUpperRight()
 	}
-	; DllCall("SetWindowPos", "UInt", WinId, "UInt", 0, "Int", New_x, "Int", New_y, "Int", New_w, "Int", New_h, "UInt", 0x400)
-	; WinActivateBottom(FORTNITEWINDOW)
 
-	ToolTip("AFK clicker on! To switch windows, tap the Windows key." 
-			. "`nAvoid alt-tab. Use RCtrl/Click to stop clicking." 
-	        . (hideWindow ? "`nWindow hides in 15 seconds (use Control-C to start clicker without auto-hide behavior)"
-					        . "`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"") ,10,10)
+	msg := "AFK clicker on! To switch windows, tap the Windows key." 
+			. "`nAvoid alt-tab. Use RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)." 
+	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (use Control-C to start clicker without auto-hide behavior)"
+					        . "`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"")
+	ttWHND := ToolTip(msg,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 
 	Loop {
 		; give user 6 seconds to read the message:
 		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
-			if toolTip_showing {
-				ToolTip
-				toolTip_showing := false
-			}
 			if hideWindow {
 				hideWindow := false ; once only
-				; Send("{AltTab}") ; didnt work
-				TryWinActivate("ahk_exe chrome.exe")
-				TryWinActivate("ahk_exe msedge.exe")
-				TryWinActivate("ahk_exe firefox.exe")
-				TryWinActivate("Visual Studio") ; I like VS Code showing on top
-				TryWinActivate("ahk_exe explorer.exe") ; I think this does nothing?
-				TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
+				unfocus()
 				Sleep(111)
 				try {
 					WinHide(FORTNITEWINDOW)
 				}
 			}
-		}
+			if toolTip_showing {
+				ToolTip()
+				TrayTip(msg)
+				toolTip_showing := false
+			}	
+	}
 		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
 		Sleep(t1)
 		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
@@ -294,8 +301,10 @@ WindowHideToggle() {
 	}
 }
 
-WindowShow() {
+WindowShowAndFocus() {
 	WinShow(FORTNITEWINDOW)
+	WinActivate(FORTNITEWINDOW)
+	WinWaitActive(FORTNITEWINDOW)
 }
 
 setVolume()
@@ -382,3 +391,6 @@ TryWinActivate(w)
 		return ; err.Message
 	}
 }
+
+Sleep(1000)
+ToolTip()  ; get rid of "Loading..."
