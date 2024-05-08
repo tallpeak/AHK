@@ -53,6 +53,7 @@ End::Reload
 ^+o::oldclicker()
 ^c::clicker_unfocused(false)
 ^+c::clicker_unfocused(ENABLE_AUTO_HIDE)
+^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
 ^!b::emoting()  ; usually used for dance floors
 +e::Send "{e 10}"  ; was {e 100}
 ;^!+e::Send "{e 1000}"
@@ -67,8 +68,11 @@ LCTRL & Down::VolumeDownLoop()
 ; Global hotkeys:
 ; control alt shift h to toggle window-hidden state:
 ^!+h::WindowHideToggle()
-^!+s::WindowShow()
+; ^!+s::WindowShow() ; redundant
 
+MoveWindowToUpperRight() {
+	WinMove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)	
+}
 
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 ;~ VK_TAB := 0x09
@@ -85,14 +89,14 @@ clicker_unfocused(hideWindow) {
 	WM_KEYUP 	:= 0x0101
 	t1 := 200  ; ms
 	t2 := "DT0.2" ; seconds
-	firekey := 13
+	firekey := 13 ; Enter
 	starttick := A_TickCount
 	; I like my Window in the upper-right at 40% size
 	; I realize not all users will want this behavior
 	; Having a consistent size can enable screen-scanning macros
 	; (in the future), eg. using FindText
 	if ENABLE_RESIZE {
-		winmove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)	
+		MoveWindowToUpperRight()
 	}
 	; DllCall("SetWindowPos", "UInt", WinId, "UInt", 0, "Int", New_x, "Int", New_y, "Int", New_w, "Int", New_h, "UInt", 0x400)
 	; WinActivateBottom(FORTNITEWINDOW)
@@ -129,7 +133,6 @@ clicker_unfocused(hideWindow) {
 		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
 		Sleep(t1)
 		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
-		;~ kw := KeyWait("NumPadDel",t2)
 		kw := KeyWait("RCtrl",t2)
 		if WinActive(FORTNITEWINDOW) {
 			lb := GetKeyState("LButton")
