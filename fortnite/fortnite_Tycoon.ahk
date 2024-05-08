@@ -31,14 +31,18 @@ InteractionLoop() {
 		if A_TimeIdlePhysical > 200000 {
 			WinActivate(FORTNITEWINDOW)
 		}
-		if WinActive(FORTNITEWINDOW) && A_TimeIdle > 5555 {
+		if WinActive(FORTNITEWINDOW) {
+			if	A_TimeIdle > 555 {
 			; this was for SuperVillain Tycoon, I think, or maybe Robot Tycoon 2
 				ToolTip("Sending {e 111}")
 				Send "{e 111}"
 				Sleep(222)
 				ToolTip()
 			}
-		Sleep(2222)
+			Sleep(522)
+		} else {
+			return
+		}
 	}
 }
 
@@ -72,7 +76,7 @@ InteractionLoop() {
 		if WinActive(FORTNITEWINDOW) {
 			Click()
 		}
-		kw := KeyWait("RCtrl","DT0.5")
+		kw := KeyWait("RCtrl","DT0.2")
 		rb := GetKeyState("RButton")
 		if kw or rb {
 			ToolTip("RCtrl/RButton found; stopping clicking")
@@ -119,91 +123,51 @@ InteractionLoop() {
 	;~ WinHide(FORTNITEWINDOW)
 ;~ }
 
+;~ ControlSend("{Enter}",FORTNITEWINDOW)
+;~ WinActivate(FORTNITEWINDOW)
+;~ WinWaitActive(FORTNITEWINDOW)
 
-NumpadDiv::
+; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+;~ VK_TAB := 0x09
+;~ VK_OEM_2 := 0xBF ; slash
+
+
+DoNothing(HotkeyName)
 {
-	WM_LBUTTONDOWN := 0x0201
-	WM_LBUTTONUP := 0x0202
-	WM_NCLBUTTONDOWN := 0x00A1
-	WM_NCLBUTTONUP := 0x00A2
-	WM_SETFOCUS := 0x0007
-	WM_KILLFOCUS := 0x0008
-	WinActivate(FORTNITEWINDOW)
-	WinWaitActive(FORTNITEWINDOW)
-	PostMessage(WM_LBUTTONDOWN,0,0,,FORTNITEWINDOW)
-	Sleep(111)
-	PostMessage(WM_KILLFOCUS)
-	Sleep(111)
-	PostMessage(WM_KILLFOCUS,0,0,,FORTNITEWINDOW)
-	Sleep(111)
-	PostMessage(WM_SETFOCUS,0,0,,"ahk_exe chrome.exe")
-	Sleep(111)
-	WinActivate("ahk_exe chrome.exe")
-;~ /	Sleep(1111)
-	;~ WinHide(FORTNITEWINDOW)
-	;Send("{tab down}")
-	;PostMessage(WM_LBUTTONUP)
-	;Click("Down")
-
-	;~ ToolTip("Press RCtrl to stop clicking")
-	;~ ;Send("{LClick Down}")
-	;~ Loop {
-		;~ ;Send("{LClick Down}")
-		;~ Click("Down")
-		;~ kw := KeyWait("RCtrl","DT0.3")
-		;~ if kw {
-			;~ ToolTip("RCtrl found, stopping clicking")
-			;~ Sleep(3000)
-			;~ ToolTip()
-			;~ break
-		;~ }
-
-	;~ }
 }
 
-; new clicker?? not tested yet
-;RCtrl & RShift & vk43::
-;>^>+c::
-NumpadMult::
-{
-	SetKeyDelay(11,1)
-	;WinActivate(FORTNITEWINDOW)
-	;KeyWait("RCtrl")
-	;KeyWait("RShift")
-	;KeyWait("c")i
-	;KeyWait("NumpadMult")
-	Click "Down"
-	;~ Sleep 1
-	Send "{Blind}{i Down}"
-	;Sleep 11
-	Click "Up"
-	Send "{Blind}{i Up}"
-	;Sleep 11
-	Sleep 888
-	Send "{Esc}"
+; only seems to work out-of-focus when firekey = enter
+; (You need to go into FN settings and bind fire to enter)
+NumpadDel::{
+	; Hotkey("Alt & Enter",DoNothing,"On")
+	WM_KEYDOWN 	:= 0x0100
+	WM_KEYUP 	:= 0x0101
+	t := 100 ; ms
+	firekey := 13
+	starttick := A_TickCount
+	ToolTip("AFK clicker on! To switch windows, tap the Windows key. Avoid alt-tab. Use NumPadDel to stop clicking.",10,10)
+	kw := KeyWait("NumPadDel","U")
+	Loop {
+		; give user 6 seconds to read the message:
+		if A_TickCount - starttick > 6666 {
+			ToolTip
+		}
+		Sleep(t)
+		KeyWait("Alt")
+		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
+		Sleep(t)
+		KeyWait("Alt")
+		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
+		kw := KeyWait("NumPadDel","DT0.005")
+		if kw {
+			ToolTip("NumPadDel found; stopping clicking")
+			Sleep(1500)
+			ToolTip()
+			break
+		}
+	}
+	; Hotkey("Alt & Enter",,"Off")
 }
-
-WinSetEnabled 1,FORTNITEWINDOW
-
-NumpadSub::
-{
-	Click "Down"
-	Sleep(20)
-	WinSetEnabled 0,FORTNITEWINDOW
-	Click "Down"
-	Sleep(20)
-	WinActivate("Google Chrome")
-	sleep(2000)
-	WinSetEnabled 1,FORTNITEWINDOW
-}
-;~ MouseClick, L, 264, 148,,, D
-;~ Send, {Blind}i
-;~ MouseClick, L, 264, 148,,, U
-;~ Sleep, 492
-;~ Send, {Blind}ii
-;~ MouseClick, L, 264, 148
-;~ Sleep, 1000
-
 
 ^!r::Reload()
 
@@ -273,11 +237,17 @@ LCTRL & Down::
     setVolume()
 }
 
+
+;#HotIf WinActive(FORTNITEWINDOW)
+;!Enter::Return
+
 #HotIf
 
 ^!+h::{
 	try {
 		WinHide(FORTNITEWINDOW)
+	} catch {
+		WinShow(FORTNITEWINDOW)
 	}
 }
 ^!+s::{
