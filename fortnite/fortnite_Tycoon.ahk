@@ -4,6 +4,18 @@
 ; #InstallKeybdHook
 ; #InstallMouseHook
 
+; maybe lower this once used to the auto-hide behavior:
+HIDE_SECONDS := 15
+; Some users won't like these enabled
+ENABLE_AUTO_HIDE := true 
+ENABLE_RESIZE := true 
+; For resize: I like FN small, in upper-right:
+SCALINGFACTOR := 0.4
+WINWIDTH := A_ScreenWidth * SCALINGFACTOR
+WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
+WINX := A_ScreenWidth - WINWIDTH
+WINY := 10
+
 ; not used yet:
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 ; #Include "FindTextv2_FeiYue_9.5.ahk"
@@ -40,7 +52,7 @@ End::Reload
 ^+f::fastclicker()
 ^+o::oldclicker()
 ^c::clicker_unfocused(false)
-^+c::clicker_unfocused(true)
+^+c::clicker_unfocused(ENABLE_AUTO_HIDE)
 ^!b::emoting()  ; usually used for dance floors
 +e::Send "{e 10}"  ; was {e 100}
 ;^!+e::Send "{e 1000}"
@@ -79,10 +91,9 @@ clicker_unfocused(hideWindow) {
 	; I realize not all users will want this behavior
 	; Having a consistent size can enable screen-scanning macros
 	; (in the future), eg. using FindText
-	SCALINGFACTOR := 0.4
-	WW := A_ScreenWidth * SCALINGFACTOR
-	WH := A_ScreenHeight * SCALINGFACTOR
-	winmove(A_ScreenWidth-WW,10,WW,WH,FORTNITEWINDOW)
+	if ENABLE_RESIZE {
+		winmove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)	
+	}
 	; DllCall("SetWindowPos", "UInt", WinId, "UInt", 0, "Int", New_x, "Int", New_y, "Int", New_w, "Int", New_h, "UInt", 0x400)
 	; WinActivateBottom(FORTNITEWINDOW)
 
@@ -95,7 +106,7 @@ clicker_unfocused(hideWindow) {
 
 	Loop {
 		; give user 6 seconds to read the message:
-		if A_TickCount - starttick > 15000 {
+		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
 			if toolTip_showing {
 				ToolTip
 				toolTip_showing := false
@@ -106,9 +117,9 @@ clicker_unfocused(hideWindow) {
 				TryWinActivate("ahk_exe chrome.exe")
 				TryWinActivate("ahk_exe msedge.exe")
 				TryWinActivate("ahk_exe firefox.exe")
-				TryWinActivate("Visual Studio")
-				TryWinActivate("ahk_exe explorer.exe") 
-				TryWinActivate("ahk_class Progman") 
+				TryWinActivate("Visual Studio") ; I like VS Code showing on top
+				TryWinActivate("ahk_exe explorer.exe") ; I think this does nothing?
+				TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
 				Sleep(111)
 				try {
 					WinHide(FORTNITEWINDOW)
