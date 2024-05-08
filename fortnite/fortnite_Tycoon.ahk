@@ -4,6 +4,9 @@
 ; #InstallKeybdHook
 ; #InstallMouseHook
 
+; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
+#Include "FindTextv2_FeiYue_9.5.ahk"
+
 global Volume := 50
 VolumeIncrement := 5
 
@@ -24,43 +27,108 @@ WinActivate(FORTNITEWINDOW)
 WinWaitActive(FORTNITEWINDOW)
 SetKeyDelay(11,5)
 
-^!e::InteractionLoop()
-
-InteractionLoop() {
-	Loop {
-		if A_TimeIdlePhysical > 200000 {
-			WinActivate(FORTNITEWINDOW)
-		}
-		if WinActive(FORTNITEWINDOW) {
-			if	A_TimeIdle > 555 {
-			; this was for SuperVillain Tycoon, I think, or maybe Robot Tycoon 2
-				ToolTip("Sending {e 111}")
-				Send "{e 111}"
-				Sleep(222)
-				ToolTip()
-			}
-			Sleep(522)
-		} else {
-			return
-		}
-	}
-}
-
 #HotIf WinActive(FORTNITEWINDOW)
 
-+e::Send "{e 100}"
+; key bindings
+; NumPadDel key-binding has been removed
 
-;^!+e::Send "{e 1000}"
+^!e::InteractionLoop()
 ^!+e::Edit()
+End::Reload
+^!r::Reload
+^+f::fastclicker()
+^+o::oldclicker()
+^c::clicker_unfocused(false)
+^+c::clicker_unfocused(true)
+^!b::emoting()  ; usually used for dance floors
++e::Send "{e 10}"  ; was {e 100}
+;^!+e::Send "{e 1000}"
 
-^F6::Reload
-^r::Reload
+; hold shift down for slowly changing volume:
+LCTRL & UP::VolumeUpLoop()
 
-; clicker:
-; don't use ctrl-alt
-; right-shift right-ctrl works well for Lumberjack
-^+c::
-{
+LCTRL & Down::VolumeDownLoop()
+
+#HotIf
+
+; Global hotkeys:
+; control alt shift h to toggle window-hidden state:
+^!+h::WindowHideToggle()
+^!+s::WindowShow()
+
+
+; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+;~ VK_TAB := 0x09
+;~ VK_OEM_2 := 0xBF ; slash
+; might want to try other bindings but so far only enter seems to work
+
+; only seems to work out-of-focus when firekey = enter
+; (You need to go into FN settings and bind fire to enter)
+clicker_unfocused(hideWindow) {
+	DetectHiddenWindows true
+	; tried to block alt+enter, didnt work
+	; Hotkey("Alt & Enter",DoNothing,"On") ; didnt work
+	WM_KEYDOWN 	:= 0x0100
+	WM_KEYUP 	:= 0x0101
+	t1 := 200  ; ms
+	t2 := "DT0.2" ; seconds
+	firekey := 13
+	starttick := A_TickCount
+	SCALINGFACTOR := 0.4
+	WW := A_ScreenWidth * SCALINGFACTOR
+	WH := A_ScreenHeight * SCALINGFACTOR
+	winmove(A_ScreenWidth-WW,10,WW,WH,FORTNITEWINDOW)
+	; DllCall("SetWindowPos", "UInt", WinId, "UInt", 0, "Int", New_x, "Int", New_y, "Int", New_w, "Int", New_h, "UInt", 0x400)
+	; WinActivateBottom(FORTNITEWINDOW)
+
+	ToolTip("AFK clicker on! To switch windows, tap the Windows key." 
+			. "`nAvoid alt-tab. Use RCtrl/Click to stop clicking." 
+	        . (hideWindow ? "`nWindow hides in 10 seconds;`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"") ,10,10)
+	toolTip_showing := true
+	kw := KeyWait("NumPadDel","U")
+
+	Loop {
+		; give user 6 seconds to read the message:
+		if A_TickCount - starttick > 10000 {
+			if toolTip_showing {
+				ToolTip
+				toolTip_showing := false
+			}
+			if hideWindow {
+				hideWindow := false ; once only
+				; Send("{AltTab}") ; didnt work
+				TryWinActivate("ahk_exe chrome.exe")
+				TryWinActivate("ahk_exe msedge.exe")
+				TryWinActivate("ahk_exe firefox.exe")
+				TryWinActivate("Visual Studio")
+				TryWinActivate("ahk_exe explorer.exe") 
+				TryWinActivate("ahk_class Progman") 
+				Sleep(111)
+				try {
+					WinHide(FORTNITEWINDOW)
+				}
+			}
+		}
+		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
+		Sleep(t1)
+		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
+		;~ kw := KeyWait("NumPadDel",t2)
+		kw := KeyWait("RCtrl",t2)
+		if WinActive(FORTNITEWINDOW) {
+			lb := GetKeyState("LButton")
+			rb := GetKeyState("RButton")
+			if kw or lb or rb {
+				ToolTip("RCtrl/Button found; stopping clicking")
+				Sleep(1500)
+				ToolTip()
+				break
+			}
+		}
+	}
+	; Hotkey("Alt & Enter",,"Off")
+}
+
+oldclicker() {
 	ToolTip("Press RCtrl or RButton to stop clicking",66,66	)
 	WinActivate(FORTNITEWINDOW)
 	;Send("{LClick Down}")
@@ -84,95 +152,54 @@ InteractionLoop() {
 			ToolTip()
 			break
 		}
-
 	}
 }
 
-;~ fastclick for sword tycoon
-^+f::{
-	;~ loop 10 {
-		;~ Send "e"
-		;~ sleep(2000)
-		loop 999 {
-			if WinActive(FORTNITEWINDOW) {
-				Click()
-			}
-			kw := KeyWait("RCtrl","DT0.005")
-			rb := GetKeyState("RButton")
-			f := GetKeyState("F","P")
-			if kw or rb or f==0 {
-				ToolTip("RCtrl/RButton/!f found; stopping clicking")
-				Sleep(1500)
-				ToolTip()
-				break
-			}
+
+; fastclick for sword tycoon
+; let go of f to stop clicking
+fastclicker() {
+	loop 999 {
+		if WinActive(FORTNITEWINDOW) {
+			Click()
 		}
-		;~ Sleep(5000)
-	;~ }
-}
-
-;~ cant seem to post to a window not in focus
-;~ NumpadEnd::
-;~ {
-	;~ WM_LBUTTONDOWN := 0x0201
-	;~ WM_LBUTTONUP := 0x0202
-	;~ WM_NCLBUTTONDOWN := 0x00A1
-	;~ WM_NCLBUTTONUP := 0x00A2
-	;~ PostMessage(WM_LBUTTONDOWN,0,0,,"ahk_exe FortniteClient-Win64-Shipping.exe")
-	;~ Sleep(1111)
-	;~ WinHide(FORTNITEWINDOW)
-;~ }
-
-;~ ControlSend("{Enter}",FORTNITEWINDOW)
-;~ WinActivate(FORTNITEWINDOW)
-;~ WinWaitActive(FORTNITEWINDOW)
-
-; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-;~ VK_TAB := 0x09
-;~ VK_OEM_2 := 0xBF ; slash
-
-
-DoNothing(HotkeyName)
-{
-}
-
-; only seems to work out-of-focus when firekey = enter
-; (You need to go into FN settings and bind fire to enter)
-NumpadDel::{
-	; Hotkey("Alt & Enter",DoNothing,"On")
-	WM_KEYDOWN 	:= 0x0100
-	WM_KEYUP 	:= 0x0101
-	t := 100 ; ms
-	firekey := 13
-	starttick := A_TickCount
-	ToolTip("AFK clicker on! To switch windows, tap the Windows key. Avoid alt-tab. Use NumPadDel to stop clicking.",10,10)
-	kw := KeyWait("NumPadDel","U")
-	Loop {
-		; give user 6 seconds to read the message:
-		if A_TickCount - starttick > 6666 {
-			ToolTip
-		}
-		Sleep(t)
-		KeyWait("Alt")
-		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
-		Sleep(t)
-		KeyWait("Alt")
-		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
-		kw := KeyWait("NumPadDel","DT0.005")
-		if kw {
-			ToolTip("NumPadDel found; stopping clicking")
+		kw := KeyWait("RCtrl","DT0.005")
+		rb := GetKeyState("RButton")
+		f := GetKeyState("F","P")
+		if kw or rb or f==0 {
+			ToolTip("RCtrl/RButton/!f found; stopping clicking")
 			Sleep(1500)
 			ToolTip()
 			break
 		}
 	}
-	; Hotkey("Alt & Enter",,"Off")
 }
 
-^!r::Reload()
+InteractionLoop() {
+	Loop {
+		if A_TimeIdlePhysical > 200000 {
+			WinActivate(FORTNITEWINDOW)
+		}
+		if WinActive(FORTNITEWINDOW) {
+			if	A_TimeIdle > 555 {
+			; this was for SuperVillain Tycoon, I think, or maybe Robot Tycoon 2
+				ToolTip("Sending {e 111}")
+				Send "{e 111}"
+				Sleep(222)
+				ToolTip()
+			}
+			Sleep(522)
+		} else {
+			return
+		}
+	}
+}
 
-^!b::
+DoNothing(HotkeyName)
 {
+}
+
+emoting() {
 	Loop {
 		Send("{b}")
 		kw := KeyWait("RCtrl","DT0.1")
@@ -185,18 +212,12 @@ NumpadDel::{
 	}
 }
 
-
-
-
 ShowVolume()
 {
 	; WinSetTitle(GTAtitle "`: V" Volume, GTAwindow)
 }
 
-
-; hold shift down for slowly changing volume:
-LCTRL & UP::
-{
+VolumeUpLoop() {
 	Loop
 	{
 		if (GetKeyState("Shift", "P")) {
@@ -214,7 +235,7 @@ LCTRL & UP::
     setVolume()
 }
 
-LCTRL & Down::
+VolumeDownLoop()
 {
 	Loop
 	{
@@ -241,16 +262,15 @@ LCTRL & Down::
 ;#HotIf WinActive(FORTNITEWINDOW)
 ;!Enter::Return
 
-#HotIf
-
-^!+h::{
+WindowHideToggle() {
 	try {
 		WinHide(FORTNITEWINDOW)
 	} catch {
 		WinShow(FORTNITEWINDOW)
 	}
 }
-^!+s::{
+
+WindowShow() {
 	WinShow(FORTNITEWINDOW)
 }
 
@@ -328,4 +348,13 @@ AppVol(Target := "A", Level := 0) {
         }
     }
     return (IsSet(levelOld) ? Round(levelOld * 100) : -1)
+}
+
+TryWinActivate(w)
+{
+	try {
+		WinActivate(w)
+	} catch Error as err {
+		return ; err.Message
+	}
 }
