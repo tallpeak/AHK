@@ -45,29 +45,33 @@ SetKeyDelay(11,5)
 ; key bindings
 ; NumPadDel key-binding has been removed
 
-^!e::InteractionLoop()
+^+e::InteractionLoop()
 ^!+e::Edit()
-End::Reload
-^!r::Reload
-^+f::fastclicker()
-^+o::oldclicker()
-^c::clicker_unfocused(false)
-^+c::clicker_unfocused(ENABLE_AUTO_HIDE)
+^End::Reload
+^+r::Reload
+^+f::fastclicker() ; sword tycoon
+^+o::oldclicker()  ; requires window focus
+^c::clicker_unfocused(false)  ; without hide
+^+c::clicker_unfocused(ENABLE_AUTO_HIDE)  ; move and hide
 ^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
-^!b::emoting()  ; usually used for dance floors
-+e::Send "{e 10}"  ; was {e 100}
-;^!+e::Send "{e 1000}"
+^+b::emoting()  ; usually used for dance floors
+; control shift h to toggle window-hidden state when FN is in focus:
+^+h::WindowHideToggle()
 
 ; hold shift down for slowly changing volume:
 LCTRL & UP::VolumeUpLoop()
-
 LCTRL & Down::VolumeDownLoop()
+
++e::Send "{e 100}"  ; was {e 100}
+;^!+e::Send "{e 1000}"
 
 #HotIf
 
 ; Global hotkeys:
 ; control alt shift h to toggle window-hidden state:
+#HotIf !WinActive(FORTNITEWINDOW)
 ^!+h::WindowHideToggle()
+#HotIf
 ; ^!+s::WindowShow() ; redundant
 
 MoveWindowToUpperRight() {
