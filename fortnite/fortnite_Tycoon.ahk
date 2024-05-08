@@ -4,8 +4,9 @@
 ; #InstallKeybdHook
 ; #InstallMouseHook
 
+; not used yet:
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
-#Include "FindTextv2_FeiYue_9.5.ahk"
+; #Include "FindTextv2_FeiYue_9.5.ahk"
 
 global Volume := 50
 VolumeIncrement := 5
@@ -74,6 +75,10 @@ clicker_unfocused(hideWindow) {
 	t2 := "DT0.2" ; seconds
 	firekey := 13
 	starttick := A_TickCount
+	; I like my Window in the upper-right at 40% size
+	; I realize not all users will want this behavior
+	; Having a consistent size can enable screen-scanning macros
+	; (in the future), eg. using FindText
 	SCALINGFACTOR := 0.4
 	WW := A_ScreenWidth * SCALINGFACTOR
 	WH := A_ScreenHeight * SCALINGFACTOR
@@ -83,13 +88,14 @@ clicker_unfocused(hideWindow) {
 
 	ToolTip("AFK clicker on! To switch windows, tap the Windows key." 
 			. "`nAvoid alt-tab. Use RCtrl/Click to stop clicking." 
-	        . (hideWindow ? "`nWindow hides in 10 seconds;`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"") ,10,10)
+	        . (hideWindow ? "`nWindow hides in 15 seconds (use Control-C to start clicker without auto-hide behavior);
+					        . "`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"") ,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 
 	Loop {
 		; give user 6 seconds to read the message:
-		if A_TickCount - starttick > 10000 {
+		if A_TickCount - starttick > 15000 {
 			if toolTip_showing {
 				ToolTip
 				toolTip_showing := false
