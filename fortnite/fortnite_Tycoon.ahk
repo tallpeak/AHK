@@ -1,4 +1,5 @@
-﻿#Requires AutoHotkey v2.0
+﻿; https://github.com/tallpeak/AHK/tree/main/fortnite
+#Requires AutoHotkey v2.0
 #WinActivateForce 1
 #SingleInstance
 ; #InstallKeybdHook
@@ -16,9 +17,26 @@ WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
 WINX := A_ScreenWidth - WINWIDTH
 WINY := 10
 
-; not used yet:
+; optional screen-scanning for Charged!:
+Charged_Delay := 666 ; When "Charged!" is found
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
-; #Include "FindTextv2_FeiYue_9.5.ahk"
+FindText_defined := false
+#Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
+try {
+	FindText_defined := HasMethod(FindText, "Call")
+}
+findtext_Charged() {
+	if ! FindText_defined {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<>*254$39.rzzzzzzxzzzzyTfnzjzHxjjqqqThxiyynhhhzrqrxxizDTzzzyzzU"
+	ok:=FindText(&X, &Y, 1330-22, 238-22, 1330+50, 238+10, 0, 0, Text)
+	; if ok {
+	; 	ToolTip("found:" X "," Y)
+	; }
+	return ok
+}
 
 global Volume := 50
 VolumeIncrement := 5
@@ -116,12 +134,12 @@ clicker_unfocused(hideWindow) {
 	if ENABLE_RESIZE {
 		MoveWindowToUpperRight()
 	}
-
-	msg := "AFK clicker on! To switch windows, tap the Windows key." 
-			. "`nAvoid alt-tab. Use RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)." 
-	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (use Control-C to start clicker without auto-hide behavior)"
-					        . "`nUse Ctrl-Alt-Shift-H to toggle window-hidden status.":"")
-	ttWHND := ToolTip(msg,10,10)
+	msg := "Clicking! Your focus should be on the desktop."
+			. "`nIf captured, tap Windows key. Avoid alt-tab." 
+			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)." 
+	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
+					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
+	ttHWND := ToolTip(msg,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 	unfocus()
@@ -156,6 +174,12 @@ clicker_unfocused(hideWindow) {
 				ToolTip()
 				break
 			}
+		}
+		if ok:=findtext_Charged() {
+			xy:=ok[1]
+			toolTip("(" xy.1 "," xy.2 ") +" Charged_Delay "ms",xy.1+xy.3*2,xy.2+xy.4)
+			Sleep(Charged_Delay) ; slow down during Charged!
+			ToolTip()
 		}
 	}
 	; Hotkey("Alt & Enter",,"Off")
