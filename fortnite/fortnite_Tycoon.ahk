@@ -103,12 +103,12 @@ MoveWindowToUpperRight() {
 
 unfocus() {
 	; Send("{AltTab}") ; didnt work
-	; TryWinActivate("ahk_exe chrome.exe")
-	; TryWinActivate("ahk_exe msedge.exe")
-	; TryWinActivate("ahk_exe firefox.exe")
-	; TryWinActivate("Visual Studio") ; I like VS Code showing on top
+	TryWinActivate("ahk_exe chrome.exe")
+	TryWinActivate("ahk_exe msedge.exe")
+	TryWinActivate("ahk_exe firefox.exe")
+	TryWinActivate("Visual Studio") ; I like VS Code showing on top
 	TryWinActivate("ahk_exe explorer.exe") ; I think this does nothing?
-	; TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
+	TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
 }
 
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -126,7 +126,6 @@ clicker_unfocused(hideWindow) {
 	t2 := "DT0.2" ; seconds
 	firekey := 13 ; Enter
 	starttick := A_TickCount
-	prev_delay_tick := A_TickCount
 	; I like my Window in the upper-right at 40% size
 	; I realize not all users will want this behavior
 	; Having a consistent size can enable screen-scanning macros
@@ -142,7 +141,7 @@ clicker_unfocused(hideWindow) {
 	ttHWND := ToolTip(msg,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
-	unfocus()
+
 	Loop {
 		; give user 6 seconds to read the message:
 		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
@@ -158,9 +157,8 @@ clicker_unfocused(hideWindow) {
 				ToolTip()
 				TrayTip(msg)
 				toolTip_showing := false
-				unfocus()
 			}	
-		}
+	}
 		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
 		Sleep(t1)
 		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
