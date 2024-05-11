@@ -17,24 +17,42 @@ WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
 WINX := A_ScreenWidth - WINWIDTH
 WINY := 10
 
-; optional screen-scanning for Charged!:
+; Optional screen-scanning for Charged!
+; Note that it works only when the window is visible;
+; not obscured, and not hidden
+; You would need to recapture "Charged" using FindTextv2, 
+; and convert to grayscale with a threshold of 254, 
+; to use the Charged_Delay functionality on your screen
+; If 96 DPI but not 1600x900, you may be able to get it to work
+; by expanding the search area
+; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
+; but more like 200 to 300 today.
 Charged_Delay := 666 ; When "Charged!" is found
+Charged_Count := 0
+Charged_MaxRunDelay := 3 ; only delay for first n appearances of Charged
+; Charged_MaxRunDelay doesnt do much because 
+; "Charged!"" isn't always caught by screen-scanning
+keydown_time := 200 ; ms
+ctrl_time := "DT0.2" ; seconds
+firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
-FindText_defined := false
+use_FindText := false
+MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
 try {
-	FindText_defined := HasMethod(FindText, "Call")
+	; throws exception if FindText is undefined
+	use_FindText := HasMethod(FindText, "Call") 
+}
+if A_ScreenDPI != MyScreenDPI {
+	use_FindText := false
 }
 findtext_Charged() {
-	if ! FindText_defined {
+	if ! use_FindText {
 		return 0
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
-	Text:="|<>*254$39.rzzzzzzxzzzzyTfnzjzHxjjqqqThxiyynhhhzrqrxxizDTzzzyzzU"
+	Text:="|<Charged>*254$39.rzzzzzzxzzzzyTfnzjzHxjjqqqThxiyynhhhzrqrxxizDTzzzyzzU"
 	ok:=FindText(&X, &Y, 1330-22, 238-22, 1330+50, 238+10, 0, 0, Text)
-	; if ok {
-	; 	ToolTip("found:" X "," Y)
-	; }
 	return ok
 }
 
@@ -79,7 +97,12 @@ SetKeyDelay(11,5)
 ^+b::emoting()  ; usually used for dance floors
 ; control shift h to toggle window-hidden state when FN is in focus:
 ^+h::WindowHideToggle()
-
+^+u::unfocus()
+LAlt & LWin::{
+	if GetKeyState("LCtrl") {
+		unfocus()
+	}
+}
 ; hold shift down for slowly changing volume:
 LCTRL & UP::VolumeUpLoop()
 LCTRL & Down::VolumeDownLoop()
@@ -101,14 +124,22 @@ MoveWindowToUpperRight() {
 	;no... unfocus()
 }
 
+; I prefer to remove focus from the game 
+; whenever I start the clicker, 
+; so that I can get back to work in another window
+;
+; At first I thought I wanted my focus returned to Chrome
+; or VS Code, but it's not always the same window
+; So I changed it to explorer/Progman, 
+; then I can move the mouse wherever I want:
 unfocus() {
 	; Send("{AltTab}") ; didnt work
 	; TryWinActivate("ahk_exe chrome.exe")
 	; TryWinActivate("ahk_exe msedge.exe")
 	; TryWinActivate("ahk_exe firefox.exe")
-	; TryWinActivate("Visual Studio") ; I like VS Code showing on top
-	TryWinActivate("ahk_exe explorer.exe") ; I think this does nothing?
-	; TryWinActivate("ahk_class Progman") ; except maybe remove focus from FortNite 
+	; TryWinActivate("Visual Studio") ; VS Code
+	TryWinActivate("ahk_exe explorer.exe") ; Only remove focus from FortNite
+	; or: TryWinActivate("ahk_class Progman") ;   
 }
 
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -117,14 +148,16 @@ unfocus() {
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
 clicker_unfocused(hideWindow) {
+	global Charged_Count
+	global Charged_MaxRunDelay
+	global keydown_time  
+	global ctrl_time 
+	global firekey  
 	DetectHiddenWindows true
 	; tried to block alt+enter, didnt work
 	; Hotkey("Alt & Enter",DoNothing,"On") ; didnt work
 	WM_KEYDOWN 	:= 0x0100
 	WM_KEYUP 	:= 0x0101
-	t1 := 200  ; ms
-	t2 := "DT0.2" ; seconds
-	firekey := 13 ; Enter
 	starttick := A_TickCount
 	prev_delay_tick := A_TickCount
 	; I like my Window in the upper-right at 40% size
@@ -133,6 +166,7 @@ clicker_unfocused(hideWindow) {
 	; (in the future), eg. using FindText
 	if ENABLE_RESIZE {
 		MoveWindowToUpperRight()
+		; FindText().BindWindow(WinExist(FORTNITEWINDOW)) ; doesnt work
 	}
 	msg := "Clicking! Your focus should be on the desktop."
 			. "`nIf captured, tap Windows key. Avoid alt-tab." 
@@ -142,6 +176,11 @@ clicker_unfocused(hideWindow) {
 	ttHWND := ToolTip(msg,10,10)
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
+	; immediately unfocusing before first Enter/click event
+	; sometimes prevented the clicking from starting
+	; I'm not sure if this fixes it?
+	Click()
+	Sleep(keydown_time)
 	unfocus()
 	Loop {
 		; give user 6 seconds to read the message:
@@ -155,16 +194,22 @@ clicker_unfocused(hideWindow) {
 				}
 			}
 			if toolTip_showing {
+				activeWindow := WinExist("A")
+				fnWindow := WinExist(FORTNITEWINDOW)
 				ToolTip()
 				TrayTip(msg)
 				toolTip_showing := false
 				unfocus()
-			}	
+				Sleep(333)
+				if activeWindow != fnWindow {
+					WinActivate(activeWindow) ; return focus after traytip bubble
+				}
+			}
 		}
 		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
-		Sleep(t1)
+		Sleep(keydown_time)
 		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
-		kw := KeyWait("RCtrl",t2)
+		kw := KeyWait("RCtrl",ctrl_time)
 		if WinActive(FORTNITEWINDOW) {
 			lb := GetKeyState("LButton")
 			rb := GetKeyState("RButton")
@@ -175,11 +220,15 @@ clicker_unfocused(hideWindow) {
 				break
 			}
 		}
-		if ok:=findtext_Charged() {
+		ok:=findtext_Charged()
+		if ok && Charged_Count < Charged_MaxRunDelay {
 			xy:=ok[1]
-			toolTip("(" xy.1 "," xy.2 ") +" Charged_Delay "ms",xy.1+xy.3*2,xy.2+xy.4)
+			toolTip("(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
 			Sleep(Charged_Delay) ; slow down during Charged!
 			ToolTip()
+			Charged_Count += 1
+		} else {
+			Charged_Count := 0
 		}
 	}
 	; Hotkey("Alt & Enter",,"Off")
@@ -213,7 +262,8 @@ oldclicker() {
 }
 
 
-; fastclick for sword tycoon
+; fastclick for sword tycoon 
+; (which is rather pointless with this cheat)
 ; let go of f to stop clicking
 fastclicker() {
 	loop 999 {
@@ -232,6 +282,8 @@ fastclicker() {
 	}
 }
 
+; many tycoons require you to interact repeatedly
+; eg. sword tycoon, collecting eggs
 InteractionLoop() {
 	Loop {
 		if A_TimeIdlePhysical > 200000 {
@@ -239,7 +291,7 @@ InteractionLoop() {
 		}
 		if WinActive(FORTNITEWINDOW) {
 			if	A_TimeIdle > 555 {
-			; this was for SuperVillain Tycoon, I think, or maybe Robot Tycoon 2
+				; useful for (eg) Robot Tycoon 2
 				ToolTip("Sending {e 111}")
 				Send "{e 111}"
 				Sleep(222)
