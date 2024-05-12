@@ -65,8 +65,8 @@
 
 <div id="UpgradeInfo"   >
     <form>
-        <p>Strength upgrade table, level min: 
-            <select id="minLevel" title="minLevel" onchange="computeTable()">
+        <p>Strength upgrade table, level name min/max: 
+            <select id="minLevelName" title="minLevelName" onchange="computeTable()">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -77,18 +77,18 @@
                 <option value="8">8</option>
                 <option value="9">9</option>
                 <option value="10">10</option>
-                <option value="11" selected>11</option>
+                <option value="11">11</option>
                 <option value="12">12</option>
                 <option value="13">13</option>
                 <option value="14">14</option>
                 <option value="15">15</option>
-                <option value="16">16</option>
+                <option value="16" selected>16</option>
                 <option value="17">17</option>
                 <option value="18">18</option>
                 <option value="19">19</option>
                 <option value="20" >20</option> 
             </select> thru
-            <select id="maxLevel" title="maxLevel" onchange="computeTable()">
+            <select id="maxLevelName" title="maxLevelName" onchange="computeTable()">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -110,7 +110,23 @@
                 <option value="19">19</option>
                 <option value="20" selected>20</option> 
             </select>
-                    </p>
+
+            <select id="minLevelNumber" title="minLevelNumber" onchange="computeTable()">
+                <option value="0">0</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400" selected>400</option>
+                <option value="500">500</option>
+            </select> thru
+            <select id="maxLevelNumber" title="maxLevelNumber" onchange="computeTable()">
+                <option value="600" selected>600</option>
+                <option value="700">700</option>
+                <option value="800">800</option>
+                <option value="900">900</option>
+                <option value="1000">999</option>
+            </select>
+        </p>
     </form>
     <table id="UpgradeTable">
     </table>
@@ -145,6 +161,12 @@
     }
 
     function computeTable() {
+
+        minLevelName = parseInt(document.getElementById("minLevelName").value);
+        maxLevelName = parseInt(document.getElementById("maxLevelName").value);
+        minLevelNumber = parseInt(document.getElementById("minLevelNumber").value);
+        maxLevelNumber = parseInt(document.getElementById("maxLevelNumber").value);
+
         var uptbl = document.getElementById('UpgradeTable');
         uptbl.innerHTML = "";
         var tr = document.createElement('tr');
@@ -152,7 +174,7 @@
         var th1 = document.createElement('th');
         th1.appendChild(txt1)
         tr.appendChild(th1);
-        for (lvl = 300; lvl < 700; lvl += 50) {
+        for (lvl = minLevelNumber; lvl < maxLevelNumber; lvl += 50) {
             var txt = document.createTextNode(lvl.toString() + "-" + (lvl+50).toString());
             var th = document.createElement('th');
             th.appendChild(txt)
@@ -160,10 +182,8 @@
         }
         uptbl.appendChild(tr);
 
-        minLevel = parseInt(document.getElementById("minLevel").value);
-        maxLevel = parseInt(document.getElementById("maxLevel").value);
         
-        for (strengthLevel = minLevel; strengthLevel <= maxLevel; strengthLevel++) {
+        for (strengthLevel = minLevelName; strengthLevel <= maxLevelName; strengthLevel++) {
             var tr = document.createElement('tr');
             var td1 = document.createElement('td');
             td1.align = "right"
@@ -171,8 +191,8 @@
             var txt1 = document.createTextNode(nm);
             tr.appendChild(txt1);
             var base = levels[strengthLevel-1];
-            for (lvl = 0; lvl < 700; lvl += 50) {
-                if (lvl >= 300) {
+            for (lvl = 0; lvl < maxLevelNumber; lvl += 50) {
+                if (lvl >= minLevelNumber) {
                     var td = document.createElement('td');
                     td.align = "right"
                     var num = total_cost(base,50);
@@ -187,8 +207,8 @@
             uptbl.appendChild(tr);
         }
     }
-    minLevel.addEventListener('change', computeTable,false);
-    maxLevel.addEventListener('change', computeTable,false);
+    minLevelName.addEventListener('change', computeTable,false);
+    maxLevelName.addEventListener('change', computeTable,false);
     computeTable()    
 </script>
 

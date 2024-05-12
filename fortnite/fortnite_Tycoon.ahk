@@ -394,15 +394,12 @@ setVolume()
 	;appvol:=SoundGetVolume()
 }
 
-
 ; for v2
 SetAppVolume(PID, MasterVolume)    ; WIN_V+
 {
 	;;SoundSetVolume(MasterVolume) ; this is system/master volume, not app volume
 	AppVol(FORTNITEPROCESS,MasterVolume) ; thanks to the github gist!
 }
-
-
 
 ; from https://gist.github.com/anonymous1184/b251cd8407a379d4965791585887cfce
 #Requires AutoHotkey v2.0
