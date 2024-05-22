@@ -95,7 +95,7 @@ SetKeyDelay(11,5)
 ^+o::oldclicker()  ; requires window focus
 ^c::clicker_unfocused(false)  ; without hide
 SC027 & c::clicker_unfocused(false)  ; semicolon c
-~LButton & RButton::clicker_unfocused(false)  ; tilde~ prevents blocking click
+; ~LButton & RButton::clicker_unfocused(false)  ; tilde~ prevents blocking click
 ^+c::clicker_unfocused(ENABLE_AUTO_HIDE)  ; move and hide
 ^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
 ^+b::emoting()  ; usually used for dance floors
@@ -103,10 +103,25 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ^+h::WindowHideToggle()
 ^+u::unfocus()
 
-^+NumpadAdd::FrenzyLoop() 
+^NumpadAdd::FrenzyLoop(true) 
+^+NumpadAdd::FrenzyLoop(false) 
 
-FrenzyLoop() {
+FrenzyLoop(frenzyfirst:=false) {
 	loop 16 {
+		if frenzyfirst {
+			MoveWindowToUpperRight()
+			ToolTip("Frenzy for loop #" A_Index)
+			Sleep(1111)
+			WinActivate(FORTNITEWINDOW)
+			Sleep(1111)
+			Click()
+			Sleep(1111)
+			Send("Enter")
+			Sleep(1111)
+			DoFrenzy()
+			ToolTip("clicker for loop #" A_Index)
+			Sleep(1111)
+		}
 		clicktime := 15*60 ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
 		; clicktime := 222 
@@ -117,22 +132,34 @@ FrenzyLoop() {
 			ToolTip()
 			break
 		}
-
-		MoveWindowToUpperRight()
-		ToolTip("Frenzy for loop #" A_Index)
-		Sleep(1111)
-		WinActivate(FORTNITEWINDOW)
-		Sleep(1111)
-		Click()
-		Sleep(1111)
-		Send("Enter")
-		Sleep(1111)
-		DoFrenzy()
-		ToolTip("clicker for loop #" A_Index)
-		Sleep(1111)
-
+		frenzyfirst := true
 	}
 }
+
+; need a do-not-disturb 
+; if stupid windows badges are coming up and not going away
+; ^+q::FocusMode()
+
+; FocusMode() {
+; 	RunWait("ms-settings:quiethours")
+; 	Sleep(1111)
+; 	t1:=A_TickCount, Text:=X:=Y:=""
+; 	Loop 9 {
+; 		Text:="|<->**50$64.050000000+00I0000000c01k0000002Uzrzjk000Dvw1q3V0000U08nNaw0003yzrBbPk0000+1QqxlU0000c5nPrq00002ULBjTM0000+2"
+		
+; 		if (ok:=FindText(&X, &Y, 1111-150000, 514-150000, 1111+150000, 514+150000, 0, 0, Text))
+; 		{
+; 		FindText().Click(X, Y, "L")
+; 		}
+; 	}
+
+; 	Text:="|<Startfocus>**50$86.s0000000000000DU0000000000002S003k0000s0000Vs01Uk01U800008700EA00M2000020Q067rXz3tsSVDU1U0slAlU8nA8G80M07A18M2MK24m0Q00P7m60a4UV7UQ002n4VU9VMAEMS00Fgn8M2An3A6S007lbm30VsSTDU"
+; 	if (ok:=FindText(&X, &Y, 1051-150000, 450-150000, 1051+150000, 450+150000, 0, 0, Text))
+; 	{
+; 	 FindText().Click(X, Y, "L")
+; 	}
+
+; }
 
 LAlt & LWin::{
 	if GetKeyState("LCtrl") {
@@ -227,7 +254,8 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	ToolTip("starting clicking...")
 	while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
-		if seconds_left < 9999 and Mod(seconds_left,5) = 0 {
+		if seconds_left < 999 
+			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
 			ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
 		}
 		; give user 6 seconds to read the message:

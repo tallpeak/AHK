@@ -43,7 +43,7 @@
 </head>
 <body>
 
-<h2>Total Cost Calculator for Lumberjack Heroes Strength</h2>
+<h2>Total Cost Calculator for Lumberjack Heroes Strength - updated for v1.10</h2>
 
 <form id="costForm">
     <label for="baseCost">Base Cost (X1 cost) (omit units):</label>
@@ -110,7 +110,7 @@
                 <option value="19">19</option>
                 <option value="20" selected>20</option> 
             </select>
-
+        LevelNumber min/max:
             <select id="minLevelNumber" title="minLevelNumber" onchange="computeTable()">
                 <option value="0">0</option>
                 <option value="100">100</option>
@@ -146,7 +146,8 @@
     });
 //maybe use these http://musicfamily.org/realm/Notation/
 //...,E63,E66,E69,E72,E75,E78,E81,E84,E87,E90,E93,E96
-    var abbr = ",k,M,B,T,Qa,Qi,Sx,Sp,Oc,No,De,Un,Du,Qt,Qd,Sd,St,Od,Nd,Vg,Uv,Dv,Tv,Qav,Qiv,Sxv,Spv,Ocv,Nov,Tg,Utg,Dtg,Ttg".split(",")
+    // var abbr = ",k,M,B,T,Qa,Qi,Sx,Sp,Oc,No,De,Un,Du,Qt,Qd,Sd,St,Od,Nd,Vg,Uv,Dv,Tv,Qav,Qiv,Sxv,Spv,Ocv,Nov,Tg,Utg,Dtg,Ttg".split(",")
+    var abbr = ",k,M,B,T,Qa,Qt,Sx,Sp,Oc,No,Dc,UDc,DDc,TDc,QaDc,QtDc,SxDc,SpDc,ODc,NDc,Vg,UVg,DVg,TVg,QaVg,QtVg,SxVg,SpVg,OVg,NVg,Tg,UTg,DTg,TTg,QaTg,QtTg,SxTg,SpTg,OTg,NTg,Qd,UQd,DQd,TQd,QaQd,QtQd,SxQd,SpQd,OQd,NQd,Qi,UQi,DQi,TQi,QaQi,QtQi,SxQi,SpQi,OQi,NQi,Se,USe,DSe,TSe,QaSe,QtSe,SxSe,SpSe,OSe,NSe".split(",")
     var levels = [15,100,1200,12000, 1.2E5,1.5E6,2E7,3E8,5E9, 7.5E10,1E12,1.5E13,1.8E14,2E15, 2.5E16,3E17,7E19,1.2E22,2E24,5.5E26];
     var strengthNames = "I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,XVII,XVIII,XIX,XX".split(",")
     function formatNumber(num) {

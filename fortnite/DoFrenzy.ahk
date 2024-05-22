@@ -29,7 +29,8 @@ DoFrenzy() {
 		MoveWindowToUpperRight()
 	}
 	
-	Send("2") ; remote
+	Send("1") ; remote?
+	; Send("2") ; remote
 	Sleep(555)
 	Send("{RButton}")
 	Sleep(555)
