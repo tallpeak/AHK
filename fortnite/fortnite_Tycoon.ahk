@@ -5,11 +5,13 @@
 ; #InstallKeybdHook
 ; #InstallMouseHook
 
+#Include "DoFrenzy.ahk"
+
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
 ; Some users won't like these enabled
-ENABLE_AUTO_HIDE := true 
-ENABLE_RESIZE := true 
+ENABLE_AUTO_HIDE := true
+ENABLE_RESIZE := true
 ; For resize: I like FN small, in upper-right:
 SCALINGFACTOR := 0.4
 WINWIDTH := A_ScreenWidth * SCALINGFACTOR
@@ -20,8 +22,8 @@ WINY := 10
 ; Optional screen-scanning for Charged!
 ; Note that it works only when the window is visible;
 ; not obscured, and not hidden
-; You would need to recapture "Charged" using FindTextv2, 
-; and convert to grayscale with a threshold of 254, 
+; You would need to recapture "Charged" using FindTextv2,
+; and convert to grayscale with a threshold of 254,
 ; to use the Charged_Delay functionality on your screen
 ; If 96 DPI but not 1600x900, you may be able to get it to work
 ; by expanding the search area
@@ -29,8 +31,8 @@ WINY := 10
 ; but more like 200 to 300 today.
 Charged_Delay := 666 ; When "Charged!" is found
 Charged_Count := 0
-Charged_MaxRunDelay := 3 ; only delay for first n appearances of Charged
-; Charged_MaxRunDelay doesnt do much because 
+Charged_MaxRunDelay := 33 ; only delay for first n appearances of Charged
+; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
 keydown_time := 200 ; ms
 ctrl_time := "DT0.2" ; seconds
@@ -41,7 +43,7 @@ MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
 try {
 	; throws exception if FindText is undefined
-	use_FindText := HasMethod(FindText, "Call") 
+	use_FindText := HasMethod(FindText, "Call")
 }
 if A_ScreenDPI != MyScreenDPI {
 	use_FindText := false
@@ -92,12 +94,46 @@ SetKeyDelay(11,5)
 ^+f::fastclicker() ; sword tycoon
 ^+o::oldclicker()  ; requires window focus
 ^c::clicker_unfocused(false)  ; without hide
+SC027 & c::clicker_unfocused(false)  ; semicolon c
+~LButton & RButton::clicker_unfocused(false)  ; tilde~ prevents blocking click
 ^+c::clicker_unfocused(ENABLE_AUTO_HIDE)  ; move and hide
 ^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
 ^+b::emoting()  ; usually used for dance floors
 ; control shift h to toggle window-hidden state when FN is in focus:
 ^+h::WindowHideToggle()
 ^+u::unfocus()
+
+^+NumpadAdd::FrenzyLoop() 
+
+FrenzyLoop() {
+	loop 16 {
+		clicktime := 15*60 ; time to grow a golden tree
+		; temp, for when wanting to use up my golden trees (testing):
+		; clicktime := 222 
+		clicker_unfocused(false, clicktime)
+		if A_TimeIdlePhysical < 10000 {
+			ToolTip("Stopping frenzyloop (A_TimeIdlePhysical < 10000; user abort?)")
+			Sleep(9999)
+			ToolTip()
+			break
+		}
+
+		MoveWindowToUpperRight()
+		ToolTip("Frenzy for loop #" A_Index)
+		Sleep(1111)
+		WinActivate(FORTNITEWINDOW)
+		Sleep(1111)
+		Click()
+		Sleep(1111)
+		Send("Enter")
+		Sleep(1111)
+		DoFrenzy()
+		ToolTip("clicker for loop #" A_Index)
+		Sleep(1111)
+
+	}
+}
+
 LAlt & LWin::{
 	if GetKeyState("LCtrl") {
 		unfocus()
@@ -117,20 +153,20 @@ LCTRL & Down::VolumeDownLoop()
 ^!+h::WindowHideToggle() ; control alt shift h to toggle window-hidden state:
 #HotIf
 
-^!+s::WindowShowAndFocus() 
+^!+s::WindowShowAndFocus()
 
 MoveWindowToUpperRight() {
-	WinMove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)	
+	WinMove(WINX, WINY, WINWIDTH,WINHEIGHT,FORTNITEWINDOW)
 	;no... unfocus()
 }
 
-; I prefer to remove focus from the game 
-; whenever I start the clicker, 
+; I prefer to remove focus from the game
+; whenever I start the clicker,
 ; so that I can get back to work in another window
 ;
 ; At first I thought I wanted my focus returned to Chrome
 ; or VS Code, but it's not always the same window
-; So I changed it to explorer/Progman, 
+; So I changed it to explorer/Progman,
 ; then I can move the mouse wherever I want:
 unfocus() {
 	; Send("{AltTab}") ; didnt work
@@ -139,7 +175,7 @@ unfocus() {
 	; TryWinActivate("ahk_exe firefox.exe")
 	; TryWinActivate("Visual Studio") ; VS Code
 	TryWinActivate("ahk_exe explorer.exe") ; Only remove focus from FortNite
-	; or: TryWinActivate("ahk_class Progman") ;   
+	; or: TryWinActivate("ahk_class Progman") ;
 }
 
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -147,13 +183,14 @@ unfocus() {
 
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
-clicker_unfocused(hideWindow) {
+clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	global Charged_Count
 	global Charged_MaxRunDelay
-	global keydown_time  
-	global ctrl_time 
-	global firekey  
+	global keydown_time
+	global ctrl_time
+	global firekey
 	DetectHiddenWindows true
+	startTick := A_TickCount
 	; tried to block alt+enter, didnt work
 	; Hotkey("Alt & Enter",DoNothing,"On") ; didnt work
 	WM_KEYDOWN 	:= 0x0100
@@ -169,8 +206,8 @@ clicker_unfocused(hideWindow) {
 		; FindText().BindWindow(WinExist(FORTNITEWINDOW)) ; doesnt work
 	}
 	msg := "Clicking! Your focus should be on the desktop."
-			. "`nIf captured, tap Windows key. Avoid alt-tab." 
-			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)." 
+			. "`nIf captured, tap Windows key. Avoid alt-tab."
+			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)."
 	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
 					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
 	ttHWND := ToolTip(msg,10,10)
@@ -181,8 +218,18 @@ clicker_unfocused(hideWindow) {
 	; I'm not sure if this fixes it?
 	Click()
 	Sleep(keydown_time)
+	PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
+	Sleep(keydown_time)
+	PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
+	Sleep(keydown_time)
 	unfocus()
-	Loop {
+	total_milliseconds := total_seconds * 1000
+	ToolTip("starting clicking...")
+	while A_TickCount < startTick + total_milliseconds {
+		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
+		if seconds_left < 9999 and Mod(seconds_left,5) = 0 {
+			ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
+		}
 		; give user 6 seconds to read the message:
 		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
 			if hideWindow {
@@ -213,7 +260,8 @@ clicker_unfocused(hideWindow) {
 		if WinActive(FORTNITEWINDOW) {
 			lb := GetKeyState("LButton")
 			rb := GetKeyState("RButton")
-			if kw or lb or rb {
+			if A_TickCount > startTick + 2000
+			   and (kw or lb or rb) {
 				ToolTip("RCtrl/Button found; stopping clicking")
 				Sleep(1500)
 				ToolTip()
@@ -231,6 +279,9 @@ clicker_unfocused(hideWindow) {
 			Charged_Count := 0
 		}
 	}
+	ToolTip("end of clicking...")
+	Sleep(2222)
+	ToolTip()
 	; Hotkey("Alt & Enter",,"Off")
 }
 
@@ -262,7 +313,7 @@ oldclicker() {
 }
 
 
-; fastclick for sword tycoon 
+; fastclick for sword tycoon
 ; (which is rather pointless with this cheat)
 ; let go of f to stop clicking
 fastclicker() {
