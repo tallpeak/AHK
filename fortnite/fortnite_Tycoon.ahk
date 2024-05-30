@@ -2,8 +2,8 @@
 #Requires AutoHotkey v2.0
 #WinActivateForce 1
 #SingleInstance
-; #InstallKeybdHook
-; #InstallMouseHook
+InstallKeybdHook()
+InstallMouseHook() ; so that A_TIMEIDLEPHYSICAL includes mouse
 
 #Include "DoFrenzy.ahk"
 
@@ -62,6 +62,8 @@ global Volume := 50
 VolumeIncrement := 5
 
 SendMode("Event")
+SetKeyDelay 50,100
+
 
 FORTNITEWINDOW := "ahk_class UnrealWindow"
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
@@ -111,24 +113,27 @@ FrenzyLoop(frenzyfirst:=false) {
 		if frenzyfirst {
 			MoveWindowToUpperRight()
 			ToolTip("Frenzy for loop #" A_Index)
-			Sleep(1111)
+			Sleep(211)
 			WinActivate(FORTNITEWINDOW)
-			Sleep(1111)
+			Sleep(211)
+			Send(Chr(96))
+			Sleep(333)
 			Click()
-			Sleep(1111)
-			Send("Enter")
-			Sleep(1111)
+			Sleep(222)
+			Send("{Enter}")
+			Sleep(222)
 			DoFrenzy()
 			ToolTip("clicker for loop #" A_Index)
 			Sleep(1111)
 		}
-		clicktime := 15*60 ; time to grow a golden tree
+		xtratime := 222
+		clicktime := 15*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
-		; clicktime := 222 
+		; clicktime := 6*60 
 		clicker_unfocused(false, clicktime)
 		if A_TimeIdlePhysical < 10000 {
 			ToolTip("Stopping frenzyloop (A_TimeIdlePhysical < 10000; user abort?)")
-			Sleep(9999)
+			Sleep(2222)
 			ToolTip()
 			break
 		}
@@ -254,7 +259,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	ToolTip("starting clicking...")
 	while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
-		if seconds_left < 999 
+		if seconds_left < 9999 
 			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
 			ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
 		}
