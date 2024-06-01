@@ -38,7 +38,7 @@ DoFrenzy() {
 
 	; This might do it; scan for the black outline of the remote,
 	; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
-	Loop 2 {
+	Loop 3 {
 		t1:=A_TickCount, Text:=X:=Y:=""
 
 		xtra:=10
