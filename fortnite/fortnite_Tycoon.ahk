@@ -126,7 +126,7 @@ FrenzyLoop(frenzyfirst:=false) {
 			ToolTip("clicker for loop #" A_Index)
 			Sleep(1111)
 		}
-		xtratime := 222
+		xtratime := 0
 		clicktime := 15*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
 		; clicktime := 6*60 

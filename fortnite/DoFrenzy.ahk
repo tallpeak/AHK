@@ -32,9 +32,28 @@ DoFrenzy() {
 	; need to find/create a stable keybinding for remote
 	; it seems to change randomly
 	Sleep(333)
-	Send("1") ; remote?
 	;FIXME!!!
-	; Send("2") ; remote
+	Send("1") ; remote?
+	; Send("2") ; remote is sometimes 2
+
+	; This might do it; scan for the black outline of the remote,
+	; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
+	Loop 2 {
+		t1:=A_TickCount, Text:=X:=Y:=""
+
+		xtra:=10
+		Text:="|<singleremoted>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
+		if (ok:=FindText(&X, &Y, 1561-xtra, 327-xtra*4, 1561+xtra, 327+xtra*4, 0, 0, Text))
+		{
+		  ToolTip(X "," Y)
+		;   Sleep(2000)
+		  if Y < 334 {
+			break
+		  }
+		}
+		Send("{WheelDown}")
+	}
+
 	Sleep(555)
 	Send("{RButton}")
 	Sleep(888)
