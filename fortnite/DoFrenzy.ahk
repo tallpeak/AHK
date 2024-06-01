@@ -33,7 +33,8 @@ DoFrenzy() {
 	; it seems to change randomly
 	Sleep(333)
 	;FIXME!!!
-	Send("1") ; remote?
+	Send(Chr(96)) ; pickaxe, for testing
+	; Send("1") ; remote?
 	; Send("2") ; remote is sometimes 2
 
 	; This might do it; scan for the black outline of the remote,
@@ -46,8 +47,9 @@ DoFrenzy() {
 		if (ok:=FindText(&X, &Y, 1561-xtra, 327-xtra*4, 1561+xtra, 327+xtra*4, 0, 0, Text))
 		{
 		  ToolTip(X "," Y)
-		;   Sleep(2000)
-		  if Y < 334 {
+		  Sleep(2000)
+		  if Y < 330 {
+			Send("{WheelUp}")
 			break
 		  }
 		}
