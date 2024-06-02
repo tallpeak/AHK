@@ -1,3 +1,4 @@
+#WinActivateForce
 #Include "FindTextv2_FeiYue_9.5.ahk"
 
 global XTRA
@@ -7,9 +8,9 @@ if A_ScreenWidth > 1920 {
 }
 SendMode("Event")
 
-FORTNITEWINDOW := "ahk_class UnrealWindow"
-FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-
+; FORTNITEWINDOW := "ahk_class UnrealWindow"
+; FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
+FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 ; ^NumpadAdd::DoFrenzyAndChop()
 
 ; DoFrenzyAndChop() {
@@ -23,49 +24,104 @@ FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
 
 ; }
 
+global SignalRemoteKey := getSignalRemoteKey() ; "1"
+
+findtext_signalRemote()
+{
+	t1:=A_TickCount, Text:=X:=Y:=""
+	xtra := 100
+	Text:="|<remoteDown>*1$13.00X001F0sUQ0AEA0402421V0QU3kE"
+	Text.="|<remoteUp>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
+	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0, 0, Text)
+	return ok
+}
+
+getSignalRemoteKey()
+{
+	global SignalRemoteKey
+	ok:=findtext_signalRemote()
+	xy:=ok[1]
+	if xy.1 > 1570 {
+		SignalRemoteKey := "2"
+	} else {
+		SignalRemoteKey := "1"
+	}
+	ToolTip("SignalRemoteKey=" SignalRemoteKey)
+	Sleep(333)
+	ToolTip()
+	; global SignalRemoteKey
+	; WinActivate(FORTNITEWINDOW)
+	; sleep(333) 
+	; SignalRemoteKey := InputBox("Enter signal remote key (eg. 1 or 2)","SignalRemoteKey",,"1").Value
+	; sleep(333) 
+	; WinActivate(FORTNITEWINDOW)
+	; sleep(333)
+	; return SignalRemoteKey
+}
+
 DoFrenzy() {
 	global XTRA
+	global SignalRemoteKey
 
-	Try {
+	; Try {
 		WinActivate(FORTNITEWINDOW)
-		WinWaitActive(FORTNITEWINDOW)
+		Sleep(111)
+		; WinWaitActive(FORTNITEWINDOW) ; gets stuck
 		WinShow(FORTNITEWINDOW)
+		Sleep(111)
 		WinActivate(FORTNITEWINDOW)
-		WinWaitActive(FORTNITEWINDOW)
+		Sleep(111)
+		; WinWaitActive(FORTNITEWINDOW)
 		MoveWindowToUpperRight()
-	}
+	; }
 	
 	; need to find/create a stable keybinding for remote
 	; it seems to change randomly
-	Sleep(333)
+	Sleep(111)
+
 	;FIXME!!!
-	Send(Chr(96)) ; pickaxe, for testing
-	; Send("1") ; remote?
+	;Send(Chr(96)) ; pickaxe, for testing
+	Send("1") ; remote?
 	; Send("2") ; remote is sometimes 2
+	; if SignalRemoteKey = "" {
+	; 	SignalRemoteKey := getSignalRemoteKey()
+	; }
+	Sleep(333)
+	; Send(SignalRemoteKey)
 
-	; This might do it; scan for the black outline of the remote,
-	; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
-	Loop 3 {
-		t1:=A_TickCount, Text:=X:=Y:=""
+	; ; This might do it; scan for the black outline of the remote,
+	; ; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
+	; Loop 3 {
+	; 	t1:=A_TickCount, Text:=X:=Y:=""
 
-		signalremote_xtra:=10
-		Text:="|<singleremoted>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
-		if (ok:=FindText(&X, &Y, 1561-signalremote_xtra, 327-signalremote_xtra*4, 1561+signalremote_xtra, 327+signalremote_xtra*4, 0, 0, Text))
-		{
-		  ToolTip(X "," Y)
-		  Sleep(2000)
-		  if Y < 330 {
-			Send("{WheelUp}")
-			break
-		  }
-		}
-		Send("{WheelDown}")
-	}
+	; 	signalremote_xtra:=10
+	; 	if XTRA > 100 {
+	; 		signalremote_xtra := XTRA
+	; 	}
+
+	; 	t1:=A_TickCount, Text:=X:=Y:=""
+	; 	Text:="|<singleremoted>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
+	; 	if (ok:=FindText(&X, &Y, 1561-signalremote_xtra, 327-signalremote_xtra*4, 1561+signalremote_xtra, 327+signalremote_xtra*4, 0, 0, Text))
+	; 	{
+	; 	  ToolTip(X "," Y)
+	; 	  Sleep(2000)
+	; 	  if Y < 330 {
+	; 		Send("{WheelUp}")
+	; 		break
+	; 	  }
+	; 	}
+	; 	Send("{WheelDown}")
+	; }
+
+	; t1:=A_TickCount, Text:=X:=Y:=""
+	; Text:="|<signalRemoteD_text>*200$48.5YNQEKE8BQNRG5OOp4FQG1+O5ZJ5EuO8U"
+	; if (ok:=FindText(&X, &Y, 1493-signalremote_xtra, 341-signalremote_xtra, 1493+signalremote_xtra, 341+signalremote_xtra, 0, 0, Text))
 
 	Sleep(555)
 	Send("{RButton}")
 	Sleep(888)
 
+	ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<GoldenTree>*11$47.Ml7797bDOm/8O2/G4YGQo4Gxd8YVM8t9KFN2kF+AMvXYUWLU"
@@ -74,6 +130,7 @@ DoFrenzy() {
 		Sleep(222)
 		FindText().Click(X, Y, "L")
 	}
+	ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
 	Sleep(666)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
@@ -83,6 +140,7 @@ DoFrenzy() {
 		Sleep(666)
 		FindText().Click(X, Y, "L")
 	}
+	ToolTip("Searching for Activate", WINWIDTH - 150, 50)
 	Sleep(666)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"

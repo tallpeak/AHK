@@ -2,10 +2,14 @@
 #Requires AutoHotkey v2.0
 #WinActivateForce 1
 #SingleInstance
-InstallKeybdHook()
-InstallMouseHook() ; so that A_TIMEIDLEPHYSICAL includes mouse
+InstallKeybdHook(true)
+InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 
 #Include "DoFrenzy.ahk"
+; FORTNITEWINDOW := "ahk_class UnrealWindow"
+FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
+FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
+
 
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
@@ -29,9 +33,10 @@ WINY := 10
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
+Delay60 := 666   ; when 60/100 
 Charged_Delay := 666 ; When "Charged!" is found
 Charged_Count := 0
-Charged_MaxRunDelay := 33 ; only delay for first n appearances of Charged
+Charged_MaxRunDelay := 1 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
 keydown_time := 200 ; ms
@@ -48,6 +53,18 @@ try {
 if A_ScreenDPI != MyScreenDPI {
 	use_FindText := false
 }
+
+findtext_60() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	xtra:=50
+	Text:="|<>*254$43.zzTTtxyhxxrSrPjyqvjPhozRRzhqvzjjzqzTrttvvbnU"
+	ok:=FindText(&X, &Y, 1352-xtra, 242-xtra, 1352+xtra, 242+xtra, 0, 0, Text)
+	return ok
+}
+
 findtext_Charged() {
 	if ! use_FindText {
 		return 0
@@ -64,12 +81,8 @@ VolumeIncrement := 5
 SendMode("Event")
 SetKeyDelay 50,100
 
-
-FORTNITEWINDOW := "ahk_class UnrealWindow"
-; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
-FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-
-ToolTip("Loading macros...")
+ToolTip("Loading macros...and sending {Enter up}")
+Send("{Enter up}")
 
 If(! WinExist(FORTNITEWINDOW) ) {
 	RunWait("com.epicgames.launcher://apps/fn%3A4fe75bbc5a674f4f9b356b5c90567da5%3AFortnite?action=launch&silent=true")
@@ -93,7 +106,7 @@ SetKeyDelay(11,5)
 ^+r::Reload
 ^+e::InteractionLoop()
 ^!+e::Edit()
-^+f::fastclicker() ; sword tycoon
+; ^+f::fastclicker() ; sword tycoon
 ^+o::oldclicker()  ; requires window focus
 ^c::clicker_unfocused(false)  ; without hide
 SC027 & c::clicker_unfocused(false)  ; semicolon c
@@ -108,13 +121,23 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ^NumpadAdd::FrenzyLoop(true) 
 ^+NumpadAdd::FrenzyLoop(false) 
 
+^f::FrenzyLoop(true) 
+^+f::FrenzyLoop(false) 
+
 FrenzyLoop(frenzyfirst:=false) {
 	loop 16 {
 		if frenzyfirst {
 			MoveWindowToUpperRight()
 			ToolTip("Frenzy for loop #" A_Index)
-			Sleep(211)
-			WinActivate(FORTNITEWINDOW)
+			Sleep(2111)
+			attempts := 0
+			while ! WinActive(FORTNITEWINDOW) && attempts < 100 {
+				WinActivate(FORTNITEWINDOW)
+				attempts += 1
+				if attempts > 1 {
+					ToolTip("WinActivate failed, attempt#" attempts)
+				}
+			} 			
 			Sleep(211)
 			Send(Chr(96))
 			Sleep(333)
@@ -123,19 +146,32 @@ FrenzyLoop(frenzyfirst:=false) {
 			Send("{Enter}")
 			Sleep(222)
 			DoFrenzy()
-			ToolTip("clicker for loop #" A_Index)
-			Sleep(1111)
 		}
 		xtratime := 0
 		clicktime := 15*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
 		; clicktime := 6*60 
+		ToolTip("clicker for loop #" A_Index)
+		Sleep(1111)
+
 		clicker_unfocused(false, clicktime)
+		; ToolTip("15 minutes of clicking has ended; pausing 30 seconds (or until click) before next frenzy")
+		; KeyWait("LButton","DT30")
+		; ToolTip()
 		if A_TimeIdlePhysical < 10000 {
-			ToolTip("Stopping frenzyloop (A_TimeIdlePhysical < 10000; user abort?)")
-			Sleep(2222)
+			; ToolTip("Are you sure you want to stop frenzyloop? Press Y to abort ")
+			; kw := KeyWait("y","DT15")
+			; if kw {
+				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 10000; user abort?)")
+				FileAppend("Stopped at:" . A_Now, "Lumberjack_log.txt")
+				Sleep(2222)
+				ToolTip()
+				break
+				; }
+		} else {
+			ToolTip("pausing 5 seconds before next frenzy")
+			Sleep(5000)
 			ToolTip()
-			break
 		}
 		frenzyfirst := true
 	}
@@ -216,6 +252,7 @@ unfocus() {
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
 clicker_unfocused(hideWindow, total_seconds := 3600*4) {
+	global Delay60 
 	global Charged_Count
 	global Charged_MaxRunDelay
 	global keydown_time
@@ -248,6 +285,8 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	; immediately unfocusing before first Enter/click event
 	; sometimes prevented the clicking from starting
 	; I'm not sure if this fixes it?
+	Send(Chr(96)) ; pickaxe
+	Sleep(111)
 	Click()
 	Sleep(keydown_time)
 	PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
@@ -301,10 +340,17 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				break
 			}
 		}
-		ok:=findtext_Charged()
+		ok:=findtext_60()
+		if ok {
+			xy:=ok[1]
+			ToolTip("60/100(" . xy.1 . "," . xy.2 . ") +" . Delay60 . "ms",xy.1+xy.3*2,xy.2+xy.4)
+			Sleep(Delay60)
+			ToolTip()  
+		}
+		ok:=findtext_Charged()`
 		if ok && Charged_Count < Charged_MaxRunDelay {
 			xy:=ok[1]
-			toolTip("(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
+			toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
 			Sleep(Charged_Delay) ; slow down during Charged!
 			ToolTip()
 			Charged_Count += 1
@@ -553,3 +599,4 @@ TryWinActivate(w)
 
 Sleep(1000)
 ToolTip()  ; get rid of "Loading..."
+; Sleep(2146473647)
