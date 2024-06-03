@@ -1,3 +1,6 @@
+; agenda for streem 6/2/2024
+; Basic usage (a few keybindings)
+; How to use FindText; explain signal remote 1 vs 2
 #WinActivateForce
 #Include "FindTextv2_FeiYue_9.5.ahk"
 
@@ -24,14 +27,14 @@ FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 
 ; }
 
-global SignalRemoteKey := getSignalRemoteKey() ; "1"
+global SignalRemoteKey := "1" ; getSignalRemoteKey() ; "1"
 
 findtext_signalRemote()
 {
 	t1:=A_TickCount, Text:=X:=Y:=""
 	xtra := 100
-	Text:="|<remoteDown>*1$13.00X001F0sUQ0AEA0402421V0QU3kE"
-	Text.="|<remoteUp>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
+	Text:="|<remoteDown2>*1$13.00X001F0sUQ0AEA0402421V0QU3kE"
+	Text.="|<remoteUp1>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
 	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0, 0, Text)
 	return ok
 }
@@ -39,16 +42,22 @@ findtext_signalRemote()
 getSignalRemoteKey()
 {
 	global SignalRemoteKey
+	oldSignalRemoteKey := SignalRemoteKey
 	ok:=findtext_signalRemote()
+	if !ok {
+		return
+	}
 	xy:=ok[1]
 	if xy.1 > 1570 {
 		SignalRemoteKey := "2"
 	} else {
 		SignalRemoteKey := "1"
 	}
-	ToolTip("SignalRemoteKey=" SignalRemoteKey)
-	Sleep(333)
-	ToolTip()
+	if oldSignalRemoteKey != SignalRemoteKey {
+		ToolTip("SignalRemoteKey=" SignalRemoteKey)
+		Sleep(2000)
+		ToolTip()	
+	}
 	; global SignalRemoteKey
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333) 
@@ -56,12 +65,17 @@ getSignalRemoteKey()
 	; sleep(333) 
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333)
-	return SignalRemoteKey
+	SetTimer(getSignalRemoteKey,60000)
+	; return SignalRemoteKey
 }
+
+SetTimer(getSignalRemoteKey, 10000)
 
 DoFrenzy() {
 	global XTRA
 	global SignalRemoteKey
+	
+	getSignalRemoteKey()
 
 	; Try {
 		WinActivate(FORTNITEWINDOW)

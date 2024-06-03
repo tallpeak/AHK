@@ -33,9 +33,9 @@ WINY := 10
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
-Delay60 := 333   ; when 60/100 
-Charged_Delay := 666 ; When "Charged!" is found
-Charged_Count := 33
+Delay60 := 666   ; when 60/100 
+Charged_Delay := 1222 ; When "Charged!" is found
+Charged_Count := 0
 Charged_MaxRunDelay := 1 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
@@ -51,6 +51,7 @@ try {
 	use_FindText := HasMethod(FindText, "Call")
 }
 if A_ScreenDPI != MyScreenDPI {
+	ToolTip("Only " MyScreenDPI " DPI supported; your DPI is " A_ScreenDPI)
 	use_FindText := false
 }
 
@@ -60,7 +61,7 @@ findtext_60() {
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
 	xtra:=50
-	Text:="|<>*254$43.zzTTtxyhxxrSrPjyqvjPhozRRzhqvzjjzqzTrttvvbnU"
+	Text:="|<x60/100>*254$43.zzTTtxyhxxrSrPjyqvjPhozRRzhqvzjjzqzTrttvvbnU"
 	ok:=FindText(&X, &Y, 1352-xtra, 242-xtra, 1352+xtra, 242+xtra, 0, 0, Text)
 	return ok
 }
@@ -340,14 +341,16 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				break
 			}
 		}
-		ok:=findtext_60()
-		if ok {
-			xy:=ok[1]
-			ToolTip("60/100(" . xy.1 . "," . xy.2 . ") +" . Delay60 . "ms",xy.1+xy.3*2,xy.2+xy.4)
-			Sleep(Delay60)
-			ToolTip()  
-		}
-		ok:=findtext_Charged()
+		if Delay60 {
+			ok:=findtext_60()
+			if ok {
+				xy:=ok[1]
+				ToolTip("60/100(" . xy.1 . "," . xy.2 . ") +" . Delay60 . "ms",xy.1+xy.3*2,xy.2+xy.4)
+				Sleep(Delay60)
+				ToolTip()  
+			}			
+	}
+	ok:=findtext_Charged()
 		if ok && Charged_Count < Charged_MaxRunDelay {
 			xy:=ok[1]
 			toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
