@@ -56,7 +56,7 @@ getSignalRemoteKey()
 	; sleep(333) 
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333)
-	; return SignalRemoteKey
+	return SignalRemoteKey
 }
 
 DoFrenzy() {

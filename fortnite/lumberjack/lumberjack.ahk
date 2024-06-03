@@ -33,9 +33,9 @@ WINY := 10
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
-Delay60 := 666   ; when 60/100 
+Delay60 := 333   ; when 60/100 
 Charged_Delay := 666 ; When "Charged!" is found
-Charged_Count := 0
+Charged_Count := 33
 Charged_MaxRunDelay := 1 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
@@ -347,7 +347,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			Sleep(Delay60)
 			ToolTip()  
 		}
-		ok:=findtext_Charged()`
+		ok:=findtext_Charged()
 		if ok && Charged_Count < Charged_MaxRunDelay {
 			xy:=ok[1]
 			toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
