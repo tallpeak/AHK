@@ -69,7 +69,7 @@ getSignalRemoteKey()
 	; return SignalRemoteKey
 }
 
-SetTimer(getSignalRemoteKey, 10000)
+SetTimer(getSignalRemoteKey, -1000)
 
 DoFrenzy() {
 	global XTRA
@@ -95,13 +95,13 @@ DoFrenzy() {
 
 	;FIXME!!!
 	;Send(Chr(96)) ; pickaxe, for testing
-	Send("1") ; remote?
+	; Send("1") ; remote?
 	; Send("2") ; remote is sometimes 2
-	; if SignalRemoteKey = "" {
-	; 	SignalRemoteKey := getSignalRemoteKey()
-	; }
+	if SignalRemoteKey = "" {
+		getSignalRemoteKey()
+	}
 	Sleep(333)
-	; Send(SignalRemoteKey)
+	Send(SignalRemoteKey)
 
 	; ; This might do it; scan for the black outline of the remote,
 	; ; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
