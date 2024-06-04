@@ -191,7 +191,7 @@ FrenzyLoop(frenzyfirst:=false) {
 			; kw := KeyWait("y","DT15")
 			; if kw {
 				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 3000; user abort?)")
-				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical "`n" Chr(13) Chr(10), "Lumberjack_log.txt")
+				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical "`n", "Lumberjack_log.txt")
 				Sleep(2222)
 				ToolTip()
 				break
