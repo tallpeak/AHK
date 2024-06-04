@@ -6,10 +6,12 @@ InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 
 #Include "DoFrenzy.ahk"
-; FORTNITEWINDOW := "ahk_class UnrealWindow"
-FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
+; WinActivate failed with just EXE
+; may need both EXE and CLASS due to ambiguity; see
+; https://www.autohotkey.com/boards/viewtopic.php?t=103024
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-
+FORTNITEWINDOW := "ahk_class UnrealWindow ahk_exe " . FORTNITEPROCESS
+; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
@@ -18,10 +20,14 @@ ENABLE_AUTO_HIDE := true
 ENABLE_RESIZE := true
 ; For resize: I like FN small, in upper-right:
 SCALINGFACTOR := 0.4
-WINWIDTH := A_ScreenWidth * SCALINGFACTOR
-WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
+; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
+; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
+WINWIDTH := 640
+WINHEIGHT := 360
 WINX := A_ScreenWidth - WINWIDTH
 WINY := 10
+; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
+; Sleep(2222)
 
 ; Optional screen-scanning for Charged!
 ; Note that it works only when the window is visible;
@@ -34,9 +40,10 @@ WINY := 10
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
 Delay60 := 666   ; when 60/100 
-Charged_Delay := 1222 ; When "Charged!" is found
-Charged_Count := 0
-Charged_MaxRunDelay := 1 ; only delay for first n appearances of Charged
+Charged_Delay := 666 ; When "Charged!" is found
+Charged_Count := 1
+; ChargedCountAtDelay := 4
+; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
 keydown_time := 200 ; ms
@@ -45,7 +52,8 @@ firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
-#Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
+; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
+#Include "findtextv2_v9.6.ahk"
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
@@ -75,6 +83,15 @@ findtext_Charged() {
 	ok:=FindText(&X, &Y, 1330-22, 238-22, 1330+50, 238+10, 0, 0, Text)
 	return ok
 }
+
+; findtext_x1Charged() {
+; 	if ! use_FindText {
+; 		return 0
+; 	}
+; 	t1:=A_TickCount, Text:=X:=Y:=""
+; 	Text:="|<x1Charged>*254$58.zzzTzzzzzzwzzvzzzzxavzTfnzjzKzjxyrrvPPOSzrvTPjjhzvzRhhjyyrvjzTrqvwxzzzzzzzxzzs"
+; 	ok:=FindText(&X, &Y, 1344-150000, 242-150000, 1344+150000, 242+150000, 0, 0, Text)
+; }
 
 global Volume := 50
 VolumeIncrement := 5
@@ -122,8 +139,11 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ^NumpadAdd::FrenzyLoop(true) 
 ^+NumpadAdd::FrenzyLoop(false) 
 
-^f::FrenzyLoop(true) 
-^+f::FrenzyLoop(false) 
+; bad keybinding; I somehow kept hitting it accidentally during boss fights
+; ^f::FrenzyLoop(true) 
+; ^+f::FrenzyLoop(false) 
+SC027 & f::FrenzyLoop(true) 
+SC027 & g::FrenzyLoop(false) 
 
 FrenzyLoop(frenzyfirst:=false) {
 	loop 16 {
@@ -132,26 +152,33 @@ FrenzyLoop(frenzyfirst:=false) {
 			ToolTip("Frenzy for loop #" A_Index)
 			Sleep(2111)
 			attempts := 0
+			DetectHiddenWindows(true)
 			while ! WinActive(FORTNITEWINDOW) && attempts < 100 {
 				WinActivate(FORTNITEWINDOW)
+				WinWaitActive(FORTNITEWINDOW, , 0.1)
 				attempts += 1
 				if attempts > 1 {
-					ToolTip("WinActivate failed, attempt#" attempts)
+					ToolTip("WinActivate " FORTNITEWINDOW " failed, attempt#" attempts,1000,10)
 				}
+				; ToolTip()
+				WinActivate("Fortnite")
+				; WinActivate("AHK_ID 17892")
+				WinWaitActive(FORTNITEWINDOW, , 0.1)
 			} 			
 			Sleep(211)
 			Send(Chr(96))
 			Sleep(333)
 			Click()
 			Sleep(222)
-			Send("{Enter}")
+			Send(Chr(firekey))
 			Sleep(222)
 			DoFrenzy()
 		}
 		xtratime := 0
 		clicktime := 15*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
-		; clicktime := 6*60 
+		; clicktime := 4 * 60 ; debugging
+		; clicktime := 20 ; debug with 0 golden trees saved
 		ToolTip("clicker for loop #" A_Index)
 		Sleep(1111)
 
@@ -159,19 +186,19 @@ FrenzyLoop(frenzyfirst:=false) {
 		; ToolTip("15 minutes of clicking has ended; pausing 30 seconds (or until click) before next frenzy")
 		; KeyWait("LButton","DT30")
 		; ToolTip()
-		if A_TimeIdlePhysical < 10000 {
+			if A_TimeIdlePhysical < 3000 {
 			; ToolTip("Are you sure you want to stop frenzyloop? Press Y to abort ")
 			; kw := KeyWait("y","DT15")
 			; if kw {
-				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 10000; user abort?)")
-				FileAppend("Stopped at:" . A_Now, "Lumberjack_log.txt")
+				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 3000; user abort?)")
+				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical "`n" Chr(13) Chr(10), "Lumberjack_log.txt")
 				Sleep(2222)
 				ToolTip()
 				break
 				; }
 		} else {
-			ToolTip("pausing 5 seconds before next frenzy")
-			Sleep(5000)
+			ToolTip("pausing 5 seconds before next frenzy (or click)")
+			KeyWait("LButton","DT5")
 			ToolTip()
 		}
 		frenzyfirst := true
@@ -250,6 +277,9 @@ unfocus() {
 ; see https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 ; might want to try other bindings but so far only enter seems to work
 
+; $*Alt::return ; doesnt work either
+; $*LAlt::return
+
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
 clicker_unfocused(hideWindow, total_seconds := 3600*4) {
@@ -290,6 +320,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	Sleep(111)
 	Click()
 	Sleep(keydown_time)
+	; KeyWait("LAlt") ; doesnt work?!
 	PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
 	Sleep(keydown_time)
 	PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
@@ -351,12 +382,15 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			}			
 	}
 	ok:=findtext_Charged()
-		if ok && Charged_Count < Charged_MaxRunDelay {
-			xy:=ok[1]
-			toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
-			Sleep(Charged_Delay) ; slow down during Charged!
-			ToolTip()
+		if ok {
 			Charged_Count += 1
+			; if Charged_Count = ChargedCountAtDelay {
+				xy:=ok[1]
+				toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
+				Sleep(Charged_Delay) ; slow down during Charged!
+				ToolTip()
+			; }
+			
 		} else {
 			Charged_Count := 0
 		}
@@ -602,4 +636,32 @@ TryWinActivate(w)
 
 Sleep(1000)
 ToolTip()  ; get rid of "Loading..."
+
+; does not seem necessary
+; and this did not fix WinActivate failures when using EXE only
+; ; elevate by restarting the script with *RunAs
+; reload_as_admin() {
+; 	; the RegExMatch was supposed to prevent accidental endless loop,
+; 	; but not needed for my use-case
+; 	if not (A_IsAdmin ) ;;;; or RegExMatch(full_command_line, " /restart(?!\S)"))
+; 	{
+; 		try
+; 		{
+; 			if A_IsCompiled {
+; 				Run("thisisoneargument")
+; 				; Run('*RunAs "' . A_ScriptFullPath . '" /restart')
+; 				Run('*RunAs "' . A_AhkPath . '" /restart "' . A_ScriptFullPath . '"')
+; 			} else {
+; 				Run('*RunAs "' . A_AhkPath . '" /restart "' . A_ScriptFullPath . '"')
+; 			}
+; 		}
+; 		catch as e {
+; 			WinSetTitle(e.Message)
+; 		}
+; 		ExitApp
+; 	}
+; }
+
+; reload_as_admin()
+
 ; Sleep(2146473647)

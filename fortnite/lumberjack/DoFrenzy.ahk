@@ -2,7 +2,8 @@
 ; Basic usage (a few keybindings)
 ; How to use FindText; explain signal remote 1 vs 2
 #WinActivateForce
-#Include "FindTextv2_FeiYue_9.5.ahk"
+; #Include "FindTextv2_FeiYue_9.5.ahk"
+#Include "findtextv2_v9.6.ahk"
 
 global XTRA
 XTRA:=50
