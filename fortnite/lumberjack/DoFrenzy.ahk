@@ -142,31 +142,31 @@ DoFrenzy() {
 	Text:="|<GoldenTree>*11$47.Ml7797bDOm/8O2/G4YGQo4Gxd8YVM8t9KFN2kF+AMvXYUWLU"
 	if (ok:=FindText(&X, &Y, 1228-XTRA, 145-XTRA, 1228+XTRA, 145+XTRA, 0, 0, Text))
 	{
-		Sleep(222)
+		Sleep(333)
 		FindText().Click(X, Y, "L")
 	}
 	ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
-	Sleep(666)
+	Sleep(333)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<Frenzy>*11$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
 	if (ok:=FindText(&X, &Y, 1057-XTRA, 241-XTRA, 1057+XTRA, 241+XTRA, 0, 0, Text))
 	{
-		Sleep(666)
+		Sleep(333)
 		FindText().Click(X, Y, "L")
 	}
 	ToolTip("Searching for Activate", WINWIDTH - 150, 50)
-	Sleep(666)
+	Sleep(333)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<ACTIVATE>*11$53.C03v8EsyywT7qNXlxVcn6An6VX2F0ANa937wm0Ml8n6ATaMlWFyAMnDVX7XAMz303664Aly"
 	if (ok:=FindText(&X, &Y, 1064-XTRA, 307-XTRA, 1064+XTRA, 307+XTRA, 0, 0, Text))
 	{
-		Sleep(666)
+		Sleep(333)
 		FindText().Click(X, Y, "L")
 	}
 
-	Sleep(666)
+	Sleep(333)
 	Send(Chr(96))
-	Sleep(666)
+	Sleep(333)
 }

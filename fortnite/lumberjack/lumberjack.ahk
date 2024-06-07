@@ -4,14 +4,18 @@
 #SingleInstance
 InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
+SetDefaultMouseSpeed 5 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
 #Include "DoFrenzy.ahk"
 ; WinActivate failed with just EXE
 ; may need both EXE and CLASS due to ambiguity; see
 ; https://www.autohotkey.com/boards/viewtopic.php?t=103024
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-FORTNITEWINDOW := "ahk_class UnrealWindow ahk_exe " . FORTNITEPROCESS
+FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
+FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
+
+DO_UNFOCUS := true ;  false ; due to winactivate failures
 
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
@@ -26,6 +30,8 @@ WINWIDTH := 640
 WINHEIGHT := 360
 WINX := A_ScreenWidth - WINWIDTH
 WINY := 10
+CENTERX := WINX + WINWIDTH/2
+CENTERY := WINY + WINHEIGHT/2
 ; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
 ; Sleep(2222)
 
@@ -53,7 +59,7 @@ firekey := 13 ; Enter
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 ; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
-#Include "findtextv2_v9.6.ahk"
+#Include "*i findtextv2_v9.6.ahk"
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
@@ -107,11 +113,16 @@ If(! WinExist(FORTNITEWINDOW) ) {
 	Sleep(1000)
 }
 
+ActivateFortniteWindow() {
+	MouseMove(CENTERX,CENTERY)
+	WinActivate(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW)
+}
+
 Try {
-	WinActivate(FORTNITEWINDOW)
+	ActivateFortniteWindow()
 	WinWaitActive(FORTNITEWINDOW)
 	WinShow(FORTNITEWINDOW)
-	WinActivate(FORTNITEWINDOW)
+	ActivateFortniteWindow()
 	WinWaitActive(FORTNITEWINDOW)
 }
 
@@ -144,8 +155,33 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ; ^+f::FrenzyLoop(false) 
 SC027 & f::FrenzyLoop(true) 
 SC027 & g::FrenzyLoop(false) 
+SC027 & h::{
+	global StopAtLowHealth
+	StopAtLowHealth := true
+	FrenzyLoop(true) 
+}
+SC027 & s::doStopAtLowHealth()
+
+maybe_unfocus() {
+	if DO_UNFOCUS {
+		unfocus()
+	}
+}
+
+StopAtLowHealth := false
+doStopAtLowHealth() {
+	global StopAtLowHealth
+	StopAtLowHealth := !StopAtLowHealth 
+	if StopAtLowHealth {
+		ToolTip("should stop when health of 409vg tree is down to 3vg")
+	} else {
+		ToolTip("healthstop disabled")
+	}
+}
+
 
 FrenzyLoop(frenzyfirst:=false) {
+	global StopAtLowHealth
 	loop 16 {
 		if frenzyfirst {
 			MoveWindowToUpperRight()
@@ -153,15 +189,17 @@ FrenzyLoop(frenzyfirst:=false) {
 			Sleep(2111)
 			attempts := 0
 			DetectHiddenWindows(true)
-			while ! WinActive(FORTNITEWINDOW) && attempts < 100 {
-				WinActivate(FORTNITEWINDOW)
-				WinWaitActive(FORTNITEWINDOW, , 0.1)
+			while ! WinActive(FORTNITEWINDOW,,FORTNITEEXCLUDEWINDOW) && attempts < 100 {
+				ActivateFortniteWindow()
+				WinWaitActive(FORTNITEWINDOW, , 0.2, FORTNITEEXCLUDEWINDOW)
 				attempts += 1
 				if attempts > 1 {
 					ToolTip("WinActivate " FORTNITEWINDOW " failed, attempt#" attempts,1000,10)
 				}
+				Send("!Tab")
+				Sleep(200)
 				; ToolTip()
-				WinActivate("Fortnite")
+				; WinActivate("Fortnite")
 				; WinActivate("AHK_ID 17892")
 				WinWaitActive(FORTNITEWINDOW, , 0.1)
 			} 			
@@ -177,33 +215,51 @@ FrenzyLoop(frenzyfirst:=false) {
 		xtratime := 0
 		clicktime := 15*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
-		; clicktime := 4 * 60 ; debugging
+	    ; clicktime := 4 * 60 ; debugging
 		; clicktime := 20 ; debug with 0 golden trees saved
 		ToolTip("clicker for loop #" A_Index)
 		Sleep(1111)
 
-		clicker_unfocused(false, clicktime)
+		term := clicker_unfocused(false, clicktime)
+		if term { 
+			return
+		}
 		; ToolTip("15 minutes of clicking has ended; pausing 30 seconds (or until click) before next frenzy")
 		; KeyWait("LButton","DT30")
 		; ToolTip()
-			if A_TimeIdlePhysical < 3000 {
-			; ToolTip("Are you sure you want to stop frenzyloop? Press Y to abort ")
-			; kw := KeyWait("y","DT15")
-			; if kw {
+			vg := getTreeHealthVg()
+			if A_TimeIdlePhysical < 5000 
+				|| vg > 0.1 && vg < 5.0 && StopAtLowHealth {
+			ToolTip("Continue frenzyloop? Press y within 20 seconds to continue ")
+			kw := KeyWait("y","DT20") ; nonzero if yes, 0 if timeout
+			if !kw {
 				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 3000; user abort?)")
-				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical "`n", "Lumberjack_log.txt")
+				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical ",vg=" vg "`n", "Lumberjack_log.txt")
 				Sleep(2222)
 				ToolTip()
 				break
-				; }
+				}
 		} else {
-			ToolTip("pausing 5 seconds before next frenzy (or click)")
-			KeyWait("LButton","DT5")
+			ToolTip("pausing 10 seconds before next frenzy (or click)")
+			KeyWait("LButton","DT10")
 			ToolTip()
 		}
 		frenzyfirst := true
 	}
 }
+
+; SetTimer(showPercent,2000)
+
+; for 409vg immortal tree (level 11)
+getTreeHealthVg() 
+{
+	color := "ED4D4D"
+	reds := FindText().PixelCount(1191, 26, 1367, 26, color,33)
+	vg := 409 * (reds / (1367-1191))
+	; ToolTip("vg=" vg, 1367,5)
+	return vg
+}
+
 
 ; need a do-not-disturb 
 ; if stupid windows badges are coming up and not going away
@@ -289,6 +345,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	global keydown_time
 	global ctrl_time
 	global firekey
+	term := false
 	DetectHiddenWindows true
 	startTick := A_TickCount
 	; tried to block alt+enter, didnt work
@@ -325,7 +382,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	Sleep(keydown_time)
 	PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
 	Sleep(keydown_time)
-	unfocus()
+	maybe_unfocus()
 	total_milliseconds := total_seconds * 1000
 	ToolTip("starting clicking...")
 	while A_TickCount < startTick + total_milliseconds {
@@ -350,7 +407,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				ToolTip()
 				TrayTip(msg)
 				toolTip_showing := false
-				unfocus()
+				; maybe_unfocus()
 				Sleep(333)
 				if activeWindow != fnWindow {
 					WinActivate(activeWindow) ; return focus after traytip bubble
@@ -369,6 +426,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				ToolTip("RCtrl/Button found; stopping clicking")
 				Sleep(1500)
 				ToolTip()
+				term := true
 				break
 			}
 		}
@@ -399,16 +457,17 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	Sleep(2222)
 	ToolTip()
 	; Hotkey("Alt & Enter",,"Off")
+	return term
 }
 
 oldclicker() {
 	ToolTip("Press RCtrl or RButton to stop clicking",66,66	)
-	WinActivate(FORTNITEWINDOW)
+	ActivateFortniteWindow()
 	;Send("{LClick Down}")
 	Loop {
 		; terminate only if window switch was likely initiated by the user:
 		if !WinActive(FORTNITEWINDOW) && A_TimeIdle < 5000 {
-			; WinActivate(FORTNITEWINDOW)
+			; ActivateFortniteWindow()
 			ToolTip(FORTNITEWINDOW " not active due to user activity; stopping clicking")
 			Sleep(333)
 			ToolTip()
@@ -454,7 +513,7 @@ fastclicker() {
 InteractionLoop() {
 	Loop {
 		if A_TimeIdlePhysical > 200000 {
-			WinActivate(FORTNITEWINDOW)
+			ActivateFortniteWindow()
 		}
 		if WinActive(FORTNITEWINDOW) {
 			if	A_TimeIdle > 555 {
@@ -548,7 +607,7 @@ WindowHideToggle() {
 
 WindowShowAndFocus() {
 	WinShow(FORTNITEWINDOW)
-	WinActivate(FORTNITEWINDOW)
+	ActivateFortniteWindow()
 	WinWaitActive(FORTNITEWINDOW)
 }
 

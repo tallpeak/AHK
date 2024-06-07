@@ -2000,6 +2000,7 @@ Click(x:="", y:="", other1:="", other2:="", GoBack:=0)
   if GoBack
     MouseGetPos &oldx, &oldy
   MouseMove x, y, 0
+  Sleep(33) ; AWW:trying to fix my Lumberjack Heroes frenzyloop macro that glitches at low wattage (when CPU is slow)
   Click x "," y "," other1 "," other2
   if GoBack
     MouseMove oldx, oldy, 0
