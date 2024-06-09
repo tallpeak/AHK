@@ -45,7 +45,7 @@ CENTERY := WINY + WINHEIGHT/2
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
-Delay60 := 666   ; when 60/100 
+Delay60 := 0  ; 666   ; when 60/100 
 Charged_Delay := 666 ; When "Charged!" is found
 Charged_Count := 1
 ; ChargedCountAtDelay := 4
@@ -115,7 +115,9 @@ If(! WinExist(FORTNITEWINDOW) ) {
 
 ActivateFortniteWindow() {
 	MouseMove(CENTERX,CENTERY)
+	Sleep(33)
 	WinActivate(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW)
+	Sleep(33)  ; try to stop the scrollwheel action that seems to be happening
 }
 
 Try {
@@ -385,6 +387,10 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	maybe_unfocus()
 	total_milliseconds := total_seconds * 1000
 	ToolTip("starting clicking...")
+	; will this fix the "not chopping" issue at start?
+	; (You may need to click in the window and restart the clicker macro, at times)
+	MouseMove(CENTERX,CENTERY)
+	Click()
 	while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
 		if seconds_left < 9999 
@@ -438,8 +444,8 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				Sleep(Delay60)
 				ToolTip()  
 			}			
-	}
-	ok:=findtext_Charged()
+		}
+		ok:=findtext_Charged()
 		if ok {
 			Charged_Count += 1
 			; if Charged_Count = ChargedCountAtDelay {
@@ -722,5 +728,29 @@ ToolTip()  ; get rid of "Loading..."
 ; }
 
 ; reload_as_admin()
+
+#Include "DateParse2.ahk"
+checkForUpdate() {
+	whr := ComObject("WinHttp.WinHttpRequest.5.1")
+	url := "https://qomph.com/lumberjack/lumberjack.zip"
+	whr.Open("HEAD", url, true)
+	whr.Send()
+	; Using 'true' above and the call below allows the script to remain responsive.
+	whr.WaitForResponse()
+	last_modified_str := whr.GetResponseHeader("Last-Modified")
+    last_modified := DateParse(last_modified_str)
+    this_modified := FileGetTime(A_ScriptFullPath, "M")
+	; this_modified := DateAdd(this_modified,8,"Hours") ; conversion to UTC
+	; respect local timezone settings:
+    utcoffset := A_NowUTC - A_Now 
+	this_modified := this_modified + utcoffset
+	if this_modified < last_modified {
+		; MsgBox("this_modified=" this_modified ", last_modified=" last_modified)
+        ToolTip("Notice: Update is available! see: " url)
+        Sleep(3333)
+    }
+}
+
+checkForUpdate()
 
 ; Sleep(2146473647)
