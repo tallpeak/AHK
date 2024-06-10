@@ -15,7 +15,7 @@ FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
 
-DO_UNFOCUS := true ;  false ; due to winactivate failures
+DO_UNFOCUS := true ; was false ; due to winactivate failures
 
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
@@ -45,15 +45,15 @@ CENTERY := WINY + WINHEIGHT/2
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
-Delay60 := 0  ; 666   ; when 60/100 
-Charged_Delay := 666 ; When "Charged!" is found
+Delay60 := 0   ; when 60/100 
+Charged_Delay := 1666 ; When "Charged!" is found
 Charged_Count := 1
 ; ChargedCountAtDelay := 4
 ; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
-keydown_time := 200 ; ms
-ctrl_time := "DT0.2" ; seconds
+keydown_time := 250 ; ms
+ctrl_time := "DT0.25" ; seconds
 firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
@@ -97,7 +97,23 @@ findtext_Charged() {
 ; 	t1:=A_TickCount, Text:=X:=Y:=""
 ; 	Text:="|<x1Charged>*254$58.zzzTzzzzzzwzzvzzzzxavzTfnzjzKzjxyrrvPPOSzrvTPjjhzvzRhhjyyrvjzTrqvwxzzzzzzzxzzs"
 ; 	ok:=FindText(&X, &Y, 1344-150000, 242-150000, 1344+150000, 242+150000, 0, 0, Text)
+;   return ok
 ; }
+
+findtext_x1Charged() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	; Text:="|<x1Charged>*254$58.zDzyzzzzzNizruwzvzpjvzThxyqqqbjxyrqvvvTyzrPPPzjhyvzrxxizDTU"
+	; Text:="|<x2Charged>*254$59.zPzzTzzzzgqrxyjDyzxPzjvxjjqqqozzrvTPjjhzrziqqrzTPxzzrxxizDTU"
+	Text:="|<x2Charged>*240$59.zPynTzzjzgqrxyjDgwxPzjvxjgqqqoyzrvTPhjhrnzgqqrzTPBVzXxZizDSU"
+	xtrax:=50
+	xtray:=20
+	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0, 0, Text)
+	return ok
+}
+
 
 global Volume := 50
 VolumeIncrement := 5
@@ -162,7 +178,7 @@ SC027 & h::{
 	StopAtLowHealth := true
 	FrenzyLoop(true) 
 }
-SC027 & s::doStopAtLowHealth()
+SC027 & s::toggleStopAtLowHealth()
 
 maybe_unfocus() {
 	if DO_UNFOCUS {
@@ -171,16 +187,16 @@ maybe_unfocus() {
 }
 
 StopAtLowHealth := false
-doStopAtLowHealth() {
+
+toggleStopAtLowHealth() {
 	global StopAtLowHealth
 	StopAtLowHealth := !StopAtLowHealth 
 	if StopAtLowHealth {
-		ToolTip("should stop when health of 409vg tree is down to 3vg")
+		ToolTip("should stop when health of 409vg tree is down below 5vg")
 	} else {
-		ToolTip("healthstop disabled")
+		ToolTip("StopAtLowHealth disabled")
 	}
 }
-
 
 FrenzyLoop(frenzyfirst:=false) {
 	global StopAtLowHealth
@@ -391,6 +407,8 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	; (You may need to click in the window and restart the clicker macro, at times)
 	MouseMove(CENTERX,CENTERY)
 	Click()
+	Sleep(33)
+	maybe_unfocus()
 	while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
 		if seconds_left < 9999 
@@ -445,7 +463,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				ToolTip()  
 			}			
 		}
-		ok:=findtext_Charged()
+		ok:=findtext_x1Charged()
 		if ok {
 			Charged_Count += 1
 			; if Charged_Count = ChargedCountAtDelay {
@@ -752,5 +770,10 @@ checkForUpdate() {
 }
 
 checkForUpdate()
+
+
+makeHUD() {
+
+}
 
 ; Sleep(2146473647)
