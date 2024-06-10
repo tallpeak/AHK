@@ -4,9 +4,136 @@
 #SingleInstance
 InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
-SetDefaultMouseSpeed 5 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
+SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
+
+EnableGUI := true
+; #Include "LumberClickGui2.ahk"
+
+#Requires Autohotkey v2
+;AutoGUI creator: Alguimist autohotkey.com/boards/viewtopic.php?f=64&t=89901
+;AHKv2converter creator: github.com/mmikeww/AHK-v2-script-converter
+;EasyAutoGUI-AHKv2 github.com/samfisherirl/Easy-Auto-GUI-for-AHK-v2
+
+DO_UNFOCUS := true ; was false ; due to winactivate failures
+WINWIDTH := 640
+WINHEIGHT := 360
+WINX := A_ScreenWidth - WINWIDTH
+WINY := 10
+CENTERX := WINX + WINWIDTH/2
+CENTERY := WINY + WINHEIGHT/2
+
+GuiX := WINX
+GuiY := WINY + WINHEIGHT + 10
+
+global myGui
+
+createGui() {
+	global myGui
+	myGui := Constructor()
+	myGui.Show("w610 h200 x" GuiX " y" GuiY)
+	;WinMove(GuiX,GuiY,610,287,myGui.Title)	
+}
+
+if EnableGUI {
+	createGui()
+}
+
+global LogCtl
+global LoopsCtl
+global MinsCtl
+global LoopNum
+global ChargedCtl
+global unfocusChk
+unfocusChk.Value := DO_UNFOCUS
+
+destroyGui(evt) { 
+	myGui.Destroy()
+	EnableGUI := false 
+}
+
+Constructor()
+{	
+	global LogCtl
+	global LoopsCtl
+	global MinsCtl
+	global LoopNum
+	global SecondsRemain
+	global ChargedCtl
+	global unfocusChk
+	
+	myGui := Gui()
+	; myGui.Opt("+AlwaysOnTop")
+	BtnClick := myGui.Add("Button", "x24 y16 w45 h23", "&Click")
+	BtnClickHide := myGui.Add("Button", "x72 y16 w57 h23", "Click&Hide")
+	UnfocusChk := myGui.Add("CheckBox", "x144 y16 w61 h23", "&Unfocus")
+	BtnFrenzy := myGui.Add("Button", "x210 y16 w50 h23", "&Frenzy")
+	LoopsLbl := myGui.Add("Text", "x280 y16 w18 h21", "#")
+	LoopsCtl := myGui.Add("Edit", "x300 y16 w26 h21 +Number", "16")
+	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("iterations"), , "ahk_id " LoopsCtl.Hwnd) ; EM_SETCUEBANNER
+	LoopsLbl := myGui.Add("Text", "x332 y16 w30 h21", "mins")
+	MinsCtl := myGui.Add("Edit", "x362 y16 w26 h21", "15")
+
+	LoopNum := myGui.Add("Text", "x400 y16 w30 h21", "0")
+	SecondsRemain := myGui.Add("Text", "x430 y16 w30 h21", "0")
+	ChargedCtl := myGui.Add("Text", "x460 y16 w30 h21", "CH")
+
+	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("minutes"), , "ahk_id " MinsCtl.Hwnd) ; EM_SETCUEBANNER
+	global LogCtl := myGui.Add("ListView", "x32 y64 w572 h120 +LV0x4000", ["time", "event", "description"])
+	LogCtl.ModifyCol(1, 100)
+	LogCtl.ModifyCol(2, 50)
+	LogCtl.ModifyCol(3, 2000)
+	; LogCtl.Add(,"Sample1")
+	; LogCtl.OnEvent("DoubleClick", LV_DoubleClick)
+	BtnClick.OnEvent("Click", (*) => clicker_unfocused(false))
+	BtnClickHide.OnEvent("Click", (*) => clicker_unfocused(true))
+	; UnfocusChk.OnEvent("Click", OnEventHandler)
+	BtnFrenzy.OnEvent("Click", (*) => FrenzyLoop())
+	LoopsCtl.OnEvent("Change", OnEventHandler)
+	MinsCtl.OnEvent("Change", OnEventHandler)
+	; myGui.OnEvent('Close', (*) => ExitApp())
+	myGui.OnEvent('Close', destroyGui )
+	myGui.Title := "LumberjackClicker"
+	
+	; LV_DoubleClick(LV, RowNum)
+	; {
+	; 	if not RowNum
+	; 		return
+	; 	ToolTip(LV.GetText(RowNum), 77, 277)
+	; 	SetTimer () => ToolTip(), -3000
+	; }
+	; Clicker(CtrlHwnd, GuiEvent, EventInfo, ErrLevel := "") {
+	; }
+	
+	OnEventHandler(*)
+	{
+		ToolTip("Click! This is a sample action.`n"
+		. "Active GUI element values include:`n"  
+		. "BtnClick => " BtnClick.Text "`n" 
+		. "BtnClickHide => " BtnClickHide.Text "`n" 
+		. "UnfocusChk => " UnfocusChk.Value "`n" 
+		. "tttonFrenzy => " BtnFrenzy.Text "`n" 
+		. "LoopsCtl => " LoopsCtl.Value "`n" 
+		. "MinsCtl => " MinsCtl.Value "`n", 77, 277)
+		SetTimer () => ToolTip(), -3000 ; tooltip timer
+	}
+	
+	return myGui
+}
+
+LogMessage(cat,msg) {
+	if EnableGUI {
+		tm := A_Now
+		RowNumber := LogCtl.Add(,tm,cat,msg)
+		if RowNumber>99
+			LogCtl.Delete(1)	
+	} else {
+		createGui()
+	}
+}
+
 
 #Include "DoFrenzy.ahk"
+
 ; WinActivate failed with just EXE
 ; may need both EXE and CLASS due to ambiguity; see
 ; https://www.autohotkey.com/boards/viewtopic.php?t=103024
@@ -14,8 +141,6 @@ FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
 FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
-
-DO_UNFOCUS := true ; was false ; due to winactivate failures
 
 ; maybe lower this once used to the auto-hide behavior:
 HIDE_SECONDS := 10
@@ -26,12 +151,6 @@ ENABLE_RESIZE := true
 SCALINGFACTOR := 0.4
 ; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
 ; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
-WINWIDTH := 640
-WINHEIGHT := 360
-WINX := A_ScreenWidth - WINWIDTH
-WINY := 10
-CENTERX := WINX + WINWIDTH/2
-CENTERY := WINY + WINHEIGHT/2
 ; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
 ; Sleep(2222)
 
@@ -90,15 +209,8 @@ findtext_Charged() {
 	return ok
 }
 
-; findtext_x1Charged() {
-; 	if ! use_FindText {
-; 		return 0
-; 	}
-; 	t1:=A_TickCount, Text:=X:=Y:=""
-; 	Text:="|<x1Charged>*254$58.zzzTzzzzzzwzzvzzzzxavzTfnzjzKzjxyrrvPPOSzrvTPjjhzvzRhhjyyrvjzTrqvwxzzzzzzzxzzs"
-; 	ok:=FindText(&X, &Y, 1344-150000, 242-150000, 1344+150000, 242+150000, 0, 0, Text)
-;   return ok
-; }
+; old 	Text:="|<x1Charged>*254$58.zzzTzzzzzzwzzvzzzzxavzTfnzjzKzjxyrrvPPOSzrvTPjjhzvzRhhjyyrvjzTrqvwxzzzzzzzxzzs"
+
 
 findtext_x1Charged() {
 	if ! use_FindText {
@@ -164,9 +276,20 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ; control shift h to toggle window-hidden state when FN is in focus:
 ^+h::WindowHideToggle()
 ^+u::unfocus()
+^+g::toggleGui()
 
 ^NumpadAdd::FrenzyLoop(true) 
 ^+NumpadAdd::FrenzyLoop(false) 
+
+toggleGui() {
+	EnableGUI := ! EnableGUI
+	if ! EnableGUI {
+		destroyGui(evt) { 
+			myGui.Destroy()
+			EnableGUI := false 
+		}		
+	}
+}
 
 ; bad keybinding; I somehow kept hitting it accidentally during boss fights
 ; ^f::FrenzyLoop(true) 
@@ -181,7 +304,7 @@ SC027 & h::{
 SC027 & s::toggleStopAtLowHealth()
 
 maybe_unfocus() {
-	if DO_UNFOCUS {
+	if unfocusChk {
 		unfocus()
 	}
 }
@@ -200,7 +323,8 @@ toggleStopAtLowHealth() {
 
 FrenzyLoop(frenzyfirst:=false) {
 	global StopAtLowHealth
-	loop 16 {
+	loop LoopsCtl.Value {
+		LoopNum.Value := A_Index
 		if frenzyfirst {
 			MoveWindowToUpperRight()
 			ToolTip("Frenzy for loop #" A_Index)
@@ -231,7 +355,7 @@ FrenzyLoop(frenzyfirst:=false) {
 			DoFrenzy()
 		}
 		xtratime := 0
-		clicktime := 15*60 + xtratime ; time to grow a golden tree
+		clicktime := MinsCtl.Value*60 + xtratime ; time to grow a golden tree
 		; temp, for when wanting to use up my golden trees (testing):
 	    ; clicktime := 4 * 60 ; debugging
 		; clicktime := 20 ; debug with 0 golden trees saved
@@ -359,7 +483,7 @@ unfocus() {
 clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	global Delay60 
 	global Charged_Count
-	global Charged_MaxRunDelay
+	; global Charged_MaxRunDelay
 	global keydown_time
 	global ctrl_time
 	global firekey
@@ -414,6 +538,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 		if seconds_left < 9999 
 			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
 			ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
+			SecondsRemain.Value:=seconds_left
 		}
 		; give user 6 seconds to read the message:
 		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
@@ -468,8 +593,16 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			Charged_Count += 1
 			; if Charged_Count = ChargedCountAtDelay {
 				xy:=ok[1]
-				toolTip("Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count,xy.1+xy.3*2,xy.2+xy.4)
+				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count
+				; LogMessage("found",msg1)
+				toolTip(msg1,xy.1+xy.3*2,xy.2+xy.4)
+				; ChargedCtl. .BackColor := "Red"
+				ChargedCtl.Opt("+BackgroundRed")
+				; ChargedCtl.Refresh()
+				; myGui.Refresh()
 				Sleep(Charged_Delay) ; slow down during Charged!
+				; ChargedCtl.BackColor := "White"
+				ChargedCtl.Opt("+BackgroundWhite")
 				ToolTip()
 			; }
 			
