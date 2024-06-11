@@ -6,13 +6,33 @@ InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
-EnableGUI := true
-; #Include "LumberClickGui2.ahk"
+global EXTRA
+EXTRA:=50
+if A_ScreenWidth != 1600 {
+	EXTRA:= A_ScreenWidth
+}
 
-#Requires Autohotkey v2
-;AutoGUI creator: Alguimist autohotkey.com/boards/viewtopic.php?f=64&t=89901
-;AHKv2converter creator: github.com/mmikeww/AHK-v2-script-converter
-;EasyAutoGUI-AHKv2 github.com/samfisherirl/Easy-Auto-GUI-for-AHK-v2
+EnableGUI := true
+
+; WinActivate failed with just EXE
+; may need both EXE and CLASS due to ambiguity; see
+; https://www.autohotkey.com/boards/viewtopic.php?t=103024
+FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
+FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
+; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
+FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
+
+; maybe lower this once used to the auto-hide behavior:
+HIDE_SECONDS := 10
+; Some users won't like these enabled
+ENABLE_AUTO_HIDE := true
+ENABLE_RESIZE := true
+; For resize: I like FN small, in upper-right:
+SCALINGFACTOR := 0.4
+; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
+; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
+; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
+; Sleep(2222)
 
 DO_UNFOCUS := true ; was false ; due to winactivate failures
 WINWIDTH := 640
@@ -22,20 +42,49 @@ WINY := 10
 CENTERX := WINX + WINWIDTH/2
 CENTERY := WINY + WINHEIGHT/2
 
+; #Include "LumberClickGui2.ahk" ; pasted below, instead
+#Requires Autohotkey v2
+;AutoGUI creator: Alguimist autohotkey.com/boards/viewtopic.php?f=64&t=89901
+;AHKv2converter creator: github.com/mmikeww/AHK-v2-script-converter
+;EasyAutoGUI-AHKv2 github.com/samfisherirl/Easy-Auto-GUI-for-AHK-v2
+
 GuiX := WINX
-GuiY := WINY + WINHEIGHT + 10
+GuiY := WINY + WINHEIGHT
 
 global myGui
 
 createGui() {
 	global myGui
 	myGui := Constructor()
-	myGui.Show("w610 h200 x" GuiX " y" GuiY)
+	myGui.Opt("-Caption +Owner")
+	myGui.Show("w700 h30 x" GuiX " y" GuiY)
 	;WinMove(GuiX,GuiY,610,287,myGui.Title)	
 }
 
 if EnableGUI {
 	createGui()
+}
+
+destroyGui(evt) { 
+	EnableGUI := false 
+	myGui.Destroy()
+}
+
+toggleGui() {
+	EnableGUI := ! EnableGUI
+	if ! EnableGUI {
+		destroyGui(0)
+	} else {
+		createGui()
+	}
+}
+
+ClickHideEvent(*) {
+	if hidden {
+		WindowHideToggle()
+	} else {
+		clicker_unfocused(true)
+	}
 }
 
 global LogCtl
@@ -44,13 +93,11 @@ global MinsCtl
 global LoopNum
 global ChargedCtl
 global unfocusChk
+global BtnClickHide
+global earlyAbort := false
+global logVisible := false
+
 unfocusChk.Value := DO_UNFOCUS
-
-destroyGui(evt) { 
-	myGui.Destroy()
-	EnableGUI := false 
-}
-
 Constructor()
 {	
 	global LogCtl
@@ -60,23 +107,29 @@ Constructor()
 	global SecondsRemain
 	global ChargedCtl
 	global unfocusChk
+	global BtnClickHide
+	global earlyAbort
+	global logVisible
 	
 	myGui := Gui()
 	; myGui.Opt("+AlwaysOnTop")
-	BtnClick := myGui.Add("Button", "x24 y16 w45 h23", "&Click")
-	BtnClickHide := myGui.Add("Button", "x72 y16 w57 h23", "Click&Hide")
-	UnfocusChk := myGui.Add("CheckBox", "x144 y16 w61 h23", "&Unfocus")
-	BtnFrenzy := myGui.Add("Button", "x210 y16 w50 h23", "&Frenzy")
-	LoopsLbl := myGui.Add("Text", "x280 y16 w18 h21", "#")
-	LoopsCtl := myGui.Add("Edit", "x300 y16 w26 h21 +Number", "16")
+	BtnLog := myGui.Add("Button", "x00 y02 w26 h23", "Log")
+	BtnClick := myGui.Add("Button", "x26 y02 w45 h23", "Click")
+	BtnClickHide := myGui.Add("Button", "x72 y02 w57 h23", "ClickHide")
+	BthUnhide := myGui.Add("Button", "x144 y02 w57 h23", "Unhide")
+	BtnFrenzy := myGui.Add("Button", "x210 y02 w50 h23", "Frenzy")
+	LoopsLbl := myGui.Add("Text", "x280 y02 w18 h21", "#")
+	LoopsCtl := myGui.Add("Edit", "x300 y02 w26 h21 +Number", "16")
 	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("iterations"), , "ahk_id " LoopsCtl.Hwnd) ; EM_SETCUEBANNER
-	LoopsLbl := myGui.Add("Text", "x332 y16 w30 h21", "mins")
-	MinsCtl := myGui.Add("Edit", "x362 y16 w26 h21", "15")
+	LoopsLbl := myGui.Add("Text", "x332 y02 w30 h21", "mins")
+	MinsCtl := myGui.Add("Edit", "x362 y02 w26 h21", "15")
 
-	LoopNum := myGui.Add("Text", "x400 y16 w30 h21", "0")
-	SecondsRemain := myGui.Add("Text", "x430 y16 w30 h21", "0")
-	ChargedCtl := myGui.Add("Text", "x460 y16 w30 h21", "CH")
-
+	LoopNum := myGui.Add("Text", "x400 y02 w30 h21", "0")
+	SecondsRemain := myGui.Add("Text", "x430 y02 w30 h21", "0")
+	ChargedCtl := myGui.Add("Text", "x460 y02 w50 h21", "Charged")
+	BtnStop  := myGui.Add("Button", "x520 y02 w50 h23", "STOP")
+	UnfocusChk := myGui.Add("CheckBox", "x580 y02 w61 h23", "Unfocus")	
+	
 	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("minutes"), , "ahk_id " MinsCtl.Hwnd) ; EM_SETCUEBANNER
 	global LogCtl := myGui.Add("ListView", "x32 y64 w572 h120 +LV0x4000", ["time", "event", "description"])
 	LogCtl.ModifyCol(1, 100)
@@ -85,11 +138,15 @@ Constructor()
 	; LogCtl.Add(,"Sample1")
 	; LogCtl.OnEvent("DoubleClick", LV_DoubleClick)
 	BtnClick.OnEvent("Click", (*) => clicker_unfocused(false))
-	BtnClickHide.OnEvent("Click", (*) => clicker_unfocused(true))
+	BtnClickHide.OnEvent("Click", ClickHideEvent)
+	BtnStop.OnEvent("Click", stopClicking)
 	; UnfocusChk.OnEvent("Click", OnEventHandler)
-	BtnFrenzy.OnEvent("Click", (*) => FrenzyLoop())
-	LoopsCtl.OnEvent("Change", OnEventHandler)
-	MinsCtl.OnEvent("Change", OnEventHandler)
+	BtnFrenzy.OnEvent("Click", (*) => FrenzyLoop(true))
+	BthUnhide.OnEvent("Click", (*) => WindowShowAndFocus())
+	BtnLog.OnEvent("Click", ToggleLog)
+
+	; LoopsCtl.OnEvent("Change", OnEventHandler)
+	; MinsCtl.OnEvent("Change", OnEventHandler)
 	; myGui.OnEvent('Close', (*) => ExitApp())
 	myGui.OnEvent('Close', destroyGui )
 	myGui.Title := "LumberjackClicker"
@@ -111,12 +168,24 @@ Constructor()
 		. "BtnClick => " BtnClick.Text "`n" 
 		. "BtnClickHide => " BtnClickHide.Text "`n" 
 		. "UnfocusChk => " UnfocusChk.Value "`n" 
-		. "tttonFrenzy => " BtnFrenzy.Text "`n" 
+		. "BtnFrenzy => " BtnFrenzy.Text "`n" 
 		. "LoopsCtl => " LoopsCtl.Value "`n" 
 		. "MinsCtl => " MinsCtl.Value "`n", 77, 277)
-		SetTimer () => ToolTip(), -3000 ; tooltip timer
+		SetTimer () => ToolTip(), -3000 ; clear-tooltip timer
 	}
-	
+	stopClicking(*) {
+		earlyAbort := true
+	}
+	ToggleLog(*) {
+		logVisible := !logVisible
+		if logVisible {
+			; myGui.Opt("+Resize +MinSize700x220")
+			myGui.Show("h220")
+		} else {
+			; myGui.Opt("+Resize +MinSize700x30")
+			myGui.Show("h30")
+		}		
+	}
 	return myGui
 }
 
@@ -131,28 +200,7 @@ LogMessage(cat,msg) {
 	}
 }
 
-
 #Include "DoFrenzy.ahk"
-
-; WinActivate failed with just EXE
-; may need both EXE and CLASS due to ambiguity; see
-; https://www.autohotkey.com/boards/viewtopic.php?t=103024
-FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
-; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
-FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
-
-; maybe lower this once used to the auto-hide behavior:
-HIDE_SECONDS := 10
-; Some users won't like these enabled
-ENABLE_AUTO_HIDE := true
-ENABLE_RESIZE := true
-; For resize: I like FN small, in upper-right:
-SCALINGFACTOR := 0.4
-; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
-; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
-; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
-; Sleep(2222)
 
 ; Optional screen-scanning for Charged!
 ; Note that it works only when the window is visible;
@@ -213,6 +261,7 @@ findtext_Charged() {
 
 
 findtext_x1Charged() {
+	global EXTRA
 	if ! use_FindText {
 		return 0
 	}
@@ -222,8 +271,78 @@ findtext_x1Charged() {
 	Text:="|<x2Charged>*240$59.zPynTzzjzgqrxyjDgwxPzjvxjgqqqoyzrvTPhjhrnzgqqrzTPBVzXxZizDSU"
 	xtrax:=50
 	xtray:=20
+	if EXTRA > 100 {
+		xtrax := EXTRA
+		xtray := EXTRA
+	}
 	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0, 0, Text)
 	return ok
+}
+
+findtext_Page2() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
+	ok:=FindText(&X, &Y, 1000-150000, 311-150000, 1000+150000, 311+150000, 0, 0, Text)
+	return ok
+}
+
+findtext_ElysiumGod() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<ElysiumGod>*240$58.TTzzzzyvztxxXTSzvySVqqxhhjjqqTOwqqqyvPNxnxPPPvhhUzCBpzjltvzxzzzzzzzy"
+	ok:=FindText(&X, &Y, 1063-150000, 201-150000, 1063+150000, 201+150000, 0, 0, Text)
+	return ok
+}
+
+findtext_FORESTGUARDIANS() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<FORESTGUARDIANS>*11$91.tXb4w6GAQsX4W00FNO545d6/KFXGU08YZm224Z4d9Fd007GQUF1OGHYYYg802/9EcUZNt+mSKI0134i8EAMYZl99400U"
+	ok:=FindText(&X, &Y, 1237-150000, 193-150000, 1237+150000, 193+150000, 0, 0, Text)
+	return ok
+}
+
+findtext_ForestGuard() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<ForestGuard>*240$61.TzzzrxrzzzDbqQMyzvbqbhaqxzThxalqrTaziqyrNvPjxDrPPPgyRtlnwSghvU"
+	ok:=FindText(&X, &Y, 1064-150000, 90-150000, 1064+150000, 90+150000, 0, 0, Text)
+	return ok
+}
+
+; uses color similarity, looking for yellows
+; reset a 30-minute countdown timer when this is found
+FindText_EventBossIcon() {
+	if ! use_FindText {
+		return 0
+	}
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<eventbossicon>E5B230-424242$10.U7BsF0004SLfwzzU"
+	ok:=FindText(&X, &Y, 800, 0, 1600, 100, 0, 0, Text)
+	return ok
+}
+
+startGodAndRun() {
+	; start Elysium God bossfight then TP to Forest Guard
+	; then turn around and run to the changing booth
+	Send(SignalRemoteKey)
+
+}
+
+TPboss1() {
+	Send(SignalRemoteKey)
+	findtext_Page2() 
+
+	findtext_ForestGuard()
 }
 
 
@@ -242,6 +361,7 @@ If(! WinExist(FORTNITEWINDOW) ) {
 }
 
 ActivateFortniteWindow() {
+	CoordMode "Mouse", "Screen"
 	MouseMove(CENTERX,CENTERY)
 	Sleep(33)
 	WinActivate(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW)
@@ -281,16 +401,6 @@ SC027 & c::clicker_unfocused(false)  ; semicolon c
 ^NumpadAdd::FrenzyLoop(true) 
 ^+NumpadAdd::FrenzyLoop(false) 
 
-toggleGui() {
-	EnableGUI := ! EnableGUI
-	if ! EnableGUI {
-		destroyGui(evt) { 
-			myGui.Destroy()
-			EnableGUI := false 
-		}		
-	}
-}
-
 ; bad keybinding; I somehow kept hitting it accidentally during boss fights
 ; ^f::FrenzyLoop(true) 
 ; ^+f::FrenzyLoop(false) 
@@ -304,7 +414,7 @@ SC027 & h::{
 SC027 & s::toggleStopAtLowHealth()
 
 maybe_unfocus() {
-	if unfocusChk {
+	if unfocusChk.Value {
 		unfocus()
 	}
 }
@@ -331,7 +441,7 @@ FrenzyLoop(frenzyfirst:=false) {
 			Sleep(2111)
 			attempts := 0
 			DetectHiddenWindows(true)
-			while ! WinActive(FORTNITEWINDOW,,FORTNITEEXCLUDEWINDOW) && attempts < 100 {
+			while ! WinActive(FORTNITEWINDOW,,FORTNITEEXCLUDEWINDOW) && attempts < 10 {
 				ActivateFortniteWindow()
 				WinWaitActive(FORTNITEWINDOW, , 0.2, FORTNITEEXCLUDEWINDOW)
 				attempts += 1
@@ -487,6 +597,8 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	global keydown_time
 	global ctrl_time
 	global firekey
+	global earlyAbort
+	earlyAbort := false
 	term := false
 	DetectHiddenWindows true
 	startTick := A_TickCount
@@ -503,6 +615,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	if ENABLE_RESIZE {
 		MoveWindowToUpperRight()
 		; FindText().BindWindow(WinExist(FORTNITEWINDOW)) ; doesnt work
+	}
+	if !unfocusChk.Value {
+		ActivateFortniteWindow()
 	}
 	msg := "Clicking! Your focus should be on the desktop."
 			. "`nIf captured, tap Windows key. Avoid alt-tab."
@@ -596,18 +711,27 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count
 				; LogMessage("found",msg1)
 				toolTip(msg1,xy.1+xy.3*2,xy.2+xy.4)
-				; ChargedCtl. .BackColor := "Red"
-				ChargedCtl.Opt("+BackgroundRed")
-				; ChargedCtl.Refresh()
-				; myGui.Refresh()
+				if EnableGUI {
+					try {
+						ChargedCtl.Text := xy.x "," xy.y
+						ChargedCtl.Opt("+BackgroundRed +Redraw")
+					}
+				}
 				Sleep(Charged_Delay) ; slow down during Charged!
-				; ChargedCtl.BackColor := "White"
-				ChargedCtl.Opt("+BackgroundWhite")
+				if EnableGUI {
+					try {
+						ChargedCtl.Text := "Charged"
+						ChargedCtl.Opt("+BackgroundWhite +Redraw")
+					}
+				}
 				ToolTip()
 			; }
 			
 		} else {
 			Charged_Count := 0
+		}
+		if earlyAbort {
+			break
 		}
 	}
 	ToolTip("end of clicking...")
@@ -754,11 +878,18 @@ VolumeDownLoop()
 ;#HotIf WinActive(FORTNITEWINDOW)
 ;!Enter::Return
 
+global hidden := false
+
 WindowHideToggle() {
+	global hidden
 	try {
 		WinHide(FORTNITEWINDOW)
+		hidden := true
+		; BtnClickHide.Text := "Unhide"
 	} catch {
 		WinShow(FORTNITEWINDOW)
+		hidden := false
+		; BtnClickHide.Text := "ClickHide"
 	}
 }
 
@@ -898,15 +1029,11 @@ checkForUpdate() {
 	if this_modified < last_modified {
 		; MsgBox("this_modified=" this_modified ", last_modified=" last_modified)
         ToolTip("Notice: Update is available! see: " url)
-        Sleep(3333)
+        Sleep(5000)
+		ToolTip()
     }
 }
 
 checkForUpdate()
-
-
-makeHUD() {
-
-}
 
 ; Sleep(2146473647)
