@@ -12,6 +12,7 @@ if A_ScreenWidth != 1600 {
 	EXTRA:= A_ScreenWidth
 }
 
+global EnableGUI
 EnableGUI := true
 
 ; WinActivate failed with just EXE
@@ -34,7 +35,7 @@ SCALINGFACTOR := 0.4
 ; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
 ; Sleep(2222)
 
-DO_UNFOCUS := true ; was false ; due to winactivate failures
+DO_UNFOCUS := true ; false ; due to winactivate failures
 WINWIDTH := 640
 WINHEIGHT := 360
 WINX := A_ScreenWidth - WINWIDTH
@@ -57,7 +58,7 @@ createGui() {
 	global myGui
 	myGui := Constructor()
 	myGui.Opt("-Caption +Owner")
-	myGui.Show("w700 h30 x" GuiX " y" GuiY)
+	myGui.Show("w700 h30 x" GuiX " y" GuiY " NoActivate")
 	;WinMove(GuiX,GuiY,610,287,myGui.Title)	
 }
 
@@ -66,11 +67,13 @@ if EnableGUI {
 }
 
 destroyGui(evt) { 
+	global EnableGUI
 	EnableGUI := false 
 	myGui.Destroy()
 }
 
 toggleGui() {
+	global EnableGUI
 	EnableGUI := ! EnableGUI
 	if ! EnableGUI {
 		destroyGui(0)
@@ -213,14 +216,14 @@ LogMessage(cat,msg) {
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
 Delay60 := 0   ; when 60/100 
-Charged_Delay := 1666 ; When "Charged!" is found
-Charged_Count := 1
-; ChargedCountAtDelay := 4
+Charged_Delay := 2250 ; When "Charged!" is found
+Charged_Count := 0
+ChargedCountAtDelay := 1
 ; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
-keydown_time := 250 ; ms
-ctrl_time := "DT0.25" ; seconds
+keydown_time := 200 ; ms
+ctrl_time := "DT0.2" ; seconds
 firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
@@ -279,46 +282,6 @@ findtext_x1Charged() {
 	return ok
 }
 
-findtext_Page2() {
-	if ! use_FindText {
-		return 0
-	}
-	t1:=A_TickCount, Text:=X:=Y:=""
-	Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
-	ok:=FindText(&X, &Y, 1000-150000, 311-150000, 1000+150000, 311+150000, 0, 0, Text)
-	return ok
-}
-
-findtext_ElysiumGod() {
-	if ! use_FindText {
-		return 0
-	}
-	t1:=A_TickCount, Text:=X:=Y:=""
-	Text:="|<ElysiumGod>*240$58.TTzzzzyvztxxXTSzvySVqqxhhjjqqTOwqqqyvPNxnxPPPvhhUzCBpzjltvzxzzzzzzzy"
-	ok:=FindText(&X, &Y, 1063-150000, 201-150000, 1063+150000, 201+150000, 0, 0, Text)
-	return ok
-}
-
-findtext_FORESTGUARDIANS() {
-	if ! use_FindText {
-		return 0
-	}
-	t1:=A_TickCount, Text:=X:=Y:=""
-	Text:="|<FORESTGUARDIANS>*11$91.tXb4w6GAQsX4W00FNO545d6/KFXGU08YZm224Z4d9Fd007GQUF1OGHYYYg802/9EcUZNt+mSKI0134i8EAMYZl99400U"
-	ok:=FindText(&X, &Y, 1237-150000, 193-150000, 1237+150000, 193+150000, 0, 0, Text)
-	return ok
-}
-
-findtext_ForestGuard() {
-	if ! use_FindText {
-		return 0
-	}
-	t1:=A_TickCount, Text:=X:=Y:=""
-	Text:="|<ForestGuard>*240$61.TzzzrxrzzzDbqQMyzvbqbhaqxzThxalqrTaziqyrNvPjxDrPPPgyRtlnwSghvU"
-	ok:=FindText(&X, &Y, 1064-150000, 90-150000, 1064+150000, 90+150000, 0, 0, Text)
-	return ok
-}
-
 ; uses color similarity, looking for yellows
 ; reset a 30-minute countdown timer when this is found
 FindText_EventBossIcon() {
@@ -331,20 +294,7 @@ FindText_EventBossIcon() {
 	return ok
 }
 
-startGodAndRun() {
-	; start Elysium God bossfight then TP to Forest Guard
-	; then turn around and run to the changing booth
-	Send(SignalRemoteKey)
-
-}
-
-TPboss1() {
-	Send(SignalRemoteKey)
-	findtext_Page2() 
-
-	findtext_ForestGuard()
-}
-
+#include "*i GodStuff.ahk"
 
 global Volume := 50
 VolumeIncrement := 5
@@ -412,6 +362,22 @@ SC027 & h::{
 	FrenzyLoop(true) 
 }
 SC027 & s::toggleStopAtLowHealth()
+
+*^!NumLock::ClearAllKeyState()
+
+LAlt & LWin::{
+	if GetKeyState("LCtrl") {
+		unfocus()
+	}
+}
+; hold shift down for slowly changing volume:
+LCTRL & UP::VolumeUpLoop()
+LCTRL & Down::VolumeDownLoop()
+
+; +e::Send "{e 100}"  ; was {e 100}
+;^!+e::Send "{e 1000}"
+#HotIf
+
 
 maybe_unfocus() {
 	if unfocusChk.Value {
@@ -537,19 +503,6 @@ getTreeHealthVg()
 ; 	}
 
 ; }
-
-LAlt & LWin::{
-	if GetKeyState("LCtrl") {
-		unfocus()
-	}
-}
-; hold shift down for slowly changing volume:
-LCTRL & UP::VolumeUpLoop()
-LCTRL & Down::VolumeDownLoop()
-
-+e::Send "{e 100}"  ; was {e 100}
-;^!+e::Send "{e 1000}"
-#HotIf
 
 ; Global hotkeys:
 ^!+r::Reload
@@ -706,7 +659,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 		ok:=findtext_x1Charged()
 		if ok {
 			Charged_Count += 1
-			; if Charged_Count = ChargedCountAtDelay {
+			if Charged_Count = ChargedCountAtDelay {
 				xy:=ok[1]
 				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count
 				; LogMessage("found",msg1)
@@ -725,7 +678,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 					}
 				}
 				ToolTip()
-			; }
+			}
 			
 		} else {
 			Charged_Count := 0
@@ -1035,5 +988,24 @@ checkForUpdate() {
 }
 
 checkForUpdate()
+
+ClearAllKeyState() {
+	; WinSetTitle("Clearing key state", FORTNITEWINDOW)
+	Loop 255 {
+		vk := Format("vk{:X}", A_Index)
+		p := GetKeyState(vk, "P")
+		l := GetKeyState(vk)
+		vkups :=""
+		if p || l {
+			vkup := "{" . vk . " up}"
+			Send(vkup)
+			vkups .= vkup " "
+		}
+		ToolTip(vkups)
+		Sleep(300)
+	}
+}
+
+ClearAllKeyState()
 
 ; Sleep(2146473647)
