@@ -36,7 +36,7 @@ FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 
 ; }
 
-global SignalRemoteKey := "1" ; getSignalRemoteKey() ; "1"
+global SignalRemoteKey := "" ; getSignalRemoteKey() ; "1"
 
 findtext_signalRemote()
 {
@@ -75,7 +75,13 @@ getSignalRemoteKey()
 	; sleep(333) 
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333)
-	SetTimer(getSignalRemoteKey,60000)
+	; every second until found, then every 30 secconds
+	if SignalRemoteKey {
+		SetTimer(getSignalRemoteKey,-30000)
+
+	} else {
+		SetTimer(getSignalRemoteKey,-1000)
+	}
 	; return SignalRemoteKey
 }
 
@@ -144,6 +150,7 @@ DoFrenzy() {
 	Sleep(555)
 	Send("{RButton}")
 	Sleep(888)
+
 
 	ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
 	t1:=A_TickCount, Text:=X:=Y:=""

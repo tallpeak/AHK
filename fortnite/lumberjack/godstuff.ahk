@@ -23,7 +23,8 @@ SC027 & 7::TPboss(7)
 SC027 & 8::TPboss(8)
 SC027 & 9::TPboss(9)
 '::TPboss()
-\::TPimmortalTree()
+\::TPimmortalTree(true)
++\::TPimmortalTree(false)
 #HotIf
 
 findtext_GuardiansPage2() {
@@ -293,6 +294,7 @@ TPboss(n:=0) {
 		ToolTip()
 		return
 	}
+	Sleep(500)
 	Send(SignalRemoteKey)
 	Sleep(500)
 	; Click("Right")
@@ -348,7 +350,11 @@ TPboss(n:=0) {
 	ToolTip()
 }
 
-TPimmortalTree() {
+TPimmortalTree(startfrenzy:=true) {
+	KeyWait("\")
+	Sleep(333)
+	Send("{Space}") ; jump up to stop crouching
+	Sleep(666)
 	TPboss(6) ; atlantean guard
 	;Walkback to wall (10 seconds?)
 	;walk left (1.5 secconds?)
@@ -374,6 +380,5 @@ TPimmortalTree() {
 	Send("{w down}")
 	Sleep(4000)
 	Send("{w up}")
-
-	FrenzyLoop(true)
+	FrenzyLoop(startfrenzy)
 }

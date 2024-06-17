@@ -6,6 +6,8 @@ InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
+; #Include ControlColor.ahk
+
 global EXTRA
 EXTRA:=50
 if A_ScreenWidth != 1600 {
@@ -82,11 +84,13 @@ toggleGui() {
 	}
 }
 
-ClickHideEvent(*) {
+HideEvent(*) {
+	WindowHideToggle()
 	if hidden {
-		WindowHideToggle()
+		BtnHide.Text := "Show"
+		; WindowShowAndFocus()
 	} else {
-		clicker_unfocused(true)
+		BtnHide.Text := "Hide"
 	}
 }
 
@@ -96,7 +100,8 @@ global MinsCtl
 global LoopNum
 global ChargedCtl
 global unfocusChk
-global BtnClickHide
+global BtnHide
+global BtnFrenzy
 global earlyAbort := false
 global logVisible := false
 
@@ -110,28 +115,29 @@ Constructor()
 	global SecondsRemain
 	global ChargedCtl
 	global unfocusChk
-	global BtnClickHide
+	global BtnHide
+	global BtnFrenzy
 	global earlyAbort
 	global logVisible
 	
 	myGui := Gui()
 	; myGui.Opt("+AlwaysOnTop")
-	BtnLog := myGui.Add("Button", "x00 y02 w26 h23", "Log")
-	BtnClick := myGui.Add("Button", "x26 y02 w45 h23", "Click")
-	BtnClickHide := myGui.Add("Button", "x72 y02 w57 h23", "ClickHide")
-	BthUnhide := myGui.Add("Button", "x144 y02 w57 h23", "Unhide")
-	BtnFrenzy := myGui.Add("Button", "x210 y02 w50 h23", "Frenzy")
-	LoopsLbl := myGui.Add("Text", "x280 y02 w18 h21", "#")
-	LoopsCtl := myGui.Add("Edit", "x300 y02 w26 h21 +Number", "16")
+	BtnStop  := myGui.Add("Button", "x0 y02 w50 h23", "STOP")
+	BtnClick := myGui.Add("Button", "x45 y02 w45 h23", "Click")
+	; BthUnhide := myGui.Add("Button", "x144 y02 w57 h23", "Unhide")
+	BtnFrenzy := myGui.Add("Button", "x90 y02 w50 h23", "Frenzy")
+	LoopsLbl := myGui.Add("Text", "x150 y02 w18 h21", "#")
+	LoopsCtl := myGui.Add("Edit", "x160 y02 w26 h21 +Number", "16")
 	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("iterations"), , "ahk_id " LoopsCtl.Hwnd) ; EM_SETCUEBANNER
-	LoopsLbl := myGui.Add("Text", "x332 y02 w30 h21", "mins")
-	MinsCtl := myGui.Add("Edit", "x362 y02 w26 h21", "15")
+	LoopsLbl := myGui.Add("Text", "x195 y02 w30 h21", "mins")
+	MinsCtl := myGui.Add("Edit", "x220 y02 w26 h21", "15")
 
 	LoopNum := myGui.Add("Text", "x400 y02 w30 h21", "0")
 	SecondsRemain := myGui.Add("Text", "x430 y02 w30 h21", "0")
 	ChargedCtl := myGui.Add("Text", "x460 y02 w50 h21", "Charged")
-	BtnStop  := myGui.Add("Button", "x520 y02 w50 h23", "STOP")
-	UnfocusChk := myGui.Add("CheckBox", "x580 y02 w61 h23", "Unfocus")	
+	UnfocusChk := myGui.Add("CheckBox", "x530 y02 w61 h23", "Unfocus")	
+	BtnHide := myGui.Add("Button", "x575 y02 w57 h23", "Hide")
+	BtnLog := myGui.Add("Button", "x620 y02 w26 h23", "Log")
 	
 	; ErrorLevel := SendMessage(0x1501, 1, StrPtr("minutes"), , "ahk_id " MinsCtl.Hwnd) ; EM_SETCUEBANNER
 	global LogCtl := myGui.Add("ListView", "x32 y64 w572 h120 +LV0x4000", ["time", "event", "description"])
@@ -141,11 +147,11 @@ Constructor()
 	; LogCtl.Add(,"Sample1")
 	; LogCtl.OnEvent("DoubleClick", LV_DoubleClick)
 	BtnClick.OnEvent("Click", (*) => clicker_unfocused(false))
-	BtnClickHide.OnEvent("Click", ClickHideEvent)
+	BtnHide.OnEvent("Click", HideEvent)
 	BtnStop.OnEvent("Click", stopClicking)
 	; UnfocusChk.OnEvent("Click", OnEventHandler)
 	BtnFrenzy.OnEvent("Click", (*) => FrenzyLoop(true))
-	BthUnhide.OnEvent("Click", (*) => WindowShowAndFocus())
+	; BthUnhide.OnEvent("Click", (*) => WindowShowAndFocus())
 	BtnLog.OnEvent("Click", ToggleLog)
 
 	; LoopsCtl.OnEvent("Change", OnEventHandler)
@@ -169,7 +175,7 @@ Constructor()
 		ToolTip("Click! This is a sample action.`n"
 		. "Active GUI element values include:`n"  
 		. "BtnClick => " BtnClick.Text "`n" 
-		. "BtnClickHide => " BtnClickHide.Text "`n" 
+		. "BtnHide => " BtnHide.Text "`n" 
 		. "UnfocusChk => " UnfocusChk.Value "`n" 
 		. "BtnFrenzy => " BtnFrenzy.Text "`n" 
 		. "LoopsCtl => " LoopsCtl.Value "`n" 
@@ -216,14 +222,15 @@ LogMessage(cat,msg) {
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
 Delay60 := 0   ; when 60/100 
-Charged_Delay := 2250 ; When "Charged!" is found
+Charged_Delay := 111 ; When "Charged!" is found
+X1Charged_Delay := 2222 ; When "x1 Charged!" is found
 Charged_Count := 0
 ChargedCountAtDelay := 1
 ; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
-keydown_time := 200 ; ms
-ctrl_time := "DT0.2" ; seconds
+keydown_time := 100 ; ms
+ctrl_time := "DT0.1" ; seconds
 firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
@@ -306,8 +313,9 @@ ToolTip("Loading macros...and sending {Enter up}")
 Send("{Enter up}")
 
 If(! WinExist(FORTNITEWINDOW) ) {
-	RunWait("com.epicgames.launcher://apps/fn%3A4fe75bbc5a674f4f9b356b5c90567da5%3AFortnite?action=launch&silent=true")
+	Run("com.epicgames.launcher://apps/fn%3A4fe75bbc5a674f4f9b356b5c90567da5%3AFortnite?action=launch&silent=true")
 	Sleep(1000)
+ 	WinWait(FORTNITEWINDOW,,60)
 }
 
 ActivateFortniteWindow() {
@@ -328,8 +336,8 @@ Try {
 
 SetKeyDelay(11,5)
 
+; main key bindings (for FN=active/focused window):
 #HotIf WinActive(FORTNITEWINDOW)
-; active/focused window key bindings
 ^End::Reload
 ^r::Reload
 ^+r::Reload
@@ -376,6 +384,13 @@ LCTRL & Down::VolumeDownLoop()
 
 ; +e::Send "{e 100}"  ; was {e 100}
 ;^!+e::Send "{e 1000}"
+
+;run: (sprint)
+r::{
+	Send "{w down}{LShift Down}"
+	KeyWait("r")
+	Send "{w up}{LShift Up}"
+}
 #HotIf
 
 
@@ -399,6 +414,8 @@ toggleStopAtLowHealth() {
 
 FrenzyLoop(frenzyfirst:=false) {
 	global StopAtLowHealth
+	; ControlColor(BtnFrenzy, myGui, "Blue")
+	BtnFrenzy.Opt("+Redraw +BackgroundGreen") 
 	loop LoopsCtl.Value {
 		LoopNum.Value := A_Index
 		if frenzyfirst {
@@ -447,7 +464,7 @@ FrenzyLoop(frenzyfirst:=false) {
 		; ToolTip()
 			vg := getTreeHealthVg()
 			if A_TimeIdlePhysical < 5000 
-				|| vg > 0.1 && vg < 5.0 && StopAtLowHealth {
+				|| vg > 1.0 && vg < 5.0 && StopAtLowHealth {
 			ToolTip("Continue frenzyloop? Press y within 20 seconds to continue ")
 			kw := KeyWait("y","DT20") ; nonzero if yes, 0 if timeout
 			if !kw {
@@ -464,6 +481,9 @@ FrenzyLoop(frenzyfirst:=false) {
 		}
 		frenzyfirst := true
 	}
+	; ControlColor(BtnFrenzy, myGui, "White")
+	BtnFrenzy.Opt("+BackgroundWhite +Redraw")
+
 }
 
 ; SetTimer(showPercent,2000)
@@ -661,7 +681,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			Charged_Count += 1
 			if Charged_Count = ChargedCountAtDelay {
 				xy:=ok[1]
-				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . Charged_Delay . "ms,#" . Charged_Count
+				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . X1Charged_Delay . "ms,#" . Charged_Count
 				; LogMessage("found",msg1)
 				toolTip(msg1,xy.1+xy.3*2,xy.2+xy.4)
 				if EnableGUI {
@@ -670,7 +690,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 						ChargedCtl.Opt("+BackgroundRed +Redraw")
 					}
 				}
-				Sleep(Charged_Delay) ; slow down during Charged!
+				Sleep(X1Charged_Delay) ; slow down during Charged!
 				if EnableGUI {
 					try {
 						ChargedCtl.Text := "Charged"
@@ -681,6 +701,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			}
 			
 		} else {
+			if findtext_Charged() {
+				Sleep(Charged_Delay)
+			}
 			Charged_Count := 0
 		}
 		if earlyAbort {
@@ -838,11 +861,11 @@ WindowHideToggle() {
 	try {
 		WinHide(FORTNITEWINDOW)
 		hidden := true
-		; BtnClickHide.Text := "Unhide"
+		; BtnHide.Text := "Unhide"
 	} catch {
 		WinShow(FORTNITEWINDOW)
 		hidden := false
-		; BtnClickHide.Text := "ClickHide"
+		; BtnHide.Text := "ClickHide"
 	}
 }
 
@@ -1001,11 +1024,60 @@ ClearAllKeyState() {
 			Send(vkup)
 			vkups .= vkup " "
 		}
-		ToolTip(vkups)
-		Sleep(300)
+	}
+	if vkups {
+		ToolTip("Cleared:" vkups)
+		Sleep(2000)
+	}
+}
+
+SetTimer(scanForGameLauncher, -15000) ; 10 seconds one-shot timer for manual reload trigger
+
+scanForGameLauncher() {
+	global EXTRA
+	; ToolTip("Looking for title screen")
+	X:=Y:=""
+	Text:="|<LUMBERJACK_HEROES>*254$70.jitn7VXlszzQwv79YwnrfqNXnBQannCRizVTQrK7T3vqvypwrPPhxri1av0zxxXkrTvbzizzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzrQATzVzzzzzyRbaPAyrzzzzs6SNSnnzzzzziPsRvTtzzzzytjinRxbzzzzvi6vzkzzzy"
+	xtra:=EXTRA
+	if (ok:=FindText(&X, &Y, 1038-xtra, 256-xtra, 1038+xtra, 256+xtra, 0, 0, Text))
+	{
+		ToolTip("Found title screen")
+		LogMessage("start","Found title screen")
+		; FindText().Click(X, Y, "L")
+		earlyAbort := true
+		Send("{LButton up}")
+		Sleep(200)
+		Send("{Enter up}")
+		Sleep(200)
+		findtext_PLAY_and_click()
+		Sleep(5000)
+		ToolTip()
+		Sleep(100000) ; is this long enough?
+		; wait for something to indicate loaded, such as the signal remote?
+		; (or wait for loading screen to go away)
+		TPimmortalTree()
+	}
+	; Sleep(5000)
+	; ToolTip()
+	SetTimer(scanForGameLauncher, -300000) ; 10 minutes
+}
+
+findtext_PLAY_and_click() {
+	global EXTRA
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<PLAY>FFFF01@0.95$29.0EwA001k8003UM0070k00C0kU8M1V1k0327U366"
+	xtra:=EXTRA
+	if (ok:=FindText(&X, &Y, 1037-xtra, 313-xtra, 1037+xtra, 313+xtra, 0, 0, Text))
+	{
+		FindText().Click(X, Y, "L")
 	}
 }
 
 ClearAllKeyState()
+
+MoveWindowToUpperRight()
+
+; scanForGameLauncher() 
+
 
 ; Sleep(2146473647)
