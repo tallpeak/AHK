@@ -6,6 +6,13 @@ InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
+; Use needs to configure key bindings 
+; for pickaxe(Harvesting tool)=` 
+; and fire=enter(return)
+pickaxe() {
+	Send(Chr(96)) ; pickaxe
+}
+
 ; #Include ControlColor.ahk
 
 global EXTRA
@@ -222,21 +229,21 @@ LogMessage(cat,msg) {
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
 Delay60 := 0   ; when 60/100 
-Charged_Delay := 111 ; When "Charged!" is found
-X1Charged_Delay := 2222 ; When "x1 Charged!" is found
+Charged_Delay := 50 ; When "Charged!" is found
+X1Charged_Delay := 2000 ; When "x1 Charged!" is found
 Charged_Count := 0
 ChargedCountAtDelay := 1
 ; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
 ; Charged_MaxRunDelay doesnt do much because
 ; "Charged!"" isn't always caught by screen-scanning
-keydown_time := 100 ; ms
-ctrl_time := "DT0.1" ; seconds
+keydown_time := 200 ; ms
+ctrl_time := "DT0.2" ; seconds
 firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 ; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
-#Include "*i findtextv2_v9.6.ahk"
+#Include "*i findtextv2_v9.6.ahk" ; v9.7 finds x3 Charged instead of x2
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
@@ -328,10 +335,13 @@ ActivateFortniteWindow() {
 
 Try {
 	ActivateFortniteWindow()
-	WinWaitActive(FORTNITEWINDOW)
+	Sleep(100)
+	; WinWaitActive(FORTNITEWINDOW)
 	WinShow(FORTNITEWINDOW)
+	Sleep(100)
 	ActivateFortniteWindow()
-	WinWaitActive(FORTNITEWINDOW)
+	Sleep(100)
+	; WinWaitActive(FORTNITEWINDOW)
 }
 
 SetKeyDelay(11,5)
@@ -431,7 +441,7 @@ FrenzyLoop(frenzyfirst:=false) {
 				if attempts > 1 {
 					ToolTip("WinActivate " FORTNITEWINDOW " failed, attempt#" attempts,1000,10)
 				}
-				Send("!Tab")
+				Send("{alt down}{tab}{alt up}")
 				Sleep(200)
 				; ToolTip()
 				; WinActivate("Fortnite")
@@ -439,7 +449,7 @@ FrenzyLoop(frenzyfirst:=false) {
 				WinWaitActive(FORTNITEWINDOW, , 0.1)
 			} 			
 			Sleep(211)
-			Send(Chr(96))
+			pickaxe()
 			Sleep(333)
 			Click()
 			Sleep(222)
@@ -589,9 +599,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 		MoveWindowToUpperRight()
 		; FindText().BindWindow(WinExist(FORTNITEWINDOW)) ; doesnt work
 	}
-	if !unfocusChk.Value {
+	; if !unfocusChk.Value {
 		ActivateFortniteWindow()
-	}
+	; }
 	msg := "Clicking! Your focus should be on the desktop."
 			. "`nIf captured, tap Windows key. Avoid alt-tab."
 			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)."
@@ -603,8 +613,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	; immediately unfocusing before first Enter/click event
 	; sometimes prevented the clicking from starting
 	; I'm not sure if this fixes it?
-	Send(Chr(96)) ; pickaxe
-	Sleep(111)
+	Sleep(333)
+	pickaxe()
+	Sleep(333)
 	Click()
 	Sleep(keydown_time)
 	; KeyWait("LAlt") ; doesnt work?!
@@ -619,7 +630,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	; (You may need to click in the window and restart the clicker macro, at times)
 	MouseMove(CENTERX,CENTERY)
 	Click()
-	Sleep(33)
+	Sleep(333)
 	maybe_unfocus()
 	while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
@@ -1051,15 +1062,17 @@ scanForGameLauncher() {
 		Sleep(200)
 		findtext_PLAY_and_click()
 		Sleep(5000)
-		ToolTip()
-		Sleep(100000) ; is this long enough?
+		ToolTip("Waiting two minutes for LJH to load")
+		;bbbbbbbbb
+		Sleep(120000) ; is this long enough?
 		; wait for something to indicate loaded, such as the signal remote?
 		; (or wait for loading screen to go away)
-		TPimmortalTree()
+		ToolTip()
+		TPimmortalTree() 
 	}
 	; Sleep(5000)
 	; ToolTip()
-	SetTimer(scanForGameLauncher, -300000) ; 10 minutes
+	SetTimer(scanForGameLauncher, -60000) ; 1 minute (temp)
 }
 
 findtext_PLAY_and_click() {

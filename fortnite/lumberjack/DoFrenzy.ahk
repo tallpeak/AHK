@@ -1,11 +1,11 @@
-; agenda for streem 6/2/2024
+; agenda for stream 6/2/2024
 ; Basic usage (a few keybindings)
 ; How to use FindText; explain signal remote 1 vs 2
 #WinActivateForce
 #Requires AutoHotkey v2.0 
 
 ; #Include "FindTextv2_FeiYue_9.5.ahk"
-#Include "findtextv2_v9.6.ahk"
+; #Include "findtextv2_v9.7.ahk"
 
 if A_LineFile = A_ScriptFullPath && !A_IsCompiled {
 	ToolTip("Do not run DoFrenzy.ahk directly")
@@ -37,6 +37,20 @@ FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 ; }
 
 global SignalRemoteKey := "" ; getSignalRemoteKey() ; "1"
+
+switchToRemote() 
+{
+	if SignalRemoteKey = "" {
+		getSignalRemoteKey()
+	}
+	while SignalRemoteKey = "" {
+		ToolTip("Waiting for signal remote to appear")
+		Sleep(1000)
+		getSignalRemoteKey()
+	}  
+	ToolTip()
+	Send(SignalRemoteKey)
+}
 
 findtext_signalRemote()
 {
@@ -105,19 +119,8 @@ DoFrenzy() {
 		MoveWindowToUpperRight()
 	; }
 	
-	; need to find/create a stable keybinding for remote
-	; it seems to change randomly
-	Sleep(111)
-
-	;FIXME!!!
-	;Send(Chr(96)) ; pickaxe, for testing
-	; Send("1") ; remote?
-	; Send("2") ; remote is sometimes 2
-	if SignalRemoteKey = "" {
-		getSignalRemoteKey()
-	}
 	Sleep(333)
-	Send(SignalRemoteKey)
+	switchToRemote() ; 1 or 2
 
 	; ; This might do it; scan for the black outline of the remote,
 	; ; then determine whether it is "lifted" higher on the screen (Y=327 vs. 334):
@@ -189,6 +192,6 @@ DoFrenzy() {
 	; } else {
 	; 	Click("WheelUp")
 	; }
-	Send(Chr(96)) ; my key binding for pickaxe?
+	pickaxe() ; my key binding for pickaxe?
 	Sleep(333)
 }

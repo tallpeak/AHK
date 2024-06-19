@@ -23,8 +23,8 @@ SC027 & 7::TPboss(7)
 SC027 & 8::TPboss(8)
 SC027 & 9::TPboss(9)
 '::TPboss()
-\::TPimmortalTree(true)
-+\::TPimmortalTree(false)
+^\::TPimmortalTree(true)
+^+\::TPimmortalTree(false)
 #HotIf
 
 findtext_GuardiansPage2() {
@@ -146,7 +146,7 @@ FightGod() {
 	KeyWait("Shift")
 	KeyWait("SC027") ;";"
 	Sleep(444)
-	Send(SignalRemoteKey)
+	switchToRemote()
 	Sleep(444)
 	Click("Right")
 	Send("{RButton}")
@@ -223,13 +223,14 @@ TPboss1() {
 	; WinActivate(FORTNITEWINDOW,,FORTNITEEXCLUDEWINDOW)
 	; SendMode("Event")
 	; ToolTip("TPBoss1")
-	Send(SignalRemoteKey)
-	Sleep(333)
+	Sleep(111)
+	switchToRemote()
+	Sleep(400)
 	; Click("Right")
 	Send("{RButton}")
 	; Send("{NumpadDot}")
 	; Sleep(99)
-	Sleep(333)
+	Sleep(400)
 	ok := findtext_FORESTGUARDIANS()
 	if ok {
 		X := ok[1].1 + 22
@@ -295,7 +296,7 @@ TPboss(n:=0) {
 		return
 	}
 	Sleep(500)
-	Send(SignalRemoteKey)
+	switchToRemote()
 	Sleep(500)
 	; Click("Right")
 	Send("{RButton}")
