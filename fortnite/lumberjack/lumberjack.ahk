@@ -41,7 +41,7 @@ ENABLE_RESIZE := true
 SCALINGFACTOR := 0.4
 ; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
 ; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
-; ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
+; FindText().ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
 ; Sleep(2222)
 
 DO_UNFOCUS := true ; false ; due to winactivate failures
@@ -171,15 +171,15 @@ Constructor()
 	; {
 	; 	if not RowNum
 	; 		return
-	; 	ToolTip(LV.GetText(RowNum), 77, 277)
-	; 	SetTimer () => ToolTip(), -3000
+	; 	FindText().ToolTip(LV.GetText(RowNum), 77, 277)
+	; 	SetTimer () => FindText().ToolTip(), -3000
 	; }
 	; Clicker(CtrlHwnd, GuiEvent, EventInfo, ErrLevel := "") {
 	; }
 	
 	OnEventHandler(*)
 	{
-		ToolTip("Click! This is a sample action.`n"
+		FindText().ToolTip("Click! This is a sample action.`n"
 		. "Active GUI element values include:`n"  
 		. "BtnClick => " BtnClick.Text "`n" 
 		. "BtnHide => " BtnHide.Text "`n" 
@@ -187,7 +187,7 @@ Constructor()
 		. "BtnFrenzy => " BtnFrenzy.Text "`n" 
 		. "LoopsCtl => " LoopsCtl.Value "`n" 
 		. "MinsCtl => " MinsCtl.Value "`n", 77, 277)
-		SetTimer () => ToolTip(), -3000 ; clear-tooltip timer
+		SetTimer () => FindText().ToolTip(), -3000 ; clear-tooltip timer
 	}
 	stopClicking(*) {
 		earlyAbort := true
@@ -228,7 +228,7 @@ LogMessage(cat,msg) {
 ; by expanding the search area
 ; 5/11/2024: I was exceeding 400 Od wood per frenzy for a while last night
 ; but more like 200 to 300 today.
-Delay60 := 0   ; when 60/100 
+Delay60 := 222   ; when 60/100 
 Charged_Delay := 50 ; When "Charged!" is found
 X1Charged_Delay := 2000 ; When "x1 Charged!" is found
 Charged_Count := 0
@@ -243,13 +243,13 @@ firekey := 13 ; Enter
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 ; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
-#Include "*i findtextv2_v9.6.ahk" ; v9.7 finds x3 Charged instead of x2
+#Include "*i findtextv2_v9.7.ahk" ; v9.7 finds x3 Charged instead of x2
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
 }
 if A_ScreenDPI != MyScreenDPI {
-	ToolTip("Only " MyScreenDPI " DPI supported; your DPI is " A_ScreenDPI)
+	FindText().ToolTip("Only " MyScreenDPI " DPI supported; your DPI is " A_ScreenDPI)
 	use_FindText := false
 }
 
@@ -260,7 +260,7 @@ findtext_60() {
 	t1:=A_TickCount, Text:=X:=Y:=""
 	xtra:=50
 	Text:="|<x60/100>*254$43.zzTTtxyhxxrSrPjyqvjPhozRRzhqvzjjzqzTrttvvbnU"
-	ok:=FindText(&X, &Y, 1352-xtra, 242-xtra, 1352+xtra, 242+xtra, 0, 0, Text)
+	ok:=FindText(&X, &Y, 1352-xtra, 242-xtra, 1352+xtra, 242+xtra, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -270,7 +270,7 @@ findtext_Charged() {
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
 	Text:="|<Charged>*254$39.rzzzzzzxzzzzyTfnzjzHxjjqqqThxiyynhhhzrqrxxizDTzzzyzzU"
-	ok:=FindText(&X, &Y, 1330-22, 238-22, 1330+50, 238+10, 0, 0, Text)
+	ok:=FindText(&X, &Y, 1330-22, 238-22, 1330+50, 238+10, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -285,14 +285,16 @@ findtext_x1Charged() {
 	t1:=A_TickCount, Text:=X:=Y:=""
 	; Text:="|<x1Charged>*254$58.zDzyzzzzzNizruwzvzpjvzThxyqqqbjxyrqvvvTyzrPPPzjhyvzrxxizDTU"
 	; Text:="|<x2Charged>*254$59.zPzzTzzzzgqrxyjDyzxPzjvxjjqqqozzrvTPjjhzrziqqrzTPxzzrxxizDTU"
-	Text:="|<x2Charged>*240$59.zPynTzzjzgqrxyjDgwxPzjvxjgqqqoyzrvTPhjhrnzgqqrzTPBVzXxZizDSU"
+	; Text:="|<x2Charged>*240$59.zPynTzzjzgqrxyjDgwxPzjvxjgqqqoyzrvTPhjhrnzgqqrzTPBVzXxZizDSU"
+	Text:="|<x2Charge>*240$52.zPynTzzjxhjvxSRFtzyzjqynPPbryzPvRhxwzvBhhzrqkzlymrTbU"
+	; if (ok:=FindText(&X, &Y, 1340-150000, 242-150000, 1340+150000, 242+150000, 0, 0, Text))	
 	xtrax:=50
 	xtray:=20
 	if EXTRA > 100 {
 		xtrax := EXTRA
 		xtray := EXTRA
 	}
-	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0, 0, Text)
+	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0.01, 0.01, Text) ; asdfasdf
 	return ok
 }
 
@@ -304,7 +306,7 @@ FindText_EventBossIcon() {
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
 	Text:="|<eventbossicon>E5B230-424242$10.U7BsF0004SLfwzzU"
-	ok:=FindText(&X, &Y, 800, 0, 1600, 100, 0, 0, Text)
+	ok:=FindText(&X, &Y, 800, 0, 1600, 100, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -316,7 +318,7 @@ VolumeIncrement := 5
 SendMode("Event")
 SetKeyDelay 50,100
 
-ToolTip("Loading macros...and sending {Enter up}")
+FindText().ToolTip("Loading macros...and sending {Enter up}",70,300)
 Send("{Enter up}")
 
 If(! WinExist(FORTNITEWINDOW) ) {
@@ -416,9 +418,9 @@ toggleStopAtLowHealth() {
 	global StopAtLowHealth
 	StopAtLowHealth := !StopAtLowHealth 
 	if StopAtLowHealth {
-		ToolTip("should stop when health of 409vg tree is down below 5vg")
+		FindText().ToolTip("should stop when health of 409vg tree is down below 5vg")
 	} else {
-		ToolTip("StopAtLowHealth disabled")
+		FindText().ToolTip("StopAtLowHealth disabled")
 	}
 }
 
@@ -430,7 +432,7 @@ FrenzyLoop(frenzyfirst:=false) {
 		LoopNum.Value := A_Index
 		if frenzyfirst {
 			MoveWindowToUpperRight()
-			ToolTip("Frenzy for loop #" A_Index)
+			FindText().ToolTip("Frenzy for loop #" A_Index)
 			Sleep(2111)
 			attempts := 0
 			DetectHiddenWindows(true)
@@ -439,22 +441,22 @@ FrenzyLoop(frenzyfirst:=false) {
 				WinWaitActive(FORTNITEWINDOW, , 0.2, FORTNITEEXCLUDEWINDOW)
 				attempts += 1
 				if attempts > 1 {
-					ToolTip("WinActivate " FORTNITEWINDOW " failed, attempt#" attempts,1000,10)
+					FindText().ToolTip("WinActivate " FORTNITEWINDOW " failed, attempt#" attempts,1000,10)
 				}
 				Send("{alt down}{tab}{alt up}")
 				Sleep(200)
-				; ToolTip()
+				; FindText().ToolTip()
 				; WinActivate("Fortnite")
 				; WinActivate("AHK_ID 17892")
 				WinWaitActive(FORTNITEWINDOW, , 0.1)
 			} 			
-			Sleep(211)
+			Sleep(444)
 			pickaxe()
-			Sleep(333)
+			Sleep(444)
 			Click()
-			Sleep(222)
+			Sleep(444)
 			Send(Chr(firekey))
-			Sleep(222)
+			Sleep(444)
 			DoFrenzy()
 		}
 		xtratime := 0
@@ -462,32 +464,31 @@ FrenzyLoop(frenzyfirst:=false) {
 		; temp, for when wanting to use up my golden trees (testing):
 	    ; clicktime := 4 * 60 ; debugging
 		; clicktime := 20 ; debug with 0 golden trees saved
-		ToolTip("clicker for loop #" A_Index)
-		Sleep(1111)
+
+		FindText().ToolTip("clicker for loop #" A_Index,,,,{timeout:3})
+		Sleep(333)
 
 		term := clicker_unfocused(false, clicktime)
 		if term { 
 			return
 		}
-		; ToolTip("15 minutes of clicking has ended; pausing 30 seconds (or until click) before next frenzy")
+		; FindText().ToolTip("15 minutes of clicking has ended; pausing 30 seconds (or until click) before next frenzy")
 		; KeyWait("LButton","DT30")
-		; ToolTip()
+		; FindText().ToolTip()
 			vg := getTreeHealthVg()
 			if A_TimeIdlePhysical < 5000 
 				|| vg > 1.0 && vg < 5.0 && StopAtLowHealth {
-			ToolTip("Continue frenzyloop? Press y within 20 seconds to continue ")
+			FindText().ToolTip("Continue frenzyloop? Press y within 20 seconds to continue ")
 			kw := KeyWait("y","DT20") ; nonzero if yes, 0 if timeout
 			if !kw {
-				ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 3000; user abort?)")
+				FindText().ToolTip("Stopping frenzyloop (A_TimeIdlePhysical = " A_TimeIdlePhysical " < 3000; user abort?)",,,,{timeout:5})
 				FileAppend("Stopped:" . A_Now "; A_TimeIdlePhysical=" A_TimeIdlePhysical ",vg=" vg "`n", "Lumberjack_log.txt")
-				Sleep(2222)
-				ToolTip()
 				break
-				}
+			}
 		} else {
-			ToolTip("pausing 10 seconds before next frenzy (or click)")
+			FindText().ToolTip("pausing 10 seconds before next frenzy (or click)")
 			KeyWait("LButton","DT10")
-			ToolTip()
+			FindText().ToolTip()
 		}
 		frenzyfirst := true
 	}
@@ -504,7 +505,7 @@ getTreeHealthVg()
 	color := "ED4D4D"
 	reds := FindText().PixelCount(1191, 26, 1367, 26, color,33)
 	vg := 409 * (reds / (1367-1191))
-	; ToolTip("vg=" vg, 1367,5)
+	; FindText().ToolTip("vg=" vg, 1367,5)
 	return vg
 }
 
@@ -607,7 +608,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)."
 	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
 					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
-	ttHWND := ToolTip(msg,10,10)
+	ttHWND := FindText().ToolTip(msg,10,10,,{timeout:5})
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 	; immediately unfocusing before first Enter/click event
@@ -625,7 +626,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	Sleep(keydown_time)
 	maybe_unfocus()
 	total_milliseconds := total_seconds * 1000
-	ToolTip("starting clicking...")
+	; FindText().ToolTip("starting clicking...")
 	; will this fix the "not chopping" issue at start?
 	; (You may need to click in the window and restart the clicker macro, at times)
 	MouseMove(CENTERX,CENTERY)
@@ -636,7 +637,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
 		if seconds_left < 9999 
 			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
-			ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
+			FindText().ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
 			SecondsRemain.Value:=seconds_left
 		}
 		; give user 6 seconds to read the message:
@@ -652,7 +653,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			if toolTip_showing {
 				activeWindow := WinExist("A")
 				fnWindow := WinExist(FORTNITEWINDOW)
-				ToolTip()
+				FindText().ToolTip()
 				TrayTip(msg)
 				toolTip_showing := false
 				; maybe_unfocus()
@@ -671,9 +672,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			rb := GetKeyState("RButton")
 			if A_TickCount > startTick + 2000
 			   and (kw or lb or rb) {
-				ToolTip("RCtrl/Button found; stopping clicking")
+				FindText().ToolTip("RCtrl/Button found; stopping clicking")
 				Sleep(1500)
-				ToolTip()
+				FindText().ToolTip()
 				term := true
 				break
 			}
@@ -682,9 +683,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			ok:=findtext_60()
 			if ok {
 				xy:=ok[1]
-				ToolTip("60/100(" . xy.1 . "," . xy.2 . ") +" . Delay60 . "ms",xy.1+xy.3*2,xy.2+xy.4)
+				FindText().ToolTip("60/100(" . xy.1 . "," . xy.2 . ") +" . Delay60 . "ms",xy.1+xy.3*2,xy.2+xy.4)
 				Sleep(Delay60)
-				ToolTip()  
+				FindText().ToolTip()  
 			}			
 		}
 		ok:=findtext_x1Charged()
@@ -692,9 +693,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			Charged_Count += 1
 			if Charged_Count = ChargedCountAtDelay {
 				xy:=ok[1]
-				msg1:="Charged(" . xy.1 . "," . xy.2 . ") +" . X1Charged_Delay . "ms,#" . Charged_Count
+				msg1:=xy.id . "(" . xy.1 . "," . xy.2 . ") +" . X1Charged_Delay . "ms,#" . Charged_Count
 				; LogMessage("found",msg1)
-				toolTip(msg1,xy.1+xy.3*2,xy.2+xy.4)
+				FindText().ToolTip(msg1,xy.1,xy.2+xy.4*2)
 				if EnableGUI {
 					try {
 						ChargedCtl.Text := xy.x "," xy.y
@@ -708,7 +709,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 						ChargedCtl.Opt("+BackgroundWhite +Redraw")
 					}
 				}
-				ToolTip()
+				FindText().ToolTip()
 			}
 			
 		} else {
@@ -721,24 +722,24 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			break
 		}
 	}
-	ToolTip("end of clicking...")
+	FindText().ToolTip("end of clicking...")
 	Sleep(2222)
-	ToolTip()
+	FindText().ToolTip()
 	; Hotkey("Alt & Enter",,"Off")
 	return term
 }
 
 oldclicker() {
-	ToolTip("Press RCtrl or RButton to stop clicking",66,66	)
+	FindText().ToolTip("Press RCtrl or RButton to stop clicking",66,66	)
 	ActivateFortniteWindow()
 	;Send("{LClick Down}")
 	Loop {
 		; terminate only if window switch was likely initiated by the user:
 		if !WinActive(FORTNITEWINDOW) && A_TimeIdle < 5000 {
 			; ActivateFortniteWindow()
-			ToolTip(FORTNITEWINDOW " not active due to user activity; stopping clicking")
+			FindText().ToolTip(FORTNITEWINDOW " not active due to user activity; stopping clicking")
 			Sleep(333)
-			ToolTip()
+			FindText().ToolTip()
 			break
 		}
 		if WinActive(FORTNITEWINDOW) {
@@ -747,9 +748,9 @@ oldclicker() {
 		kw := KeyWait("RCtrl","DT0.2")
 		rb := GetKeyState("RButton")
 		if kw or rb {
-			ToolTip("RCtrl/RButton found; stopping clicking")
+			FindText().ToolTip("RCtrl/RButton found; stopping clicking")
 			Sleep(1500)
-			ToolTip()
+			FindText().ToolTip()
 			break
 		}
 	}
@@ -768,9 +769,9 @@ fastclicker() {
 		rb := GetKeyState("RButton")
 		f := GetKeyState("F","P")
 		if kw or rb or f==0 {
-			ToolTip("RCtrl/RButton/!f found; stopping clicking")
+			FindText().ToolTip("RCtrl/RButton/!f found; stopping clicking")
 			Sleep(1500)
-			ToolTip()
+			FindText().ToolTip()
 			break
 		}
 	}
@@ -786,10 +787,10 @@ InteractionLoop() {
 		if WinActive(FORTNITEWINDOW) {
 			if	A_TimeIdle > 555 {
 				; useful for (eg) Robot Tycoon 2
-				ToolTip("Sending {e 111}")
+				FindText().ToolTip("Sending {e 111}")
 				Send "{e 111}"
 				Sleep(222)
-				ToolTip()
+				FindText().ToolTip()
 			}
 			Sleep(522)
 		} else {
@@ -807,9 +808,9 @@ emoting() {
 		Send("{b}")
 		kw := KeyWait("RCtrl","DT0.1")
 		if kw {
-			ToolTip("RCtrl found, stopping b (emote)")
+			FindText().ToolTip("RCtrl found, stopping b (emote)")
 			Sleep(3000)
-			ToolTip()
+			FindText().ToolTip()
 			break
 		}
 	}
@@ -969,7 +970,7 @@ TryWinActivate(w)
 }
 
 Sleep(1000)
-ToolTip()  ; get rid of "Loading..."
+FindText().ToolTip()  ; get rid of "Loading..."
 
 ; does not seem necessary
 ; and this did not fix WinActivate failures when using EXE only
@@ -1002,6 +1003,7 @@ ToolTip()  ; get rid of "Loading..."
 checkForUpdate() {
 	whr := ComObject("WinHttp.WinHttpRequest.5.1")
 	url := "https://qomph.com/lumberjack/lumberjack.zip"
+	filename := "lumberjack.zip"
 	whr.Open("HEAD", url, true)
 	whr.Send()
 	; Using 'true' above and the call below allows the script to remain responsive.
@@ -1013,11 +1015,17 @@ checkForUpdate() {
 	; respect local timezone settings:
     utcoffset := A_NowUTC - A_Now 
 	this_modified := this_modified + utcoffset
-	if this_modified < last_modified {
+	if this_modified < last_modified  {
 		; MsgBox("this_modified=" this_modified ", last_modified=" last_modified)
-        ToolTip("Notice: Update is available! see: " url)
-        Sleep(5000)
-		ToolTip()
+        FindText().ToolTip("Notice: Update is available! see: `n" url 
+						  "`nPress y to download (in 10 seconds)",80,WINHEIGHT-80)
+        ; Sleep(5000)
+		k := KeyWait("y","DT10")
+		if k {
+			Download(url,filename)
+			RunWait(filename) ; open the archive; let the user extract
+		}
+		FindText().ToolTip()
     }
 }
 
@@ -1037,7 +1045,7 @@ ClearAllKeyState() {
 		}
 	}
 	if vkups {
-		ToolTip("Cleared:" vkups)
+		FindText().ToolTip("Cleared:" vkups)
 		Sleep(2000)
 	}
 }
@@ -1046,13 +1054,14 @@ SetTimer(scanForGameLauncher, -15000) ; 10 seconds one-shot timer for manual rel
 
 scanForGameLauncher() {
 	global EXTRA
-	; ToolTip("Looking for title screen")
+	global SignalRemoteKey
+	; FindText().ToolTip("Looking for title screen")
 	X:=Y:=""
 	Text:="|<LUMBERJACK_HEROES>*254$70.jitn7VXlszzQwv79YwnrfqNXnBQannCRizVTQrK7T3vqvypwrPPhxri1av0zxxXkrTvbzizzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzrQATzVzzzzzyRbaPAyrzzzzs6SNSnnzzzzziPsRvTtzzzzytjinRxbzzzzvi6vzkzzzy"
 	xtra:=EXTRA
 	if (ok:=FindText(&X, &Y, 1038-xtra, 256-xtra, 1038+xtra, 256+xtra, 0, 0, Text))
 	{
-		ToolTip("Found title screen")
+		FindText().ToolTip("Found title screen")
 		LogMessage("start","Found title screen")
 		; FindText().Click(X, Y, "L")
 		earlyAbort := true
@@ -1062,12 +1071,33 @@ scanForGameLauncher() {
 		Sleep(200)
 		findtext_PLAY_and_click()
 		Sleep(5000)
-		ToolTip("Waiting two minutes for LJH to load")
-		;bbbbbbbbb
-		Sleep(120000) ; is this long enough?
+		; FindText().ToolTip("Waiting two minutes for LJH to load...Scanning for signal remote")
+		FindText().ToolTip("Wait for LJH to load`nScan for signal remote")
+		; Sleep(120000) ; is this long enough?
 		; wait for something to indicate loaded, such as the signal remote?
 		; (or wait for loading screen to go away)
-		ToolTip()
+		SignalRemoteKey := ""
+		tries := 0
+		while !SignalRemoteKey && tries++ < 240 {
+			if findtext_signalRemote() {
+				break
+			}
+			Sleep(2000)
+		} 
+		; this seemed to get stuck?!
+		; Loop 600 {
+		; 	getSignalRemoteKey()
+		; 	if SignalRemoteKey {
+		; 		break
+		; 	}				
+		; 	Sleep(2000)
+		; }
+		getSignalRemoteKey()
+		FindText().ToolTip("Found signal remote; about to TP Immortal Tree...")
+		MoveWindowToUpperRight()
+		ActivateFortniteWindow()
+		Sleep(1000)
+		FindText().ToolTip()
 		TPimmortalTree() 
 	}
 	; Sleep(5000)

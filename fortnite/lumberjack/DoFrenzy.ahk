@@ -8,7 +8,7 @@
 ; #Include "findtextv2_v9.7.ahk"
 
 if A_LineFile = A_ScriptFullPath && !A_IsCompiled {
-	ToolTip("Do not run DoFrenzy.ahk directly")
+	FindText().ToolTip("Do not run DoFrenzy.ahk directly")
 	Sleep(2000)
 	ExitApp()
 }
@@ -40,15 +40,15 @@ global SignalRemoteKey := "" ; getSignalRemoteKey() ; "1"
 
 switchToRemote() 
 {
-	if SignalRemoteKey = "" {
+	if ! SignalRemoteKey {
 		getSignalRemoteKey()
 	}
-	while SignalRemoteKey = "" {
-		ToolTip("Waiting for signal remote to appear")
+	while ! SignalRemoteKey {
+		FindText().ToolTip("Waiting for signal remote to appear")
 		Sleep(1000)
 		getSignalRemoteKey()
 	}  
-	ToolTip()
+	FindText().ToolTip()
 	Send(SignalRemoteKey)
 }
 
@@ -57,8 +57,16 @@ findtext_signalRemote()
 	global EXTRA
 	t1:=A_TickCount, Text:=X:=Y:=""
 	xtra := EXTRA ; 100
-	Text:="|<remoteDown2>*1$13.00X001F0sUQ0AEA0402421V0QU3kE"
+	; Text:="|<remoteDown2>*1$13.00X001F0sUQ0AEA0402421V0QU3kE"
 	Text.="|<remoteUp1>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
+	Text.="|<SignalRemoteDown>*1$13.00X001F0sUQ0AEA0402421V0QU3kE" ; captured with v9.7
+
+	if (ok:=FindText(&X, &Y, 1561-150000, 334-150000, 1561+150000, 334+150000, 0, 0, Text))
+	{
+	  ; FindText().Click(X, Y, "L")
+	}
+
+
 	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0, 0, Text)
 	return ok
 }
@@ -78,9 +86,9 @@ getSignalRemoteKey()
 		SignalRemoteKey := "1"
 	}
 	if oldSignalRemoteKey != SignalRemoteKey {
-		ToolTip("SignalRemoteKey=" SignalRemoteKey)
+		FindText().ToolTip("SignalRemoteKey=" SignalRemoteKey, , "Timeout=1555")
 		Sleep(2000)
-		ToolTip()	
+		FindText().ToolTip()	
 	}
 	; global SignalRemoteKey
 	; WinActivate(FORTNITEWINDOW)
@@ -92,7 +100,6 @@ getSignalRemoteKey()
 	; every second until found, then every 30 secconds
 	if SignalRemoteKey {
 		SetTimer(getSignalRemoteKey,-30000)
-
 	} else {
 		SetTimer(getSignalRemoteKey,-1000)
 	}
@@ -136,7 +143,7 @@ DoFrenzy() {
 	; 	Text:="|<singleremoted>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
 	; 	if (ok:=FindText(&X, &Y, 1561-signalremote_xtra, 327-signalremote_xtra*4, 1561+signalremote_xtra, 327+signalremote_xtra*4, 0, 0, Text))
 	; 	{
-	; 	  ToolTip(X "," Y)
+	; 	  FindText().ToolTip(X "," Y)
 	; 	  Sleep(2000)
 	; 	  if Y < 330 {
 	; 		Send("{WheelUp}")
@@ -150,12 +157,12 @@ DoFrenzy() {
 	; Text:="|<signalRemoteD_text>*200$48.5YNQEKE8BQNRG5OOp4FQG1+O5ZJ5EuO8U"
 	; if (ok:=FindText(&X, &Y, 1493-signalremote_xtra, 341-signalremote_xtra, 1493+signalremote_xtra, 341+signalremote_xtra, 0, 0, Text))
 
-	Sleep(555)
+	Sleep(666)
 	Send("{RButton}")
-	Sleep(888)
+	Sleep(555)
 
 
-	ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
+	FindText().ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<GoldenTree>*11$47.Ml7797bDOm/8O2/G4YGQo4Gxd8YVM8t9KFN2kF+AMvXYUWLU"
@@ -164,7 +171,7 @@ DoFrenzy() {
 		Sleep(333)
 		FindText().Click(X, Y, "L")
 	}
-	ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
+	FindText().ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
 	Sleep(333)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
@@ -174,7 +181,7 @@ DoFrenzy() {
 		Sleep(333)
 		FindText().Click(X, Y, "L")
 	}
-	ToolTip("Searching for Activate", WINWIDTH - 150, 50)
+	FindText().ToolTip("Searching for Activate", WINWIDTH - 150, 50)
 	Sleep(333)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
