@@ -306,7 +306,7 @@ TPboss(n:=0) {
 	; Send("{RButton Down}")
 	; Sleep(200)
 	; Send("{RButton Up}")
-	Sleep(300)
+	Sleep(800)
 	ok := findtext_FORESTGUARDIANS()
 	if ok {
 		X := ok[1].1

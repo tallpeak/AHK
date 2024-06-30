@@ -6,10 +6,11 @@ InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
-; Use needs to configure key bindings 
+; User needs to configure key bindings 
 ; for pickaxe(Harvesting tool)=` 
 ; and fire=enter(return)
 pickaxe() {
+	WinActivate(FORTNITEWINDOW,,FORTNITEEXCLUDEWINDOW)
 	Send(Chr(96)) ; pickaxe
 }
 
@@ -230,7 +231,7 @@ LogMessage(cat,msg) {
 ; but more like 200 to 300 today.
 Delay60 := 222   ; when 60/100 
 Charged_Delay := 50 ; When "Charged!" is found
-X1Charged_Delay := 2000 ; When "x1 Charged!" is found
+X1Charged_Delay := 2500 ; When "x1 Charged!" is found
 Charged_Count := 0
 ChargedCountAtDelay := 1
 ; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
@@ -243,7 +244,7 @@ firekey := 13 ; Enter
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
 ; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
-#Include "*i findtextv2_v9.7.ahk" ; v9.7 finds x3 Charged instead of x2
+#Include "*i findtextv2_v9.7b.ahk" ; v9.7 finds x3 Charged instead of x2
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
@@ -310,6 +311,25 @@ FindText_EventBossIcon() {
 	return ok
 }
 
+findtext_BATTLEPASS_CLAIM_and_click() {
+	t1:=A_TickCount, Text:=X:=Y:=""
+	Text:="|<BATTLEPASS_CLAIM>*15$128.knrYQCA8E0000000028MYMA8F42H5+000000001+69DZ24FkZF2000000000EWWPZ8V4ECG480000000048YZPS8F427Z+000000001+D9LYW4RkV8V0000000008uGFU"
+	xtrax:=50
+	xtray:=20
+	if EXTRA > 100 {
+		xtrax := EXTRA
+		xtray := EXTRA
+	}
+	if (ok:=FindText(&X, &Y, 1273-xtrax, 337-xtray, 1273+xtrax, 337+xtray, 0, 0, Text))
+	{
+		FindText().ToolTip("clicking BATTLEPASS_CLAIM")
+		Sleep(600)
+		FindText().Click(X+55, Y, "L")
+		Sleep(5000)
+		FindText().ToolTip()
+	}
+}
+
 #include "*i GodStuff.ahk"
 
 global Volume := 50
@@ -328,11 +348,14 @@ If(! WinExist(FORTNITEWINDOW) ) {
 }
 
 ActivateFortniteWindow() {
-	CoordMode "Mouse", "Screen"
-	MouseMove(CENTERX,CENTERY)
-	Sleep(33)
-	WinActivate(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW)
-	Sleep(33)  ; try to stop the scrollwheel action that seems to be happening
+	if !WinActive(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW) {
+		CoordMode "Mouse", (bak:=A_CoordModeMouse)?"Screen":"Screen"
+		MouseMove(CENTERX,CENTERY)	
+		CoordMode "Mouse", bak
+		Sleep(33)
+		WinActivate(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW)
+		Sleep(33)  ; try to stop the scrollwheel action that seems to be happening
+	}
 }
 
 Try {
@@ -606,9 +629,12 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	msg := "Clicking! Your focus should be on the desktop."
 			. "`nIf captured, tap Windows key. Avoid alt-tab."
 			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)."
+			. "`nIMPORTANT: Configure key bindings in Fortnite settings:"
+			. "`npickaxe(Harvesting Tool)=backquote(``) (Chr(96))"
+			. "`nFire=Enter(Return key) (Chr(13))"
 	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
 					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
-	ttHWND := FindText().ToolTip(msg,10,10,,{timeout:5})
+	ttHWND := FindText().ToolTip(msg,10,10,2,{timeout:10})
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 	; immediately unfocusing before first Enter/click event
@@ -1050,11 +1076,14 @@ ClearAllKeyState() {
 	}
 }
 
-SetTimer(scanForGameLauncher, -15000) ; 10 seconds one-shot timer for manual reload trigger
+global EventBossTimer
+EventBossTimer := A_TickCount
+SetTimer(scanForGameLauncher, -5000) ; 5 seconds one-shot timer for manual reload trigger
 
 scanForGameLauncher() {
 	global EXTRA
 	global SignalRemoteKey
+	global EventBossTimer
 	; FindText().ToolTip("Looking for title screen")
 	X:=Y:=""
 	Text:="|<LUMBERJACK_HEROES>*254$70.jitn7VXlszzQwv79YwnrfqNXnBQannCRizVTQrK7T3vqvypwrPPhxri1av0zxxXkrTvbzizzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzrQATzVzzzzzyRbaPAyrzzzzs6SNSnnzzzzziPsRvTtzzzzytjinRxbzzzzvi6vzkzzzy"
@@ -1065,6 +1094,7 @@ scanForGameLauncher() {
 		LogMessage("start","Found title screen")
 		; FindText().Click(X, Y, "L")
 		earlyAbort := true
+		EventBossTimer := A_TickCount ; reset event boss timer
 		Send("{LButton up}")
 		Sleep(200)
 		Send("{Enter up}")
@@ -1102,6 +1132,23 @@ scanForGameLauncher() {
 	}
 	; Sleep(5000)
 	; ToolTip()
+
+	; attempt to show approx. minutes until next event boss
+	ok:=FindText_EventBossIcon()
+	elapsed := A_TickCount - EventBossTimer
+	if ok && elapsed > 10000 {
+		FindText().ToolTip("EB icon!",ok[1].1,ok[1].2+20,,{timeout:3})
+		EventBossTimer := A_TickCount + 3 * 60000
+	}
+	mins := Round(30 - elapsed / 60000)
+	if mins < 33 || true {
+		CoordMode "ToolTip", (bak:=A_CoordModeMouse)?"Screen":"Screen"
+		FindText().ToolTip(mins,A_ScreenWidth-50,40,3,{color:"White",bgcolor:"AA6622",size:(mins>9?10:14)})
+		CoordMode "ToolTip", bak
+	}
+
+	findtext_BATTLEPASS_CLAIM_and_click()
+
 	SetTimer(scanForGameLauncher, -60000) ; 1 minute (temp)
 }
 

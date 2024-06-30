@@ -61,13 +61,13 @@ findtext_signalRemote()
 	Text.="|<remoteUp1>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
 	Text.="|<SignalRemoteDown>*1$13.00X001F0sUQ0AEA0402421V0QU3kE" ; captured with v9.7
 
-	if (ok:=FindText(&X, &Y, 1561-150000, 334-150000, 1561+150000, 334+150000, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1561-150000, 334-150000, 1561+150000, 334+150000, 0.01, 0.01, Text))
 	{
 	  ; FindText().Click(X, Y, "L")
 	}
 
 
-	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0, 0, Text)
+	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -141,7 +141,7 @@ DoFrenzy() {
 
 	; 	t1:=A_TickCount, Text:=X:=Y:=""
 	; 	Text:="|<singleremoted>*1$13.00X001F0sUQ0AEA0402421V0AU0UE"
-	; 	if (ok:=FindText(&X, &Y, 1561-signalremote_xtra, 327-signalremote_xtra*4, 1561+signalremote_xtra, 327+signalremote_xtra*4, 0, 0, Text))
+	; 	if (ok:=FindText(&X, &Y, 1561-signalremote_xtra, 327-signalremote_xtra*4, 1561+signalremote_xtra, 327+signalremote_xtra*4, 0.01, 0.01, Text))
 	; 	{
 	; 	  FindText().ToolTip(X "," Y)
 	; 	  Sleep(2000)
@@ -155,43 +155,50 @@ DoFrenzy() {
 
 	; t1:=A_TickCount, Text:=X:=Y:=""
 	; Text:="|<signalRemoteD_text>*200$48.5YNQEKE8BQNRG5OOp4FQG1+O5ZJ5EuO8U"
-	; if (ok:=FindText(&X, &Y, 1493-signalremote_xtra, 341-signalremote_xtra, 1493+signalremote_xtra, 341+signalremote_xtra, 0, 0, Text))
+	; if (ok:=FindText(&X, &Y, 1493-signalremote_xtra, 341-signalremote_xtra, 1493+signalremote_xtra, 341+signalremote_xtra, 0.01, 0.01, Text))
 
 	Sleep(666)
 	Send("{RButton}")
 	Sleep(555)
 
-
 	FindText().ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<GoldenTree>*11$47.Ml7797bDOm/8O2/G4YGQo4Gxd8YVM8t9KFN2kF+AMvXYUWLU"
-	if (ok:=FindText(&X, &Y, 1228-EXTRA, 145-EXTRA, 1228+EXTRA, 145+EXTRA, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1228-EXTRA, 145-EXTRA, 1228+EXTRA, 145+EXTRA, 0.01, 0.01, Text))
 	{
 		Sleep(333)
 		FindText().Click(X, Y, "L")
+	} else { 
+		ToolTip("failed findtext_GoldenTree")
+		return
 	}
 	FindText().ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
-	Sleep(333)
+	Sleep(555)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<Frenzy>*11$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
-	if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0.01, 0.01, Text))
 	{
 		Sleep(333)
 		FindText().Click(X, Y, "L")
+	} else { 
+		ToolTip("failed findtext_Frenzy")
+		return
 	}
 	FindText().ToolTip("Searching for Activate", WINWIDTH - 150, 50)
 	Sleep(333)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	Text:="|<ACTIVATE>*11$53.C03v8EsyywT7qNXlxVcn6An6VX2F0ANa937wm0Ml8n6ATaMlWFyAMnDVX7XAMz303664Aly"
-	if (ok:=FindText(&X, &Y, 1064-EXTRA, 307-EXTRA, 1064+EXTRA, 307+EXTRA, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1064-EXTRA, 307-EXTRA, 1064+EXTRA, 307+EXTRA, 0.01, 0.01, Text))
 	{
 		Sleep(333)
 		FindText().Click(X, Y, "L")
+	} else { 
+		ToolTip("failed findtext_ACTIVATE")
+		return
 	}
-
 	Sleep(333)
 	; signal remote is 1, then Click("WheelUp") else Click("WheelDown") should work to move back to pickaxe
 	; if SignalRemoteKey = "1" {
