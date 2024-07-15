@@ -32,12 +32,14 @@ findtext_GuardiansPage2() {
 		return 0
 	}
 	t1:=A_TickCount, Text:=X:="", Y:=""
-	Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
+	; Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
+	Text:="|<Page2/2>*99$49.7zzzwzrtUzxzwDnsKEkkwnttVCGPTnxzYAB8DnwzaQaCrUyT1T373sDTkE"
 	xtra:=111
 	X:="wait"
 	Y:=0.2
 	; 968, 289, 1028, 325
-	ok:=FindText(&X, &Y, 1000-xtra, 311-xtra, 1000+xtra, 311+xtra, 0.01, 0.01, Text)
+	; ok:=FindText(&X, &Y, 1000-xtra, 311-xtra, 1000+xtra, 311+xtra, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1000-xtra, 310-xtra, 1000+xtra, 310+xtra, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -60,9 +62,11 @@ findtext_FORESTGUARDIANS() {
 	}
 	t1:=A_TickCount, Text:=X:="", Y:=0
 	Text:="|<FORESTGUARDIANS>*11$91.tXb4w6GAQsX4W00FNO545d6/KFXGU08YZm224Z4d9Fd007GQUF1OGHYYYg802/9EcUZNt+mSKI0134i8EAMYZl99400U"
+	Text.="|<FOREST_GUARDIANS>*31$78.tXb4w6GAQsX4WWmo+8/GAKgX6ZWGL888GIGYZ6YuHY28/GGQYYZVWmI+89KSGgbZZVWL486AGGsYYWU"
 	X:="wait"
+	y:=1.0
 	xtra:=EXTRA
-	ok:=FindText(&X, &Y, 1237-xtra, 193-xtra, 1237+xtra, 193+xtra, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1231-xtra, 193-xtra, 1231+xtra, 193+xtra, 0.01, 0.01, Text)
 	return ok
 }
 
@@ -83,27 +87,38 @@ findtext_TELEPORT_and_click() {
 	global EXTRA
 	t1:=A_TickCount, Text:=X:="", Y:=0
 	Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
+	Text.="|<TELEPORT>*31$56.zTADbUMSDzrn3tyTbvwlUkkNaNaAATADaNaNX36331yNbkklUkkS6NYAATDja1yNX37nvtU66Mm"
 	X:="wait"
 	xtra:=EXTRA ; 100
-	ok:=FindText(&X, &Y, 1527-xtra, 89-xtra, 1527+xtra, 89+xtra, 0.01, 0.01, Text)
+	; ok:=FindText(&X, &Y, 1527-xtra, 89-xtra, 1527+xtra, 89+xtra, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1527-xtra, 20-xtra, 1527+xtra, 500+xtra, 0.01, 0.01, Text)
 	if ok {
 		; ToolTip("TELEPORT:X=" X ",Y=" Y)
+		Sleep(100)
 		FindText().Click(X, Y, "L")
 		; Sleep(555)
+	} else {
+		FindText().ToolTip("failed findtext_TELEPORT")
+		return
 	}
 	return ok	
 }
 
 findtext_TELEPORT_and_click_n(n) {
 	t1:=A_TickCount, Text:=X:="", Y:=0
-	Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
+	; Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
+	Text:="|<TELEPORT>*31$56.zTADbUMSDzrn3tyTbvwlUkkNaNaAATADaNaNX36331yNbkklUkkS6NYAATDja1yNX37nvtU66Mm"
 	X:="wait"
 	xtra:=EXTRA ; 100
 	xy:=0
-	ok:=FindText(&X, &Y, 0, 0, A_ScreenWidth, A_ScreenHeight, 0.01, 0.01, Text)
+	; ok:=FindText(&X, &Y, 0, 0, A_ScreenWidth, A_ScreenHeight, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1527-xtra, 20-xtra, 1527+xtra, 500+xtra, 0.01, 0.01, Text)
 	if ok {
 		xy := ok[n]
 		FindText().Click(xy.1, xy.2, "L")
+	} else {
+		FindText().ToolTip("failed findtext_TELEPORT_and_click_n(" n ")")
+		return
 	}
 	return xy	
 }
@@ -112,13 +127,17 @@ findtext_JOIN_and_click() {
 	global EXTRA
 	t1:=A_TickCount, Text:=X:="", Y:=0
 	Text:="|<JOIN>*1$24.Q0AlASAlAnAtAVAVAVAZAnAbsSAX00AXU"
+	Text.="|<JOIN>*31$24.wAAlwzAtAnAtAnAxAnArAnArwzAnkAAnU"
 	xtra:=EXTRA
 	X:="wait"
 	if (ok:=FindText(&X, &Y, 1464-xtra, 201-xtra, 1464+xtra, 201+xtra, 0.01, 0.01, Text))
 	{
 		; ToolTip("found JOIN")
-		Sleep(300)
+		Sleep(100)
 		FindText().Click(X+11, Y+6, "L")
+	} else {
+		FindText().ToolTip("failed findtext_JOIN")
+		return
 	}
 }
 
@@ -126,13 +145,17 @@ findtext_CLOSE_and_click() {
 	global EXTRA
 	t1:=A_TickCount, Text:=X:="", Y:=0
 	Text:="|<CLOSE>*1$34.0A001xskSBaAn3AUMUA8F1u0kV1aAn3A2MSD7X9w0w007s"
+	Text.="|<CLOSE>*15$33.0A001vlUwNAnAAm1Y1V28DUA8ENaNVa1ASD7X9s1s00DU"
 	xtra:=EXTRA
 	X:="wait"
 	if (ok:=FindText(&X, &Y, 1280-xtra, 325-xtra, 1280+xtra, 325+xtra, 0.01, 0.01, Text))
 	{
 		; Sleep(100)
 		FindText().Click(X, Y, "L")
-	}
+	} else {
+		FindText().ToolTip("failed findtext_CLOSE")
+		return
+	}	
 }
 
 FightGod() {
@@ -147,67 +170,73 @@ FightGod() {
 	KeyWait("SC027") ;";"
 	Sleep(444)
 	switchToRemote()
-	Sleep(444)
-	Click("Right")
-	Send("{RButton}")
-	Sleep(666)
-	ok := findtext_FORESTGUARDIANS()
-	if ok {
-		X := ok[1].1 + 33
-		Y := ok[1].2
-		FindText().Click(X, Y, "L")
-		Sleep(666)
-	} else {
-		ToolTip("Error finding FORESTGUARDIANS")
-		return
-	}
-	ok := findtext_GuardiansPage2() 
-	if !ok {
-		FindText_larrow_and_click()
-		Sleep(888)
-	} 
-	t1:=A_TickCount, Text:=X:="", Y:=0
-	Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
-	X:="wait"
-	xtra:=30
-	ok:=FindText(&X, &Y, 1524-xtra, 201-xtra, 1524+xtra, 201+xtra, 0.01, 0.01, Text)
-	if ok {
-		; ToolTip("TPed to Boss9? Clicking TP")
-		FindText().Click(X, Y, "L")
-	} else {
-		ToolTip("Error finding boss9 TELEPORT")
-		return
-	}
+	TPboss(9)
+	; Sleep(444)
+	; Click("Right")
+	; Send("{RButton}")
+	; Sleep(666)
+	; ok := findtext_FORESTGUARDIANS()
+	; if ok {
+	; 	X := ok[1].1 + 33
+	; 	Y := ok[1].2
+	; 	FindText().Click(X, Y, "L")
+	; 	Sleep(666)
+	; } else {
+	; 	ToolTip("Error finding FORESTGUARDIANS")
+	; 	return
+	; }
+	; ok := findtext_GuardiansPage2() 
+	; if !ok {
+	; 	FindText_larrow_and_click()
+	; } 
+	; Sleep(444)
+	; t1:=A_TickCount, Text:=X:="", Y:=0
+	; Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
+	; X:="wait"
+	; xtra:=100
+	; ok:=FindText(&X, &Y, 1524-xtra, 201-xtra, 1524+xtra, 201+xtra, 0.01, 0.01, Text)
+	; if ok {
+	; 	; ToolTip("TPed to Boss9? Clicking TP")
+	; 	FindText().Click(X, Y, "L")
+	; } else {
+	; 	ToolTip("Error finding boss9 TELEPORT")
+	; 	return
+	; }
 	
-	Sleep(2222)
+	Sleep(2000)
 
 	; wait for [E] Forest Guardian
 	xtra:=50
-	t1:=A_TickCount, Text:="", X:="wait", Y:="2"
+	t1:=A_TickCount, Text:="", X:="wait", Y:="3"
 	Text:="|<E_ForestGuardian>**50$62.m01zzzzzzzzU0NAWNmYW/807htivdfgy01jHxjrmDAU0TDmPn/D/s07zzzzzzzU"
 	ok:=FindText(&X, &Y, 1317-xtra, 165-xtra, 1317+xtra, 165+xtra, 0.01, 0.01, Text)
 
-	Sleep(555)
+	Sleep(666)
 	Send("e")
-	Sleep(555)
+	Sleep(666)
 	findtext_JOIN_and_click()
-	Sleep(222)
+	Sleep(250)
 	findtext_CLOSE_and_click()
 
 	; TPboss1()
 	TPboss(1)
-	ToolTip()
+	; FindText().ToolTip()
 }
 
 FindText_larrow_and_click() {
 	t1:=A_TickCount, Text:=X:="", Y:=0
-	Text:="|<LArrow>*1$4.4zQM"
-	; xtra:=EXTRA
+	; Text:="|<LArrow>*1$4.4zQM"
+	Text:="|<LArrow>*15$4.4zQM"
+; xtra:=EXTRA
 	xtra:=88
 	X:="wait"
-	if (ok:=FindText(&X, &Y, 1172-xtra, 310-xtra, 1172+xtra, 310+xtra, 0.01, 0.01, Text))
+	; if (ok:=FindText(&X, &Y, A_ScreenWidth-(1600-1172)-xtra, 310-xtra, A_ScreenWidth-(1600-1172)+xtra, 310+xtra, 0.01, 0.01, Text))
+	if (ok:=FindText(&X, &Y, 1172-xtra, 310-xtra, 1172+xtra, 310+xtra, 0, 0, Text))
 	{
 	 FindText().Click(X, Y, "L")
+	} else {
+		FindText().ToolTip("failed to find left arrow")
+		return
 	}
 }
 
@@ -241,7 +270,7 @@ FindText_larrow_and_click() {
 ; 		Sleep(333)
 ; 		FindText().Click(X, Y, "L")
 ; 	} else {
-; 		ToolTip("failed findtext_FORESTGUARDIANS")
+; 		FindText().ToolTip("failed findtext_FORESTGUARDIANS")
 ; 		return
 ; 	}
 ; 	Sleep(666)
@@ -257,7 +286,7 @@ FindText_larrow_and_click() {
 ; 		FindText_larrow_and_click()
 ; 		Sleep(222)
 ; 	} else {
-; 		ToolTip("failed findtext_GuardiansPage2 ")
+; 		FindText().ToolTip("failed findtext_GuardiansPage2 ")
 ; 		Sleep(1111)
 ; 	}
 ; 	; ok := findtext_ForestGuard()
@@ -271,7 +300,7 @@ FindText_larrow_and_click() {
 ; 		if ok {
 ; 			ToolTip("1=" ok[1].1 ",2=" ok[1].2)
 ; 		} else {
-; 			ToolTip("failed findtext_TELEPORT_and_click, ok=" ok)
+; 			FindText().ToolTip("failed findtext_TELEPORT_and_click, ok=" ok)
 ; 		}
 		
 ; 	; } else {
@@ -283,8 +312,18 @@ FindText_larrow_and_click() {
 
 TPboss(n:=0) {
 	KeyWait("'")
+	KeyWait(";")
+	KeyWait("1")
+	KeyWait("2")
+	KeyWait("3")
+	KeyWait("4")
+	KeyWait("5")
+	KeyWait("6")
+	KeyWait("7")
+	KeyWait("8")
+	KeyWait("9")
 	if !n {
-		ToolTip("Boss#?")
+		FindText().ToolTip("Boss#?")
 		ih := InputHook("L1")
 		ih.Start()
 		ih.Wait()
@@ -293,34 +332,38 @@ TPboss(n:=0) {
 		}
 	}
 	if !n {
-		ToolTip("No boss")
+		FindText().ToolTip("No boss")
 		Sleep(2000)
-		ToolTip()
+		FindText().ToolTip()
 		return
 	}
-	Sleep(200)
+	Sleep(111)
 	switchToRemote()
-	Sleep(500)
+	Sleep(444)
 	; Click("Right")
-	Send("{RButton}")
-	; Send("{RButton Down}")
-	; Sleep(200)
-	; Send("{RButton Up}")
-	Sleep(800)
+	; Send("{RButton}")
+	Send("{RButton Down}")
+	Sleep(50)
+	Send("{RButton Down}")
+	Sleep(20)
+	Send("{RButton Up}")
+	Sleep(50)
+	Send("{RButton Up}")
+	Sleep(400)
 	ok := findtext_FORESTGUARDIANS()
 	if ok {
 		X := ok[1].1
 		Y := ok[1].2
-		Sleep(111)
+		; Sleep(111)
 		FindText().Click(X, Y, "L")
 	} else {
-		ToolTip("failed findtext_FORESTGUARDIANS")
+		FindText().ToolTip("failed findtext_FORESTGUARDIANS",,,,{timeout:3})
 		return
 	}
 	Sleep(333)
 	ok := findtext_GuardiansPage2() 
 	if !ok {
-		ToolTip("findtext_GuardiansPage2 not found")
+		FindText().ToolTip("findtext_GuardiansPage2 not found",,,,{timeout:1})
 	}
 	if (ok && n < 6) || ((!ok) && n>=6) {
 		; ToolTip("need to page switch ")
@@ -329,9 +372,9 @@ TPboss(n:=0) {
 		; X := 1169
 		; Y := 311
 		; FindText().Click(X, Y, "L")
-		Sleep(400)
+		Sleep(100)
 		FindText_larrow_and_click()
-		Sleep(222)
+		Sleep(111)
 	} else {
 		; ToolTip("no page switch ")
 		Sleep(111)
@@ -342,46 +385,52 @@ TPboss(n:=0) {
 	; 	X := 1527 
 	; 	Y := ok[1].2 + 15
 	; 	FindText().Click(X, Y, "L")
-		Sleep(111)
+		; Sleep(111)
 		xy:=findtext_TELEPORT_and_click_n(1+Mod(n-1,5))
 		if xy {
 			ToolTip("1=" xy.1 ",2=" xy.2)
 		} else {
-			ToolTip("failed findtext_TELEPORT_and_click, xy=" xy)
+			FindText().ToolTip("failed findtext_TELEPORT_and_click, xy=" xy)
 		}
 		
 	; } else {
 	; 	ToolTip("cant find ForestGuard")
 	; }
-	Sleep(1111)
 	ToolTip()
+	Sleep(111)
 }
 
 TPimmortalTree(startfrenzy:=true) {
+	KeyWait("Shift")
 	KeyWait("\")
-	Sleep(333)
+	KeyWait("Ctrl")
+	Sleep(500)
 	Send("{Space}") ; jump up to stop crouching
 	Sleep(666)
 	TPboss(6) ; atlantean guard
-	;Walkback to wall (10 seconds?)
-	;walk left (1.5 secconds?)
-	Send("{blind}{s down}{LShift down}")
-	Sleep(13000) ; rather long because half the time my character is crouching and won't run
-	; Send("{blind}{a down}")
-	; Sleep(200)
-	; Send("{blind}{a up}")
-	Send("{blind}{s up}{LShift up}")
+	;Walk backwards to wall
+	Sleep(600)
+	Send("{blind}{s down}{LShift down}") ; run backwards
+	Sleep(14400) ; was rather long because half the time my character was crouching and won't run
+	Send("{blind}{s up}{LShift up}") 
 	Sleep(400)
 	Send("e")
-	Sleep(400)
+	Sleep(2000) ; because "wait" doesn't work
 	;TP immortal tree
-	t1:=A_TickCount, Text:=X:="wait",Y:=2
+	t1:=A_TickCount, Text:=X:="",Y:=4.0
 	Text:="|<ImmortalTree>*1$62.YG81XX47AQt4WEGEF0WI+F8YY4EE8VnYG99l442CEdIeGEFt0W4+F8U4Y2Q8ZnU"
-	xtra:=EXTRA
+	Text.="|<IMMORTAL_TREE>*31$63.YG8lrX4DCQwqP//MMUlO4anN995429QweJ9C8gUFm4ZGdN97Y29EYWF699YsF/bU"
+	xtra:=EXTRA+50
+	X:="wait" ; doesnt seem to work
 	if (ok:=FindText(&X, &Y, 1020-xtra, 215-xtra, 1020+xtra, 215+xtra, 0.01, 0.01, Text))
 	{
+		Sleep(300)
 		FindText().Click(X, Y, "L")
+		; ToolTip("IMMORTAL=" X "," Y)
+	} else {
+		FindText().ToolTip("failed findtext_IMMORTAL_TREE")
 	}
+
 	; now walk up to the tree
 	Sleep(3000)
 	Send("{w down}")

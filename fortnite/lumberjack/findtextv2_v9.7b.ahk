@@ -4,8 +4,8 @@
 ;  https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 ;
 ;  Author  : FeiYue
-;  Version : 9.6
-;  Date    : 2024-05-25
+;  Version : 9.7
+;  Date    : 2024-06-18
 ;
 ;  Usage:  (required AHK v2.02)
 ;  1. Capture the image to text string.
@@ -55,7 +55,7 @@ __New()
 __Delete()
 {
   if (this.bits.hBM)
-    DllCall("DeleteObject", "Ptr",this.bits.hBM)
+    Try DllCall("DeleteObject", "Ptr",this.bits.hBM)
 }
 
 New()
@@ -69,7 +69,7 @@ return "
 (
 ;--------------------------------
 ;  FindText - Capture screen image into text and then find it
-;  Version : 9.6  (2024-05-25)
+;  Version : 9.7  (2024-06-18)
 ;--------------------------------
 ;  returnArray:=FindText(
 ;      &OutputX --> The name of the variable used to store the returned X coordinate
@@ -136,7 +136,7 @@ FindText(&OutputX:="", &OutputY:=""
 {
   if IsSet(OutputX) && (OutputX ~= "i)^\s*wait[10]?\s*$")
   {
-    found:=!InStr(OutputX,"0"), time:=this.Floor(IsSet(OutputY)?OutputY:0)
+    found:=!InStr(OutputX, "0"), time:=this.Floor(OutputY ?? 0)
     , timeout:=A_TickCount+Round(time*1000), OutputX:=""
     Loop
     {
@@ -180,7 +180,7 @@ FindText(&OutputX:="", &OutputY:=""
   }
   sx:=x, sy:=y, sw:=w, sh:=h
   , (mode=1 && JoinText:=[s])
-  , s1:=Buffer(k*4), s0:=Buffer(k*4), ss:=Buffer(sw*(sh+2))
+  , s1:=Buffer(k*4), s0:=Buffer(k*4), ss:=Buffer(sw*(sh+3))
   , allpos_max:=(FindAll || JoinText ? 10240 : 1)
   , ini:={ sx:sx, sy:sy, sw:sw, sh:sh, zx:zx, zy:zy
   , mode:mode, bits:bits, ss:ss.Ptr, s1:s1.Ptr, s0:s0.Ptr
@@ -230,12 +230,12 @@ FindText(&OutputX:="", &OutputY:=""
 JoinText(arr, ini, info2, text, index, offsetX, offsetY
   , FindAll, dir, minX, minY, maxY, sx, sy, sw, sh)
 {
-  if !(Len:=text.Length)
+  if !(Len:=text.Length) || !info2.Has(key:=text[index])
     return 0
   allpos:=Buffer(ini.allpos_max*4), allpos_ptr:=allpos.Ptr
   , zoomW:=ini.zoomW, zoomH:=ini.zoomH, mode:=ini.mode
-  For i,j in info2[text[index]]
-  if (mode!=2 || text[index]==j[10])
+  For i,j in info2[key]
+  if (mode!=2 || key==j[10])
   Loop this.PicFind(ini, j, dir, sx, sy, (index=1 ? sw
   : Min(sx+offsetX+Floor(j[2]*zoomW),ini.sx+ini.sw)-sx), sh, allpos_ptr)
   {
@@ -272,212 +272,224 @@ PicFind(ini, j, dir, sx, sy, sw, sh, allpos_ptr)
   static MyFunc:=""
   if (!MyFunc)
   {
-    x32:="VVdWU4HslAAAAIO8JKgAAAAFi6wkrAAAAA+ERwMAAIu0JOQAAACF9g+OmAsAAIl8"
-    . "JByLvCTgAAAAMcCJrCSsAAAAxwQkAAAAAInFx0QkFAAAAADHRCQMAAAAAMdEJBgA"
-    . "AAAAi4Qk3AAAAItMJBgx9jHbAciF@4lEJAh@O+mOAAAAD6+EJMgAAACJwYnwmff@"
-    . "AcGLRCQIgDwYMXRMi4Qk2AAAAIPDAQO0JPgAAACJDKiDxQE533RUiwQkmfe8JOQA"
-    . "AACDvCSoAAAABHW1D6+EJLwAAACJwYnwmff@jQyBi0QkCIA8GDF1tItEJAyLlCTU"
-    . "AAAAg8MBA7Qk+AAAAIkMgoPAATnfiUQkDHWsAXwkGINEJBQBi4wk@AAAAItEJBQB"
-    . "DCQ5hCTkAAAAD4U0@@@@i0wkDLuti9toie4Pr4wk6AAAAIlsJDCLfCQci6wkrAAA"
-    . "AInIwfkf9+vB+gwpyouMJOwAAACJVCQ8D6@OicjB+R@368H6DCnKiVQkQIO8JKgA"
-    . "AAAED4T5BQAAi4QkvAAAAIu0JMAAAAAPr4QkxAAAAIuMJLwAAACNNLCLhCTIAAAA"
-    . "99iDvCSoAAAAAY0EgYlEJDQPhNsGAACDvCSoAAAAAg+EBwkAAItEJDyDvCSoAAAA"
-    . "A4kEJItEJECJRCQID4T5CQAAi3QkDIsMJDHAOc6LTCQID07wiXQkDIt0JDA5zg9P"
-    . "xolEJDCLhCSoAAAAg+gEg@gBD4YpBQAAx0QkGAAAAADHRCQUAAAAAItEJBQDhCTI"
-    . "AAAAK4Qk+AAAAIlEJCCLRCQYA4QkzAAAACuEJPwAAACDvCS0AAAACYlEJBwPhBUD"
-    . "AACLhCS0AAAAg+gBg@gHD4esAAAAg@gDiUQkOA+OpwAAAItEJBSLdCQYx0QkPAAA"
-    . "AACJRCRQiXQkSIlEJBiLdCRQOXQkIItEJEiJRCQUfGCLdCRIOXQkHA+MnQsAAPZE"
-    . "JDgCi3QkUInydAyLRCQYA0QkICnwicL2RCQ4AYt0JEiJ8HQKi0QkFANEJBwp8It0"
-    . "JDiJ0YP+Aw9PyA9PwolMJCiJRCQk6X8DAACNtgAAAACLRCQ8gcSUAAAAW15fXcJY"
-    . "AMdEJDgAAAAAi0QkGIt0JCDHRCQ8AAAAAIlEJFCLRCQciXQkHIlEJCCLRCQUiUQk"
-    . "SOlI@@@@McCF7Q+VwIlEJEQPhFQEAACLhCTkAAAAiemLvCTcAAAAD6+EJOAAAADB"
-    . "6RCJ6w+2yQ+204nOD6@xi4wk5AAAAI08h4noD7bEiXQkLInGD6@widAPr8KFyYl0"
-    . "JASJRCQQD457CgAAi4Qk4AAAAIn+i3wkLInri6wksAAAAMdEJCgAAAAAx0QkMAAA"
-    . "AADHRCQMAAAAAMHgAok8JIlEJDgxwIuUJOAAAACF0g+OGAEAAIuMJNwAAACLPCTH"
-    . "RCQYAAAAAIlcJCABwQNEJDiJTCQUiUQkNAOEJNwAAACJRCQki0QkFIXtD7ZQAQ+2"
-    . "SAIPtgCJFCSJRCQIdEQx0osclonYwegQD7bAKcgPr8A5x3wjD7bHKwQkD6@AOUQk"
-    . "BHwUD7bDK0QkCA+vwDlEJBAPjTwGAACDwgE56nXCiVwkIItEJAzB4RDB4AKJRCQc"
-    . "i0QkKJn3vCTkAAAAD6+EJLwAAACJw4tEJBiZ97wk4AAAAItUJAyNBIOLnCTUAAAA"
-    . "iQSTiwQkg8IBi5wk2AAAAIlUJAzB4AgJwQtMJAiLRCQciQwDg0QkFASLlCT4AAAA"
-    . "i0QkFAFUJBg7RCQkD4Ui@@@@i1wkIItEJDSJPCSDRCQwAYu8JPwAAACLTCQwAXwk"
-    . "KDmMJOQAAAAPhbj+@@+LTCQMuq2L22iJ9w+vjCToAAAAid3HRCQIAAAAAMdEJDAA"
-    . "AAAAicjB+R@36sH6DCnKiRQk6Wv8@@+LdCQUi0wkIMdEJGQAAAAAx0QkYAEAAADH"
-    . "RCRMAAAAAMdEJFgAAAAAifDHRCQ8AAAAAAHIKfGLdCQcicIrdCQYjVkBweofg8EJ"
-    . "AdDR+IlEJCSLRCQYA0QkHInCweofAdCJwonw0fqDwAmJVCQojVYBid4Pr@I50w9P"
-    . "wYm0JIAAAACJxg+v8Im0JIQAAACLtCSAAAAAOXQkZA+N+@z@@4u0JIQAAAA5dCRY"
-    . "x0QkXAAAAAAPjeL8@@+LTCRgOUwkXA+N+wMAAItEJCSLdCQUOfAPjE8FAACLdCQg"
-    . "OfAPj0MFAACLRCQoi0wkGDnID4wzBQAAi0wkHDnID48nBQAAg0QkZAGJdCQciUwk"
-    . "IMdEJDgJAAAAi3QkMItEJAw5xg9NxoO8JKgAAAAFiUQkNItEJCgPhMkJAACDvCSo"
-    . "AAAABA+EUQgAAA+vhCTIAAAAi1QkNIt0JCSF0o0cMA+EsAcAAIsEJIuMJNAAAAAx"
-    . "0ot0JAiJXCRUiUQkQAHZ6w2DwgE5VCQ0D4SDBwAAO1QkDH0ci5wk1AAAAIsEkwHI"
-    . "gDgAdQuDbCRAAQ+I1gcAADlUJDB+y4ucJNgAAACLBJMByIA4AXW6g+4BebXptQcA"
-    . "AIuEJMQAAADHhCTEAAAAAAAAAIlEJBiLhCTAAAAAx4QkwAAAAAAAAACJRCQU6bb6"
-    . "@@+J6MHoEA+vhCT8AAAAmfe8JOQAAAAPr4QkvAAAAInBD7fFD6+EJPgAAACZ97wk"
-    . "4AAAAI0sgYtEJDyJBCSLRCRAiUQkCOkn+v@@i5wksAAAAIXbD4ReBgAAi4wksAAA"
-    . "AIu0JNQAAACLnCTcAAAAi7wk2AAAAI0EjjHJiUQkCIsrg8YEg8NYg8cEiejB6BAP"
-    . "r4Qk@AAAAJn3vCTkAAAAD6+EJLwAAACJBCQPt8UPr4Qk+AAAAJn3vCTgAAAAixQk"
-    . "jQSCiUb8i0OsjQRBg8EWiUf8O3QkCHWni4QksAAAAIuMJOgAAAC6rYvbaA+vyIlE"
-    . "JAyJyMH5H@fqidDB+AwpyIu8JNwAAACJBCTHRCQIAAAAAMdEJDAAAAAAg8cI6VD5"
-    . "@@+LhCTkAAAA0aQksAAAAA+vhCTgAAAAx0QkKAAAAADHRCQ4AAAAAAOEJNwAAACJ"
-    . "x4uEJMgAAADB4AKJRCRUi4QkzAAAAIXAD45FAQAAiXwkJIt8JESJrCSsAAAAi5wk"
-    . "yAAAAIXbD47+AAAAi0QkOAOEJNAAAACLnCS4AAAAiceLRCRUAfOJ3QHwif6JRCRE"
-    . "A4QkuAAAAIlEJCDrFo12AMYGAIPFBIPGATtsJCAPhKgAAAAPtkUCMf+JBCQPtkUB"
-    . "iUQkFA+2RQCJRCQYO7wksAAAAHPLi0QkJIsUuIPHAotMuPwPtt4rXCQUidDB6BAP"
-    . "tsArBCSJXCQID7baK1wkGIH6@@@@AIlcJBwPhsAAAACLFCSNHFCNkwAEAAAPr9AP"
-    . "r8KLVCQID6@SweILAdC6@gUAACnaidOLVCQcD6@aD6@ajRQYOdFyhMYGAYPFBIPG"
-    . "ATtsJCAPhVj@@@+LjCTIAAAAAUwkOIt0JESDRCQoAQN0JDSLRCQoOYQkzAAAAA+F"
-    . "2f7@@4l8JESLrCSsAAAAi3wkJItEJDyJBCSLRCRAiUQkCOmr9@@@i3QkTINEJFgB"
-    . "ifCD4AEBwYnwg8ABiUwkYIPgA4lEJEzpqPv@@410JgCJysHqEA+22g+21Q+2yYlU"
-    . "JASJ2olcJCwPr8CJTCQQD6@TOdAPj9L+@@+LXCQIi0wkBInYicoPr8MPr9E50A+P"
-    . "uP7@@4tUJByLTCQQidOJyA+v2g+vwTnDD4+e@v@@6RX@@@+JXCQg6Sj6@@+NRQGL"
-    . "jCTMAAAAxwQkAAAAAMdEJAgAAAAAweAHicWLhCTIAAAAweAChcmJRCQYD44j@@@@"
-    . "iXwkHIuUJMgAAACF0n5fi4wkuAAAAItcJAiLvCS4AAAAA5wk0AAAAAHxA3QkGIl0"
-    . "JBQB9w+2UQIPtkEBD7Yxa8BLa9ImAcKJ8MHgBCnwAdA5xQ+XA4PBBIPDATn5ddWL"
-    . "vCTIAAAAAXwkCIt0JBSDBCQBA3QkNIsEJDmEJMwAAAB1got8JBzpmP7@@4tEJCCL"
-    . "dCQciUQkHIl0JCCLRCRMhcAPhWACAACDbCQoAYNEJFwB6Xj6@@@HRCRAAAAAAMdE"
-    . "JDwAAAAAx0QkMAAAAADHRCQMAAAAAOmQ9f@@i4wkyAAAAIuEJNAAAADHRCQUAAAA"
-    . "AMdEJBgAAAAAjQRIiUQkIInIweACiUQkHIuEJMwAAACFwA+OyvX@@4msJKwAAACJ"
-    . "PCSJ9YuEJMgAAACFwH5ai4wkuAAAAItcJCCLvCS4AAAAA1wkGAHpA2wkHAHvjXYA"
-    . "D7ZRAoPBBIPDAWvyJg+2Uf1rwkuNFAYPtnH8ifDB4AQp8AHQwfgHiEP@Ofl10ou8"
-    . "JMgAAAABfCQYg0QkFAEDbCQ0i0QkFDmEJMwAAAB1hYuEJMgAAACLPCQx9sdEJAgA"
-    . "AAAAg+gBiXwkKIu8JLAAAACJRCQYi4QkzAAAAIPoAYlEJByLhCTIAAAAhcAPjukA"
-    . "AACLRCQIi4wkyAAAAIusJNAAAACFwItEJCAPlEQkFAHxiUwkJInDjRQwAcuJ8SuM"
-    . "JMgAAAAB7okcJAHBMcDplgAAAIB8JBQAD4WTAAAAOUQkGA+EiQAAAItsJAg5bCQc"
-    . "dH8PtjoPtmr@uwEAAAADvCSsAAAAOe9yRw+2agE573I@D7YpOe9yOIssJA+2bQA5"
-    . "73ItD7Zp@znvciUPtmkBOe9yHYscJA+2a@+7AQAAADnvcg2LHCQPtmsBOe8PksOQ"
-    . "iBwGg8ABg8IBgwQkAYPBATmEJMgAAAB0DoXAD4Vi@@@@xgQGAuvci3QkJINEJAgB"
-    . "i0QkCDmEJMwAAAAPhfL+@@+LRCQ8ibwksAAAAIusJKwAAACLfCQoiQQki0QkQIlE"
-    . "JAjp2@P@@4N8JEwBdGmDfCRMAnRYMcCDfCRMAw+UwClEJCTphP3@@zHAx0QkDAAA"
-    . "AADpOfr@@8dEJAgAAAAAxwQkAAAAAMdEJAwAAAAAx0QkMAAAAADpqvP@@4tEJBSD"
-    . "RCRQAYlEJEjpMfT@@4NEJCgB6TX9@@+DRCQkAekr@f@@i1wkVItEJAyFwHQii5Qk"
-    . "1AAAAI00gouEJNAAAACNDBiLAoPCBAHIOdbGAAB18ouEJPAAAACDRCQ8AYt0JDyF"
-    . "wHQzi1QkKAOUJMQAAACLRCQkA4QkwAAAAIuMJPAAAADB4hAJ0Du0JPQAAACJRLH8"
-    . "D40a9P@@g3wkOAkPhIr8@@+DRCRIAeml8@@@D6+EJLwAAACLdCQki0wkNI0EsIu0"
-    . "JLgAAACJRCRUAeiFyQ+2dAYCiXQkaIu0JLgAAAAPtnQGAYl0JGyLtCS4AAAAD7YE"
-    . "BolEJHAPhFT@@@+LRCQIiXwkQImsJKwAAACJ9YlEJHiLBCSJRCR0McCJx+t4jXYA"
-    . "OXwkMH5ii4Qk2AAAAItUJFSLXCRoAxS4D7ZMFQIPtkQVAStEJGwPtlQVACtUJHCJ"
-    . "zgHZKd6NmQAEAAAPr8APr97B4AsPr94Bw7j+BQAAKcgPr8IPr8IB2DmEJLAAAABy"
-    . "B4NsJHgBeH2DxwE5fCQ0D4TbAgAAO3wkDH2Fi4Qk1AAAAItUJFSLXCRoAxS4D7ZM"
-    . "FQIPtkQVAStEJGwPtlQVACtUJHCJzgHZKd6NmQAEAAAPr8APr97B4AsPr94Bw7j+"
-    . "BQAAKcgPr8IPr8IB2DmEJLAAAAAPgyb@@@+DbCR0AQ+JG@@@@4t8JECLrCSsAAAA"
-    . "6YH+@@8Pr4QkvAAAAIt0JCSNBLCJRCRAi0QkRIXAD4V@AQAAi3QkNIX2D4QP@v@@"
-    . "i4Qk1AAAAIl8JGyJfCR4i3wkLIlEJGiLhCTYAAAAiUQkcGtEJDQWx0QkNAAAAACJ"
-    . "hCSIAAAAiwQkiUQkfIt0JGiLRCRAi1wkNAMGi3QkbIlcJCyLDolMJFSLTCRwiwmJ"
-    . "jCSwAAAAifGLtCS4AAAAD7Z0BgKJdCR0i7QkuAAAAA+2dAYBibQkjAAAAIu0JLgA"
-    . "AAAPtgQGiYQkkAAAAOl5AAAAi3EEixGDRCQsAon3idDB7xDB6BCJ+w+2wCtEJHQP"
-    . "tvuJ8w+234lcJASJ8w+284l0JBCJ@g+vwA+v9znwfziLXCQED7bGK4QkjAAAAIne"
-    . "D6@AD6@zOfB@Hg+2wot0JBArhCSQAAAAifIPr8APr9Y50A+OKAEAAIPBCItEJCw5"
-    . "hCSwAAAAD4d2@@@@gXwkVP@@@wB3C4NsJHwBD4jbAAAAg0QkNBaDRCRoBItEJDSD"
-    . "RCRsWINEJHAEOYQkiAAAAA+F1@7@@4l8JCyLfCR46Zz8@@+LXCQ0hdsPhJD8@@+L"
-    . "HCQx9olcJFTrE422AAAAAIPGATl0JDQPhIwAAACLhCTUAAAAi0wkQAMMsIuEJNgA"
-    . "AACLFLCLhCS4AAAAD7ZsCAKJ0A+23sHoEA+2wCnFi4QkuAAAAA+v7Q+2RAgBKdg5"
-    . "bCQsi5wkuAAAAA+2DAt8Gg+vwDlEJAR8EQ+2wQ+2yinID6@AOUQkEH2Gg2wkVAEP"
-    . "iXv@@@+J1ek6@P@@iXwkLIt8JHjpLfz@@4nV6d@7@@+LfCRAi6wkrAAAAOnP+@@@"
-    . "gXwkVP@@@wAPh+j+@@@p7v7@@5CQkJCQkJCQkJCQkJA="
-    x64:="QVdBVkFVQVRVV1ZTSIHsqAAAAIucJGABAACLvCRoAQAAiYwk8AAAAIO8JPAAAAAF"
-    . "idFEiYQkAAEAAESJjCQIAQAAD4QbAwAAhf8PjiYLAABFMeREiXwkKESLnCTwAAAA"
-    . "RIlkJBBMi7wkUAEAADH2RIukJDABAACLrCSQAQAARTHtRTH2x0QkGAAAAABEiVQk"
-    . "IImUJPgAAAAPH4QAAAAAAExjVCQYRTHJRTHATAOUJFgBAACF238163oPH4AAAAAA"
-    . "QQ+vxInBRInImff7AcFDgDwCMXQ8SYPAAUljxUEB6UGDxQFEOcNBiQyHfkOJ8Jn3"
-    . "@0GD+wR1yQ+vhCQYAQAAicFEiciZ9@tDgDwCMY0MgXXESIuUJEgBAABJg8ABSWPG"
-    . "QQHpQYPGAUQ5w4kMgn+9AVwkGINEJBABA7QkmAEAAItEJBA5xw+FVf@@@0SLjCRw"
-    . "AQAAQbiti9toRItUJCBEi3wkKIuMJPgAAABFD6@ORInIQcH5H0H36MH6DEQpykSL"
-    . "jCR4AQAAiVQkOEUPr81EichBwfkfQffowfoMRCnKiVQkRIO8JPAAAAAED4S9BQAA"
-    . "i4QkGAEAAIu0JCABAAAPr4QkKAEAAI0EsIu0JBgBAACJRCQgi4QkMAEAAPfYg7wk"
-    . "8AAAAAGNBIaJRCQwD4SNBgAAg7wk8AAAAAIPhLwIAACDvCTwAAAAA0SLZCQ4i1wk"
-    . "RA+EegkAADHARTnmRA9O8EE53UQPTuiLhCTwAAAAg+gEg@gBD4YGBQAAMf@HRCQQ"
-    . "AAAAAItEJBADhCQwAQAAK4QkkAEAAIlEJBiLhCQ4AQAAAfgrhCSYAQAAg7wkCAEA"
-    . "AAmJxg+E7QIAAIuEJAgBAACD6AGD+AcPh6sAAACD+AOJRCQwD46mAAAAi0QkEIl8"
-    . "JEjHRCRAAAAAAIlEJGCJx4tUJGA5VCQYi0QkSIlEJBB8Xjt0JEgPjFULAAD2RCQw"
-    . "AkSLXCRgRInadAuLRCQYAfhEKdiJwvZEJDABRItcJEhEidh0CYtEJBAB8EQp2ESL"
-    . "XCQwQYnRQYP7A0QPT8gPT8JEiUwkKIlEJCDpWQMAAJCLRCRASIHEqAAAAFteX11B"
-    . "XEFdQV5BX8PHRCQwAAAAAInwi3QkGIl8JGCJRCQYi0QkEMdEJEAAAAAAiUQkSOlN"
-    . "@@@@McCF0g+VwIlEJGQPhDQEAACJ+EGJ0g+20g+vw0HB6hBFD7bSweACSJhIA4Qk"
-    . "WAEAAEUPr9JIiUQkCA+2xUGJx0QPr@iJ0A+vwoX@iUQkHA+OWQoAAIu0JAABAACN"
-    . "Q@+JvCRoAQAAi3wkHMdEJBgAAAAARTH2SI0EhQYAAADHRCQgAAAAAMdEJCgAAAAA"
-    . "jVb@SIt0JAiJnCRgAQAASIlEJDCNBJ0AAAAASI10lgSJRCRAi6wkYAEAAIXtD472"
-    . "AAAASGNEJChIi5wkWAEAADHtSI1cAwJIA0QkMEgDhCRYAQAASIlEJBAPH4AAAAAA"
-    . "RIukJAABAABED7YDRA+2S@9ED7Zb@kWF5HQ+SItUJAiLConIwegQD7bARCnAD6@A"
-    . "QTnCfBsPtsVEKcgPr8BBOcd8DQ+2wUQp2A+vwDnHfVtIg8IESDnWdceLRCQYTWPu"
-    . "QcHgEEHB4QhBg8YBRQnImUUJ2Pe8JGgBAAAPr4QkGAEAAEGJxInomfe8JGABAABI"
-    . "i5QkSAEAAEGNBIRCiQSqSIuEJFABAABGiQSoSIPDBAOsJJABAABIO1wkEA+FP@@@"
-    . "@4tcJEABXCQog0QkIAGLlCSYAQAAi0QkIAFUJBg5hCRoAQAAD4Xa@v@@RIuEJHAB"
-    . "AAC6rYvbaDHbRTHtRQ+vxkSJwEHB+B@36sH6DEQpwkGJ1Omw@P@@RItcJBBEi0wk"
-    . "GMdEJHQAAAAAx0QkcAEAAADHRCRMAAAAAMdEJGgAAAAARInYx0QkQAAAAABEAciJ"
-    . "wsHqHwHQ0fiJRCQgjQQ3icLB6h8B0ESJytH4RCnaiUQkKInwRI1KASn4QYnQjVAB"
-    . "RYnLQYPACYPACUQPr9pBOdFBD0@AicIPr9BEiZwkhAAAAImUJJgAAACLlCSEAAAA"
-    . "OVQkdA+NFv3@@4uUJJgAAAA5VCRox0QkbAAAAAAPjf38@@9Ei1wkcEQ5XCRsD42j"
-    . "AwAAi0QkIItUJBA50A+MmQcAAItUJBg50A+PjQcAAItEJCg5+A+MgQcAADnwD495"
-    . "BwAAg0QkdAGJ8MdEJDAJAAAAidaJRCQYRTn1RIn1i0QkKEEPTe2DvCTwAAAABQ+E"
-    . "+wkAAIO8JPAAAAAED4QzCAAAD6+EJDABAACLVCQghe1EjQwQD4SHBwAAQYnbRIlk"
-    . "JDhFMcDrFmYPH4QAAAAAAEmDwAFEOcUPjmQHAABFOcZEiUQkRH4oSIuEJEgBAABE"
-    . "icpCAxSASIuEJEABAACAPBAAdQuDbCQ4AQ+IsQcAAEQ7bCREfrpIi5QkUAEAAESJ"
-    . "yEIDBIJIi5QkQAEAAIA8AgF1nUGD6wF5l+mCBwAAZpCLhCQgAQAAi7wkKAEAAMeE"
-    . "JCABAAAAAAAAx4QkKAEAAAAAAACJRCQQ6df6@@+JyESLZCQ4wegQD6+EJJgBAACZ"
-    . "9@8Pr4QkGAEAAEGJwA+3wQ+vhCSQAQAAmff7i1wkREGNDIDpb@r@@0SLrCQAAQAA"
-    . "RTHJMfZFMeRFMfZMi5wkWAEAAEWF7Q+EmAAAAEiLrCRIAQAATIukJFABAABEi6wk"
-    . "kAEAAESLtCSYAQAAQYsLSYPDWInIwegQQQ+vxpn3@w+vhCQYAQAAQYnAD7fBQQ+v"
-    . "xZn3+0GNBIBCiUSNAEGLQ6yNBEaDxhZDiQSMSYPBAUQ5jCQAAQAAd7NEi7QkAAEA"
-    . "AESLhCRwAQAAuq2L22hFD6@GRInAQcH4H@fqwfoMQYnURSnESIuEJFgBAAAx20Ux"
-    . "7UiDwAhIiUQkCOmY+f@@ifiLtCQ4AQAA0aQkAAEAAA+vw0iYSAOEJFgBAACF9kiJ"
-    . "RCQID44FAgAAi4QkMAEAAESLXCRkRIukJAABAADHRCQoAAAAAMdEJEAAAAAARIl0"
-    . "JHiD6AFEiWwkfESJfCQYSI0EhQYAAACJjCT4AAAASIlEJFCLhCQwAQAAweACiUQk"
-    . "WIucJDABAACF2w+OZQEAAEhjRCQgSIu8JBABAABIY3QkQEgDtCRAAQAATI1MBwJI"
-    . "A0QkUEgB+EiJRCQQ6xhmkMYGAEmDwQRIg8YBTDtMJBAPhAwBAABBD7YpRQ+2cf9F"
-    . "MdtFD7Zp@kiLXCQIRTnjc8+LE0GDwwKLSwSJ0A+2@kQPtsLB6BBEKfdFKegPtsAp"
-    . "6IH6@@@@AHZnjRRoD6@@RI26AAQAAEQPr@jB5wtBD6@HAce4@gUAACnQicJBD6@Q"
-    . "idBBD6@AAfg5wQ+DfAAAAEiDwwjrlotUJEyDRCRoAYnQg+ABQQHDidCDwAFEiVwk"
-    . "cIPgA4lEJEzp@Pv@@w8fAEGJyg+21Q+2yUHB6hBBic+JTCQcRQ+20olUJBhEidEP"
-    . "r8BBD6@KOch@potUJBgPr@+J0A+vwjnHf5ZEicBEifpBD6@AQQ+v1znQf4TGBgFJ"
-    . "g8EESIPGAUw7TCQQD4X0@v@@i3wkWAF8JCCLvCQwAQAAAXwkQINEJCgBi1wkMItE"
-    . "JCgBXCQgOYQkOAEAAA+Fbv7@@0SLdCR4RItsJHxEi3wkGIuMJPgAAABEiVwkZESL"
-    . "ZCQ4i1wkROlb9@@@RIuMJDgBAACLhCQwAQAAg8EBweEHMfYx@0WFyY0shQAAAAB+"
-    . "zUSJdCQQRIukJDABAABEi3QkIEWF5H5jSIucJBABAABJY8ZFMclMjUQDAkhj30gD"
-    . "nCRAAQAAZi4PH4QAAAAAAEEPthBBD7ZA@0UPtlj+a8BLa9ImAcJEidjB4AREKdgB"
-    . "0DnBQg+XBAtJg8EBSYPABEU5zH@LQQHuRAHng8YBRAN0JDA5tCQ4AQAAdYdEi3Qk"
-    . "EOk4@@@@x0QkRAAAAADHRCQ4AAAAAEUx7UUx9ukR9v@@i4QkMAEAAESLhCQ4AQAA"
-    . "MfYx@wHASJhIA4QkQAEAAEWFwEiJRCQQi4QkMAEAAI0shQAAAAAPjkv2@@9EiXQk"
-    . "GESLpCQwAQAARIt0JCBFheR+W0iLnCQQAQAASWPGRTHJTI1EAwJIY99IA1wkEGaQ"
-    . "QQ+2EEmDwAREa9omQQ+2UPtrwktBjRQDRQ+2WPpEidjB4AREKdgB0MH4B0KIBAtJ"
-    . "g8EBRTnMf8hBAe5EAeeDxgFEA3QkMDm0JDgBAAB1j0hjhCQwAQAAugEAAABEi3Qk"
-    . "GESLhCQAAQAARIucJDABAAAx7cdEJBgAAAAARIlsJEBEiXQkMESJVCRQSI14AUgp"
-    . "wouEJDABAABIiVQkKEiJfCQgRI1g@4uEJDgBAACD6AFBicZFhdsPjuEAAABIY1wk"
-    . "GEiLfCQghe1Ii0QkEEEPlMVMjRQfSIt8JChIjVQYAUkBwkyNDB9Ii7wkQAEAAEkB"
-    . "wTHASAH76Y8AAAAPH0QAAEWE7Q+FiQAAAEE5xA+EgAAAAEE57nR7RA+2Qv8Ptnr+"
-    . "vgEAAABBAchBOfhyRA+2OkE5+HI8QQ+2ef9BOfhyMkEPtnr@QTn4cihBD7Z5@kE5"
-    . "+HIeQQ+2OUE5+HIVQQ+2ev5BOfhyC0EPtjJBOfBAD5LGQIg0A0iDwAFIg8IBSYPC"
-    . "AUmDwQFBOcN+DoXAD4Vu@@@@xgQDAuvdRAFcJBiDxQE5rCQ4AQAAD4UG@@@@RIt0"
-    . "JDBEi2wkQESLVCRQRImEJAABAABEi2QkOItcJETpRfT@@4tEJBiJdCQYicaLVCRM"
-    . "hdJ1D4NsJCgBg0QkbAHpMPj@@4N8JEwBdECDfCRMAnQyMcCDfCRMAw+UwClEJCDr"
-    . "2DHbRTHkRTH2RTHt6Qb0@@+LRCQQg0QkYAGJRCRI6X30@@+DRCQoAeuvg0QkIAHr"
-    . "qEWF9nQsSIuUJEgBAABBjUb@TI1EggREicgDAkyLnCRAAQAASIPCBEk50EHGBAMA"
-    . "deWDRCRAAUiDvCSAAQAAAESLXCRAdDmLVCQoA5QkKAEAAE1jw4tEJCADhCQgAQAA"
-    . "weIQCdBEO5wkiAEAAEiLlCSAAQAAQolEgvwPjWD0@@+DfCQwCQ+EB@@@@4NEJEgB"
-    . "6e3z@@8Pr4QkGAEAAItUJCBMi5wkEAEAAI0EkIlEJEQByIXtjVACSGPSQQ+2FBOJ"
-    . "VCRQjVABSJhBD7YEA0hj0kEPthQTiUQkeIlUJFgPhE@@@@8xwESJVCQ4iYwk+AAA"
-    . "AImcJIAAAABEiWQkfEiJwU2J2umjAAAADx+EAAAAAABEO6wkiAAAAA+OgQAAAEiL"
-    . "hCRQAQAAi1QkRESLTCRQAxSIjUICSJhFD7YEAo1CAUhj0kEPthQSSJgrVCR4QQ+2"
-    . "BAJFicNFAcgrRCRYRSnLRY2IAAQAAEUPr8sPr8BFD6@LweALQQHBuP4FAABEKcAP"
-    . "r8IPr8JEAcg5hCQAAQAAcg6DrCSAAAAAAQ+InwAAAEiDwQE5zQ+ONwMAAEE5zomM"
-    . "JIgAAAAPjlX@@@9Ii5QkSAEAAItEJEREi0wkUAMEio1QAkhj0kUPtgQSjVABSJhB"
-    . "D7YEAkhj0itEJHhBD7YUEkWJw0UByCtUJFhFKctFjYgABAAARQ+vyw+v0kUPr8vB"
-    . "4gtBAdG6@gUAAEQpwg+v0A+vwkQByDmEJAABAAAPg93+@@+DbCR8AQ+J0v7@@0SL"
-    . "VCQ4i4wk+AAAAOkx@v@@D6+EJBgBAACLVCQgjQSQiUQkRItEJGSFwA+FqAEAAIXt"
-    . "D4S8@f@@SIuEJEgBAABIi5QkSAEAAEyLXCQIRImkJIAAAADHRCR4AAAAAEiJRCQ4"
-    . "SIuEJFABAABIiUQkWI1F@0iNRIIESImEJIgAAABIi0QkOItsJERFiwNEi0wkeImM"
-    . "JPgAAAADKESJRCRQTItEJFiNRQGNVQJIY+1FiwBImEhj0kiJhCSQAAAASIuEJBAB"
-    . "AABEiYQkAAEAAE2J2A+2BBBIi5QkkAAAAIlEJHxIi4QkEAEAAA+2BBCJhCSQAAAA"
-    . "SIuEJBABAAAPtgQoiYQknAAAAOt3QYsQQYtoBEGDwQKJ0EGJ6kiJ6cHoEEHB6hAP"
-    . "ts0PtsArRCR8RQ+20kGJz0APts1EidVBD6@qiUwkHA+vwDnofzIPtsYrhCSQAAAA"
-    . "RIn9QQ+v7w+vwDnofxoPtsIrhCScAAAAicoPr9EPr8A50A+OEAEAAEmDwAhEOYwk"
-    . "AAEAAA+He@@@@4F8JFD@@@8Ai4wk+AAAAHcOg6wkgAAAAAEPiJf8@@9Ig0QkOARJ"
-    . "g8NYSINEJFgESItEJDiDRCR4Fkg7hCSIAAAAD4Ws@v@@6Rz8@@+F7Q+EFPz@@0WJ"
-    . "40UxyYlsJDhIi4QkSAEAAItUJERMi4QkEAEAAEiLrCQQAQAAQgMUiEiLhCRQAQAA"
-    . "QosMiI1CAkiYRQ+2BACJyMHoEA+2wEEpwI1CAUhj0kUPr8BImA+2RAUAD7btKehI"
-    . "i6wkEAEAAEU5wg+2VBUAfBkPr8BBOcd8EQ+2wg+20SnQD6@AOUQkHH0KQYPrAQ+I"
-    . "zPv@@0mDwQFEOUwkOA+PZf@@@+lq+@@@gXwkUP@@@wCLjCT4AAAAD4f+@v@@6Qf@"
-    . "@@9Ei1QkOIuMJPgAAADpP@v@@5CQkJCQkJCQkJCQkJA="
-    this.MCode(&MyFunc, StrReplace((A_PtrSize=8?x64:x32),"@","/"))
+    x32:="VVdWU4HskAAAAIuEJKQAAACLvCSoAAAAi6wk3AAAAMcEJAAAAACD6AGD+AQPh48F"
+    . "AACDvCSkAAAABQ+EkQUAAIuEJOAAAACFwA+ONA0AADHAibwkqAAAAMcEJAAAAADH"
+    . "RCQUAAAAAMdEJAwAAAAAicfHRCQYAAAAAI20JgAAAACLhCTYAAAAi0wkGDH2MdsB"
+    . "yIXtiUQkCH896ZAAAABmkA+vhCTEAAAAicGJ8Jn3@QHBi0QkCIA8GDF0TIuEJNQA"
+    . "AACDwwEDtCT4AAAAiQy4g8cBOd10VIsEJJn3vCTgAAAAg7wkpAAAAAR1tQ+vhCS4"
+    . "AAAAicGJ8Jn3@Y0MgYtEJAiAPBgxdbSLRCQMi5Qk0AAAAIPDAQO0JPgAAACJDIKD"
+    . "wAE53YlEJAx1rAFsJBiDRCQUAYuMJPwAAACLRCQUAQwkOYQk4AAAAA+FMv@@@4tM"
+    . "JAy7rYvbaIn+D6+MJOQAAACJfCQ0i7wkqAAAAInIwfkf9+vB+gwpyouMJOgAAACJ"
+    . "VCRID6@OicjB+R@368H6DCnKiVQkTIO8JKQAAAAED4TGCAAAi4QkzAAAAAOEJMQA"
+    . "AACLtCS8AAAAi4wkuAAAAIlEJCiLhCS4AAAAD6+EJMAAAACNNLCLhCTEAAAA99iD"
+    . "vCSkAAAAAY0EgYlEJDgPhKAJAACDvCSkAAAAAg+EIgcAAIuUJMgAAACF0g+O9wcA"
+    . "AIuMJMQAAACLRCQoifXHBCQAAAAAx0QkCAAAAACJvCSoAAAAjQRIiUQkHInIweAC"
+    . "iUQkFIuEJMQAAACFwH5ai4wktAAAAItcJByLvCS0AAAAA1wkCAHpA2wkFAHvjXYA"
+    . "D7ZRAoPBBIPDAWvyJg+2Uf1rwkuNFAYPtnH8ifDB4AQp8AHQwfgHiEP@Ofl10ou0"
+    . "JMQAAAABdCQIgwQkAQNsJDiLBCQ5hCTIAAAAdYeLhCTEAAAAi5QkrAAAADHtMfaD"
+    . "6AGJRCQUi4QkyAAAAIPoAYlEJBiLhCTEAAAAhcAPjuIAAACLvCTEAAAAi0QkHAH3"
+    . "jQwwifuJfCQgiccB2InzK5wkxAAAAIkEJDHAAfuLfCQoAfeLNCSJHCSJfCQIjXYA"
+    . "hcAPhJQQAAA5RCQUD4SKEAAAhe0PhIIQAAA5bCQYD4R4EAAAD7YRD7Z5@7sBAAAA"
+    . "A5QkqAAAADn6ckUPtnkBOfpyPYs8JA+2Pzn6cjMPtj45+nIsizwkD7Z@@zn6ciGL"
+    . "PCQPtn8BOfpyFg+2fv85+nIOD7ZeATnaD5LDkI10JgCLfCQIiBwHg8ABg8EBg8YB"
+    . "gwQkATmEJMQAAAAPhV@@@@+LdCQgg8UBOawkyAAAAA+F@@7@@4u8JKgAAACJlCSs"
+    . "AAAAi4QkxAAAAMdEJBQAAAAAx0QkGAAAAACJvCSoAAAAg+gBiUQkCJCNtCYAAAAA"
+    . "i4QkxAAAAIXAD468BQAAi0QkGItcJCgxyYuUJMwAAAC@AwAAAAHDAdAPtjOJBCTr"
+    . "aY1W@7gCAAAAg@oBdhOD@wEPlMKD@QEPlMAJ0A+2wAHAgeb9AAAAugEAAAB0EoX@"
+    . "D5TChe2J1w+UwonWCfeJ+os8JAnQiAQPg8EBOYwkxAAAAA+EOAUAAIXJD7ZzAQ+E"
+    . "PA8AAA+2O4PDATtMJAgPhFkOAAAPtmsBi4Qk7AAAAIXAD4V6@@@@jUb@g@gCGcCD"
+    . "4AKB5v0AAAAPlMLro4t0JCiLbCQsx0QkbAAAAADHRCRoAQAAAMdEJEQAAAAAx0Qk"
+    . "YAAAAACJ8I1eAY1VAcHoH4lsJDjHBCQAAAAAAfDR+IlEJBiJ6MHoHwHo0fiJRCQc"
+    . "ifCJ3g+v8o1ICYl0JHyJxonog8AJOdOJdCQ8D0@Bi3QkfInBD6@IOXQkbImMJIAA"
+    . "AAB9TYu0JIAAAAA5dCRgx0QkZAAAAAB9OItMJGg5TCRkD4wRCAAAi3QkRINEJGAB"
+    . "ifCD4AEBwYnwi3QkfIPAAYlMJGiD4AM5dCRsiUQkRHyziwQkgcSQAAAAW15fXcJc"
+    . "ADHAhf8PlcCJRCRcD4TNBAAAi4Qk4AAAAIu0JNgAAACJ+cHpEIn7D7bJD7bTD6@F"
+    . "jQSGic4Pr@GJRCQkifgPtsSJdCQwicYPr@CJ0A+vwol0JASJRCQQi4Qk4AAAAIXA"
+    . "D466CAAAi3QkJI0ErQAAAACJ+4msJNwAAACLvCSsAAAAi2wkMIlEJDwxwMdEJCwA"
+    . "AAAAx0QkNAAAAADHRCQMAAAAAIk0JIu0JNwAAACF9g+OGAEAAIuMJNgAAACLNCTH"
+    . "RCQYAAAAAIlcJCABwQNEJDyJTCQUiUQkOAOEJNgAAACJRCQoi0QkFIX@D7ZQAQ+2"
+    . "SAIPtgCJFCSJRCQIdEQx0osclonYwegQD7bAKcgPr8A5xXwjD7bHKwQkD6@AOUQk"
+    . "BHwUD7bDK0QkCA+vwDlEJBAPjRkDAACDwgE5+nXCiVwkIItEJAzB4RDB4AKJRCQc"
+    . "i0QkLJn3vCTgAAAAD6+EJLgAAACJw4tEJBiZ97wk3AAAAItUJAyNBIOLnCTQAAAA"
+    . "iQSTiwQkg8IBi5wk1AAAAIlUJAzB4AgJwQtMJAiLRCQciQwDg0QkFASLlCT4AAAA"
+    . "i0QkFAFUJBg7RCQoD4Ui@@@@i1wkIItEJDiJNCSDRCQ0AYu0JPwAAACLTCQ0AXQk"
+    . "LDmMJOAAAAAPhbj+@@+LTCQMuq2L22iJ3w+vjCTkAAAAx0QkFAAAAADHRCQ0AAAA"
+    . "AInIwfkf9+rB+gwpyolUJAiLdCQMi0wkCDHAOc6LTCQUD07wiXQkDIt0JDQ5zg9P"
+    . "xolEJDSLhCTEAAAAK4Qk+AAAAIlEJCiLhCTIAAAAK4Qk@AAAAIO8JKQAAAADiUQk"
+    . "LA+O4gEAAIuMJMQAAACLhCTMAAAAD6+MJMgAAACJygHChcl+CsYAAYPAATnCdfaD"
+    . "vCSwAAAACQ+EcPz@@4uEJLAAAACD6AGD+AcPh64BAACD+AOJRCRAD46pAQAAi0Qk"
+    . "KMdEJFAAAAAAxwQkAAAAAIlEJDiLRCQsiUQkPIt0JFA5dCQ4x0QkWAAAAAAPjO@8"
+    . "@@+LdCRYOXQkPA+M9wUAAItMJFCLdCRAi0QkOCnI98YCAAAAD0TBi0wkWInCi0Qk"
+    . "PCnI98YBAAAAD0TBg@4DidEPT8gPT8KJTCQciUQkGOnBBAAAjUcBxwQkAAAAAMdE"
+    . "JAgAAAAAweAHiceLhCTEAAAAweACiUQkGIuEJMgAAACFwA+OsAAAAIuEJMQAAACF"
+    . "wH5ci4wktAAAAItcJCiLrCS0AAAAA1wkCAHxA3QkGIl0JBQB9Q+2UQIPtkEBD7Yx"
+    . "a8BLa9ImAcKJ8MHgBCnwAdA5xw+XA4PBBIPDATnpddWLjCTEAAAAAUwkCIt0JBSD"
+    . "BCQBA3QkOIsEJDmEJMgAAAB1hekb+v@@kI20JgAAAACLtCTEAAAAAXQkGINEJBQB"
+    . "i0QkFDmEJMgAAAAPjx@6@@+LvCSoAAAAi0QkSIlEJAiLRCRMiUQkFOnU@f@@jXYA"
+    . "iVwkIOlL@f@@g7wk7AAAAAGDnCS8AAAA@+kx@v@@x0QkQAAAAACLRCQsx0QkUAAA"
+    . "AADHBCQAAAAAiUQkOItEJCiJRCQ86VL+@@+J+MHoEA+vhCT8AAAAmfe8JOAAAAAP"
+    . "r4QkuAAAAInBD7fHD6+EJPgAAACZ9@2NPIGLRCRIiUQkCItEJEyJRCQU6UL9@@+L"
+    . "hCSsAAAAhcAPhCMEAACLjCSsAAAAi7Qk0AAAAIuEJNQAAACLnCTYAAAAiawk3AAA"
+    . "AI08jjHJicWJfCQIizuDxgSDw1iDxQSJ+MHoEA+vhCT8AAAAmfe8JOAAAAAPr4Qk"
+    . "uAAAAIkEJA+3xw+vhCT4AAAAmfe8JNwAAACLFCSNBIKJRvyLQ6yNBEGDwRaJRfw5"
+    . "dCQIdaeLhCSsAAAAi4wk5AAAALqti9toD6@IiUQkDInIwfkf9+qJ0MH4DCnIi7Qk"
+    . "2AAAAIlEJAjHRCQUAAAAAMdEJDQAAAAAg8YIiXQkJOld@P@@i4Qk4AAAAIucJMgA"
+    . "AADRpCSsAAAAx0QkLAAAAADHRCQ8AAAAAA+vxQOEJNgAAACJRCQki4QkxAAAAMHg"
+    . "AoXbiUQkVA+OK@7@@4m8JKgAAACLfCRci4wkxAAAAIXJD474AAAAi0QkKANEJDyL"
+    . "nCS0AAAAiceLRCRUAfOJ3QHwif6JRCRAA4QktAAAAIlEJCDrE8YGAIPFBIPGATts"
+    . "JCAPhKgAAAAPtkUCMf+JBCQPtkUBiUQkFA+2RQCJRCQYObwkrAAAAHbLi0QkJIsU"
+    . "uIPHAotMuPwPtt4rXCQUidDB6BAPtsArBCSJXCQID7baK1wkGIH6@@@@AIlcJBwP"
+    . "hosAAACLFCSNHFCNkwAEAAAPr9APr8KLVCQID6@SweILAdC6@gUAACnaidOLVCQc"
+    . "D6@aD6@ajRQYOdFyhMYGAYPFBIPGATtsJCAPhVj@@@+LjCTEAAAAAUwkPIt0JECD"
+    . "RCQsAQN0JDiLRCQsOYQkyAAAAA+F3@7@@4l8JFyLvCSoAAAA6dr2@@+NtCYAAAAA"
+    . "icrB6hAPttoPttUPtsmJVCQEidqJXCQwD6@AiUwkEA+v0znQD48H@@@@i1wkCItM"
+    . "JASJ2InKD6@DD6@ROdAPj+3+@@+LVCQci0wkEInTicgPr9oPr8E5ww+P0@7@@+lK"
+    . "@@@@x0QkTAAAAADHRCRIAAAAAMdEJDQAAAAAx0QkDAAAAADp7vP@@4tEJBiFwA+I"
+    . "5gAAAIt0JDw58A+P2gAAAItEJByFwA+IzgAAAIt0JDg58A+PwgAAAINEJGwBx0Qk"
+    . "QAkAAACLRCQci7QkzAAAAA+vhCTEAAAAA0QkGIA8BgAPhIMAAACLTCQ0i3QkDDnx"
+    . "D03xg7wkpAAAAAOJdCQgD48UAQAAhfYPhAQEAAADhCTMAAAAi1wkFDHSi3QkCInB"
+    . "6yo5VCQ0fheLrCTUAAAAi0SVAAHI9gABdQWD6wF4KoPCATlUJCAPhMUDAAA7VCQM"
+    . "fdCLrCTQAAAAi0SVAAHIgDgBd76D7gF5uYN8JEAJdAqDRCRYAek4+v@@i2wkRIXt"
+    . "dC6DfCREAQ+EFQUAAIN8JEQCD4QABQAAMcCDfCREAw+UwClEJBiDRCRkAem59v@@"
+    . "g2wkHAHr74NEJFAB6dv5@@8xwMdEJAwAAAAA6X38@@+LhCTEAAAAK4Qk+AAAAMdE"
+    . "JAgAAAAAx0QkNAAAAADHRCQUAAAAAMdEJAwAAAAAiUQkKIuEJMgAAAArhCT8AAAA"
+    . "iUQkLOkO+f@@i0QkHAOEJMAAAAAPr4QkuAAAAItUJBgDlCS8AAAAg7wkpAAAAAWN"
+    . "BJCJRCRID4RTAQAAi7QktAAAAAH4i1QkIA+2dAYChdKJdCRMi7QktAAAAA+2dAYB"
+    . "iXQkVIu0JLQAAAAPtgQGiUQkcA+EiAIAAItEJBSJvCSoAAAAMe2J94lEJHiLRCQI"
+    . "iUQkdOt+jXYAjbwnAAAAADlsJDR+YYuEJNQAAACLVCRIi1wkTAMUqA+2TBcCD7ZE"
+    . "FwErRCRUD7YUFytUJHCJzgHZKd6NmQAEAAAPr8APr97B4AsPr94Bw7j+BQAAKcgP"
+    . "r8IPr8IBwzmcJKwAAAByB4NsJHgBeHyDxQE5bCQgD4TmAQAAO2wkDH2Gi4Qk0AAA"
+    . "AItUJEiLXCRMAxSoD7ZMFwIPtkQXAStEJFQPthQXK1QkcInOAdkp3o2ZAAQAAA+v"
+    . "wA+v3sHgCw+v3gHDuP4FAAApyA+vwg+vwgHDOZwkrAAAAA+DKP@@@4NsJHQBD4kd"
+    . "@@@@i7wkqAAAAOnK@f@@i3QkXIX2D4VcAgAAi1wkIIXbD4RaAQAAi4Qk0AAAAItc"
+    . "JCQx9om8JKgAAACJRCRMi4Qk1AAAAIlEJFRrRCQgFolEJHiLRCQIiUQkdIt8JEyL"
+    . "RCRIifWJ2YlcJHADB4s7iXwkIIt8JFSLP4m8JKwAAACLvCS0AAAAD7Z8BwKJvCSE"
+    . "AAAAi7wktAAAAA+2fAcBibwkiAAAAIu8JLQAAAAPtgQHiYQkjAAAAOl9AAAAjXYA"
+    . "iwGLeQSDxQLB7xCJwsHqEIn7D7b7D7bSi1kEK5QkhAAAAIl8JDAPr@8Ptt+JXCQE"
+    . "D7ZZBA+v0jn6iVwkEH84i1wkBA+21CuUJIgAAACJ3w+v0g+v+zn6fx6LXCQQD7bA"
+    . "K4QkjAAAAInaD6@AD6@TOdAPjvIBAACDwQg7rCSsAAAAD4J5@@@@gXwkIP@@@wCL"
+    . "XCRwdwuDbCR0AQ+Io@7@@4NEJEwEg8NYg0QkVASDxhY5dCR4D4Xh@v@@i7wkqAAA"
+    . "AIuEJPAAAACDBCQBhcB0NotUJBwDlCTAAAAAi0QkGAOEJLwAAACLNCSLjCTwAAAA"
+    . "weIQCdA7tCT0AAAAiUSx@A+NS@P@@4t0JBwxyYnwK4Qk@AAAAIPAAYnCifCLtCT8"
+    . "AAAAD0jRjUQw@4t0JCw58A9Pxot0JBiJxYnwK4Qk+AAAAIPAAYnDifCLtCT4AAAA"
+    . "D0jZjUQw@4t0JCg5xg9OxjnqicYPj6@7@@+LhCTEAAAAD6@CA4QkzAAAAInBjUUB"
+    . "jW4BiUQkIDnzfw2J2MYEAQCDwAE56HX1g8IBA4wkxAAAADtUJCB13+ls+@@@vQMA"
+    . "AADpofH@@4tMJCCFyQ+E@v7@@4tsJAgx9ou8JNAAAACLRCRIAwS3i7wk1AAAAIsc"
+    . "t4u8JLQAAAAPtkwHAonaweoQD7bSKdEPtlQHAQ+2@w+vySn6i7wktAAAAA+2BAcP"
+    . "tvsp+DlMJDB8Eg+v0jlUJAR8CQ+vwDlEJBB9BYPtAXgQg8YBOXQkIHWPid@pgP7@"
+    . "@4nf6dH6@@+DRCQcAekE+@@@g0QkGAHp+vr@@4t8JAjGBAcC6d7v@@+BfCQg@@@@"
+    . "AItcJHAPhxr+@@@pIP7@@78DAAAA6b3w@@+QkJCQkJA="
+    x64:="QVdBVkFVQVRVV1ZTSIHsqAAAAEUx5ESLrCQwAQAAi5wkYAEAAImMJPAAAACLhCTw"
+    . "AAAAidFEiYQkAAEAAESJjCQIAQAAi7wkaAEAAIPoAYP4BA+HxwUAAIO8JPAAAAAF"
+    . "D4TQBQAAhf8PjgoNAABEiXwkMESLnCTwAAAARTHkTIu8JFABAACLrCSYAQAAMfZF"
+    . "MfbHRCQcAAAAAESJVCQgRIlkJBCJlCT4AAAADx9EAABMY1QkHEUxyUUxwEwDlCRY"
+    . "AQAAhdt@Net6Dx+AAAAAAEEPr8WJwUSJyJn3+wHBQ4A8AjF0PEmDwAFJY8ZBAelB"
+    . "g8YBRDnDQYkMh35DifCZ9@9Bg@sEdckPr4QkGAEAAInBRInImff7Q4A8AjGNDIF1"
+    . "xEiLlCRIAQAASYPAAUljxEEB6UGDxAFEOcOJDIJ@vQFcJByDRCQQAQO0JKABAACL"
+    . "RCQQOccPhVX@@@9FieBBua2L22hEi1QkIEQPr4QkcAEAAESLfCQwi4wk+AAAAESJ"
+    . "ZCQsRInAQcH4H0H36YnQwfgMRCnARIuEJHgBAACJRCRMRQ+vxkSJwEHB+B9B9+nB"
+    . "+gxEKcKJVCRQg7wk8AAAAAQPhJcIAABJY+2LtCQgAQAASInoSAOEJEABAABIiUQk"
+    . "OIuEJBgBAAAPr4QkKAEAAI0EsIu0JBgBAACJRCQgRIno99iDvCTwAAAAAY0EholE"
+    . "JEAPhGEJAACDvCTwAAAAAg+EWgcAAESLjCQ4AQAARYXJD473AgAAQ41EbQBEiXQk"
+    . "HESLdCQgRo0krQAAAAAx9jH@SJhIA4QkQAEAAEiJRCQQRYXtfllIi5wkEAEAAElj"
+    . "xkUxyUyNRAMCSGPfSANcJBBBD7YQSYPABERr2iZBD7ZQ+2vCS0GNFANFD7ZY+kSJ"
+    . "2MHgBEQp2AHQwfgHQogEC0mDwQFFOc1@yEUB5kQB74PGAUQDdCRAObQkOAEAAHWR"
+    . "SI1FAUSLdCQci5QkAAEAADHbx0QkHAAAAABIiUQkILgBAAAASCnoQY1t@0SJdCRA"
+    . "SIlEJDCLhCQ4AQAARI1g@0WF7Q+OzgAAAEhjdCQcSIt8JCBIi0QkEEyNHDdIi3wk"
+    . "MEyNRDABSQHDTI0MN0iLfCQ4SQHBMcBMjTQ3Dx9EAABIhcAPhOoQAAA5xQ+E4hAA"
+    . "AIXbD4TaEAAAQTncD4TREAAAQQ+2UP9BD7Zw@r8BAAAAAco58nI+QQ+2MDnycjZB"
+    . "D7Zx@znyci1BD7Zz@znyciRBD7Zx@jnychtBD7YxOfJyE0EPtnP+OfJyCkEPtjM5"
+    . "8kAPksdBiDwGSIPAAUmDwAFJg8MBSYPBAUE5xQ+Pbv@@@0QBbCQcg8MBOZwkOAEA"
+    . "AA+FGf@@@0SLdCRAiZQkAAEAAESJdCQQRIl8JCBBjW3@TIt0JDhEi7wkOAEAAEUx"
+    . "5Iu0JIABAAAx@0SJVCQciYwk+AAAAGYuDx+EAAAAAABFhe0PjsIAAABMY88xyUG7"
+    . "AwAAAEcPthQOT41EDgFMA4wkQAEAAOttDx+EAAAAAABBjVL@uAIAAACD+gF2FEGD"
+    . "+wEPlMKD+wEPlMAJ0A+2wAHAQYHi@QAAALoBAAAAdA9FhdtBD5TChdsPlMJECdKD"
+    . "wQEJ0EE5zUGIAXRMhclFD7YQD4SfDwAARQ+2WP9Jg8ABSYPBATnpD4SmDgAAQQ+2"
+    . "GIX2dYtBjUL@g@gCGcCD4AJBgeL9AAAAD5TCg8EBCdBBOc1BiAF1tEQB70GDxAFF"
+    . "OecPjyj@@@9Ei3QkEESLVCQcRIt8JCCLjCT4AAAAi0QkTIlEJBCLRCRQiUQkHOkV"
+    . "AwAAi3wkQItcJDjHRCR4AAAAAMdEJHQBAAAAx0QkSAAAAADHRCRsAAAAAIn4RI1P"
+    . "AY1TAcHoH4lcJEQB+NH4iUQkIInYwegfAdjR+IlEJDCJ+ESJzw+v+kSNQAlBOdGJ"
+    . "vCSIAAAAiceNQwmJfCRMi7wkiAAAAEEPT8BFMeSJxg+v8Dl8JHiJtCSMAAAAfVCL"
+    . "vCSMAAAAOXwkbMdEJHAAAAAAfTuLXCR0OVwkcA+MpgcAAIt8JEiDRCRsAYn4g+AB"
+    . "AcOJ+Iu8JIgAAACDwAGJXCR0g+ADOXwkeIlEJEh8sESJ4EiBxKgAAABbXl9dQVxB"
+    . "XUFeQV@DMcCF0g+VwIlEJGgPhFkEAACJ+EGJ0g+20g+vw0HB6hBFD7bSweACSJhI"
+    . "A4QkWAEAAEUPr9JIiUQkCA+2xUGJx0QPr@iJ0A+vwoX@iUQkKA+OZAgAAIu0JAAB"
+    . "AACNQ@+JvCRoAQAAi3wkKESJrCQwAQAASI0EhQYAAADHRCQcAAAAAMdEJCAAAAAA"
+    . "jVb@SIt0JAjHRCQsAAAAAEiJRCQwjQSdAAAAAImcJGABAABIjXSWBDHSiUQkQEGJ"
+    . "1YusJGABAACF7Q+O+QAAAEhjRCQsSIucJFgBAAAx7UiNXAMCSANEJDBIA4QkWAEA"
+    . "AEiJRCQQZi4PH4QAAAAAAESLpCQAAQAARA+2A0QPtkv@RA+2W@5FheR0PkiLVCQI"
+    . "iwqJyMHoEA+2wEQpwA+vwEE5wnwbD7bFRCnID6@AQTnHfA0PtsFEKdgPr8A5x31b"
+    . "SIPCBEg58nXHi0QkHE1j9UHB4BBBweEIQYPFAUUJyJlFCdj3vCRoAQAAD6+EJBgB"
+    . "AABBicSJ6Jn3vCRgAQAASIuUJEgBAABBjQSEQokEskiLhCRQAQAARokEsEiDwwQD"
+    . "rCSYAQAASDtcJBAPhT@@@@+LXCRAAVwkLINEJCABi5QkoAEAAItEJCABVCQcOYQk"
+    . "aAEAAA+F1@7@@0SJbCQsRItEJCy6rYvbaEQPr4QkcAEAAESLrCQwAQAAx0QkHAAA"
+    . "AABFMfZEicBBwfgf9+rB+gxEKcKJVCQQi3wkLItcJBAxwDnfD074RDt0JByJfCQs"
+    . "RA9O8ESJ6CuEJJgBAACJRCRAi4QkOAEAACuEJKABAACDvCTwAAAAA4lEJDgPjn8B"
+    . "AACLlCQ4AQAAQQ+v1YXSfhxIi4QkQAEAAIPqAUiNVBABxgABSIPAAUg5wnX0g7wk"
+    . "CAEAAAkPhGj8@@+LhCQIAQAAg+gBg@gHD4dIAQAAg@gDiUQkUA+OQwEAAItEJEDH"
+    . "RCRUAAAAAEUx5IlEJESLRCQ4iUQkTIt8JFQ5fCREx0QkZAAAAAAPjPP8@@+LfCRk"
+    . "OXwkTA+MlgUAAItcJFSLfCRQi0QkRCnYQPbHAg9Ew4tcJGSJwotEJEwp2ED2xwEP"
+    . "RMOD@wOJ0w9P2A9PwolcJDCJRCQg6VsEAABmDx9EAABEi4QkOAEAAIPBATH2weEH"
+    . "Mf9CjSytAAAAAESLZCQgRYXAD46G+@@@RYXtfl5Ii5wkEAEAAEljxEUxyUyNRAMC"
+    . "SGPfSANcJDgPH4QAAAAAAEEPthBBD7ZA@0UPtlj+a8BLa9ImAcJEidjB4AREKdgB"
+    . "0DnBQg+XBAtJg8EBSYPABEU5zX@LQQHsRAHvg8YBRANkJEA5tCQ4AQAAdYzp4vn@"
+    . "@4O8JIABAAABg5wkIAEAAP@pl@7@@8dEJFAAAAAAi0QkOMdEJFQAAAAARTHkiUQk"
+    . "RItEJECJRCRM6bj+@@+JyMHoEA+vhCSgAQAAmff@D6+EJBgBAABBicAPt8EPr4Qk"
+    . "mAEAAJn3+0GNDICLRCRMiUQkEItEJFCJRCQc6bj9@@9Ei7QkAAEAAEUxyTH2TIuc"
+    . "JFgBAABFhfYPhCIEAABIi6wkSAEAAEyLpCRQAQAARIu0JKABAABBiwtJg8NYicjB"
+    . "6BBBD6@Gmff@D6+EJBgBAABBicAPt8EPr4QkmAEAAJn3+0GNBIBCiUSNAEGLQ6yN"
+    . "BEaDxhZDiQSMSYPBAUQ5jCQAAQAAd6+LhCQAAQAARIuEJHABAAC6rYvbaEQPr8CJ"
+    . "RCQsRInAQcH4H@fqidDB+AxEKcBIi7wkWAEAAIlEJBBFMfbHRCQcAAAAAEiDxwhI"
+    . "iXwkCOnf@P@@ifiLtCQ4AQAA0aQkAAEAAA+vw0iYSAOEJFgBAACF9kiJRCQID46L"
+    . "+f@@QY1F@0SLXCRoRIukJAABAADHRCQwAAAAAMdEJEQAAAAASI0EhQYAAABEiXQk"
+    . "fESJfCQciYwk+AAAAESJrCQwAQAASIlEJFhCjQStAAAAAIlEJGCLnCQwAQAAhdsP"
+    . "jjIBAABIY0QkIEiLvCQQAQAASGN0JERIA3QkOEyNTAcCSANEJFhIAfhIiUQkEOsW"
+    . "xgYASYPBBEiDxgFMO0wkEA+E3gAAAEEPtilFD7Zx@0Ux20UPtmn+SItcJAhFOeNz"
+    . "z4sTQYPDAotLBInQD7b+RA+2wsHoEEQp90Up6A+2wCnogfr@@@8AdjmNFGgPr@9E"
+    . "jboABAAARA+v+MHnC0EPr8cBx7j+BQAAKdCJwkEPr9CJ0EEPr8AB+DnBc1JIg8MI"
+    . "65pBicoPttUPtslBweoQQYnPiUwkKEUPttKJVCQcRInRD6@AQQ+vyjnIf9CLVCQc"
+    . "D6@@idAPr8I5x3@ARInARIn6QQ+vwEEPr9c50H+uxgYBSYPBBEiDxgFMO0wkEA+F"
+    . "Iv@@@4t8JGABfCQgi7wkMAEAAAF8JESDRCQwAYtcJECLRCQwAVwkIDmEJDgBAAAP"
+    . "haH+@@9EiVwkaESLdCR8RIt8JByLjCT4AAAARIusJDABAADpi@b@@8dEJFAAAAAA"
+    . "x0QkTAAAAABFMfbHRCQsAAAAAOkh9P@@i0QkIIXAD4jvAAAAi3wkTDn4D4@jAAAA"
+    . "i0QkMIXAD4jXAAAAi3wkRDn4D4@LAAAAg0QkeAHHRCRQCQAAAItEJDCLfCQgQQ+v"
+    . "xUSNDDhIi7wkQAEAAEljwYA8BwAPhIgAAACLRCQsRDnwQQ9MxoO8JPAAAAADicYP"
+    . "jxoBAACFwA+EYgQAAESLXCQci1wkEEUxwEiJ+OsvZpBBOdZ+G0iLvCRQAQAARInK"
+    . "QgMUh@YEEAF1BkGD6wF4MkmDwAFEOcYPjiIEAABEOUQkLESJwn7JSIusJEgBAABE"
+    . "ic9CA3yFAIA8OAF3s4PrAXmug3wkUAl0CoNEJGQB6Zn6@@+LVCRIhdJ0LoN8JEgB"
+    . "D4SHBQAAg3wkSAIPhHIFAAAxwIN8JEgDD5TAKUQkIINEJHAB6Rv3@@+DbCQwAevv"
+    . "g0QkVAHpPPr@@2YPH0QAADHAx0QkLAAAAADpZfz@@0SJ6CuEJJgBAADHRCQsAAAA"
+    . "AEUx9sdEJBAAAAAAx0QkHAAAAACJRCRAi4QkOAEAACuEJKABAACJRCQ46XP5@@+L"
+    . "RCQwA4QkKAEAAA+vhCQYAQAAi1QkIAOUJCABAACDvCTwAAAABQ+EkgEAAI0ckEiL"
+    . "vCQQAQAAhfaNBBmNUAJIY9IPtiwXjVABSJhIY9IPtjwXiXwkWEiLvCQQAQAAD7YE"
+    . "B4lEJGAPhOQCAACLRCQciYwk+AAAADH@SIuMJBABAACJhCSAAAAAi0QkEIlEJHzp"
+    . "kwAAAEQ5tCSQAAAAfX1Ii4QkUAEAAIsUuAHajUICSJhED7YEAY1CAUhj0g+2FBFI"
+    . "mCtUJGAPtgQBRYnDQQHoK0QkWEWNiAAEAABBKetFD6@LD6@ARQ+vy0G7@gUAAMHg"
+    . "C0Upw0WJ2EQPr8JEAchBD6@QAdA5hCQAAQAAcg6DrCSAAAAAAQ+IlgAAAEiDxwE5"
+    . "@g+O4AMAADt8JCyJvCSQAAAAD41c@@@@SIuEJEgBAACLFLgB2o1CAkiYRA+2BAGN"
+    . "QgFIY9IPthQRSJgrVCRgD7YEAUWJw0EB6CtEJFhFjYgABAAAQSnrRQ+vyw+vwEUP"
+    . "r8vB4AtBAcG4@gUAAEQpwA+vwg+vwkQByDmEJAABAAAPg+7+@@+DbCR8AQ+J4@7@"
+    . "@4uMJPgAAADplf3@@40EkIlEJFiLRCRohcAPhY0CAACF9g+EdwEAAEyLjCRIAQAA"
+    . "jUb@SIt8JAhMi5wkUAEAADH2SY1EgQRIiYQkgAAAAItEJBCJRCR8i2wkWEEDKYnz"
+    . "RIsHiYwk+AAAAI1FAY1VAkhj7USJRCRgRYsDSJhIY9JIiYQkkAAAAEiLhCQQAQAA"
+    . "RImEJAABAABJifgPtgQQSIuUJJAAAACJhCSYAAAASIuEJBABAAAPtgQQiYQkkAAA"
+    . "AEiLhCQQAQAAD7YEKImEJJwAAADpgAAAAA8fgAAAAABBiwBBi2gEg8MCicJBiepI"
+    . "ienB6hBBweoQD7bND7bSK5QkmAAAAEUPttJBic9AD7bNRInVQQ+v6olMJCgPr9I5"
+    . "6n8yD7bUK5QkkAAAAESJ@UEPr+8Pr9I56n8aD7bAK4QknAAAAInKD6@RD6@AOdAP"
+    . "jhgCAABJg8AIO5wkAAEAAA+Cev@@@4F8JGD@@@8Ai4wk+AAAAHcLg2wkfAEPiCD8"
+    . "@@9Jg8EESIPHWEmDwwSDxhZMO4wkgAAAAA+FuP7@@0GDxAFIg7wkiAEAAAB0OYtU"
+    . "JDADlCQoAQAATWPEi0QkIAOEJCABAABIi7wkiAEAAMHiEAnQRDukJJABAABCiUSH"
+    . "@A+NWPP@@4t8JDAx0on4K4QkoAEAAIPAAUGJwIn4i7wkoAEAAEQPSMKNRDj@i3wk"
+    . "ODn4D0@Hi3wkIInGifgrhCSYAQAAg8ABQYnBifiLvCSYAQAARA9Iyo1EOP+LfCRA"
+    . "OfgPT8dBOfCJww+PUvv@@0SJ6kljwY1uAUEPr9BJY@1IY9JIAdBIA4QkQAEAAEmJ"
+    . "w4nYRCnISI1wAUE52X8TSo0UHkyJ2MYAAEiDwAFIOdB19EGDwAFJAftBOeh13On@"
+    . "+v@@uwMAAADpVPH@@4X2D4Tq@v@@i3wkEEyLjCQQAQAARTHbSIucJEgBAACLRCRY"
+    . "QgMEm0iLnCRQAQAAQosMm41QAkhj0g+23UUPtgQRicrB6hAPttJBKdCNUAFImEEP"
+    . "tgQBSGPSQQ+2FBFFD6@AKdoPttkp2EU5wnwRD6@SQTnXfAkPr8A5RCQofQmD7wEP"
+    . "iG36@@9Jg8MBRDnef4bpXP7@@4NEJDAB6ZL6@@+DRCQgAemI+v@@i4wk+AAAAOk8"
+    . "@v@@QcYEBgLpfO@@@4F8JGD@@@8Ai4wk+AAAAA+H9f3@@+n7@f@@QbsDAAAA6Vvw"
+    . "@@+QkJCQkJCQkJCQkJCQkA=="
+    MyFunc:=this.MCode(StrReplace((A_PtrSize=8?x64:x32),"@","/"))
   }
   text:=j[1], w:=j[2], h:=j[3]
   , err1:=this.Floor(j[4] ? j[5] : ini.err1)
@@ -489,8 +501,8 @@ PicFind(ini, j, dir, sx, sy, sw, sh, allpos_ptr)
     , "int",sx, "int",sy, "int",sw, "int",sh
     , "Ptr",ini.ss, "Ptr",ini.s1, "Ptr",ini.s0
     , "Ptr",text, "int",w, "int",h
-    , "int",Floor(err1*10000), "int",Floor(err0*10000)
-    , "Ptr",allpos_ptr, "int",ini.allpos_max
+    , "int",Floor(Abs(err1)*10000), "int",Floor(Abs(err0)*10000)
+    , "int",(err1<0||err0<0), "Ptr",allpos_ptr, "int",ini.allpos_max
     , "int",Floor(w*ini.zoomW), "int",Floor(h*ini.zoomH))
 }
 
@@ -506,7 +518,8 @@ int __attribute__((__stdcall__)) PicFind(
   , unsigned char * Bmp, int Stride
   , int sx, int sy, int sw, int sh
   , unsigned char * ss, unsigned int * s1, unsigned int * s0
-  , unsigned char * text, int w, int h, int err1, int err0
+  , unsigned char * text, int w, int h
+  , int err1, int err0, int more_err
   , unsigned int * allpos, int allpos_max
   , int new_w, int new_h )
 {
@@ -515,9 +528,10 @@ int __attribute__((__stdcall__)) PicFind(
   int r, g, b, rr, gg, bb, dR, dG, dB;
   int ii, jj, RunDir, DirCount, RunCount, AllCount1, AllCount2;
   unsigned int c1, c2;
-  unsigned char * gs;
+  unsigned char * ts, * gs;
   unsigned int * cors;
-  ok=0; o=0; len1=0; len0=0;
+  ok=0; o=0; len1=0; len0=0; ts=ss+sw; gs=ss+sw*3;
+  if (mode<1 || mode>5) goto Return1;
   //----------------------
   if (mode==5)
   {
@@ -606,10 +620,10 @@ int __attribute__((__stdcall__)) PicFind(
             if (r*r<=dR*dR && g*g<=dG*dG && b*b<=dB*dB) goto MatchOK1;
           }
         }
-        ss[i]=0;
+        ts[i]=0;
         continue;
         MatchOK1:
-        ss[i]=1;
+        ts[i]=1;
       }
     }
   }
@@ -618,11 +632,10 @@ int __attribute__((__stdcall__)) PicFind(
     c=(c+1)<<7;
     for (y=0; y<sh; y++, o+=j)
       for (x=0; x<sw; x++, o+=4, i++)
-        ss[i]=(Bmp[2+o]*38+Bmp[1+o]*75+Bmp[o]*15<c) ? 1:0;
+        ts[i]=(Bmp[2+o]*38+Bmp[1+o]*75+Bmp[o]*15<c) ? 1:0;
   }
   else if (mode==3)  // Gray Difference Mode
   {
-    gs=ss+sw*2;
     for (y=0; y<sh; y++, o+=j)
     {
       for (x=0; x<sw; x++, o+=4, i++)
@@ -632,17 +645,30 @@ int __attribute__((__stdcall__)) PicFind(
     {
       for (x=0; x<sw; x++, i++)
       {
-        if (x==0 || y==0 || x==sw-1 || y==sh-1)
-          ss[i]=2;
+        if (x==0 || x==sw-1 || y==0 || y==sh-1)
+          ts[i]=2;
         else
         {
           n=gs[i]+c;
-          ss[i]=(gs[i-1]>n || gs[i+1]>n
+          ts[i]=(gs[i-1]>n || gs[i+1]>n
           || gs[i-sw]>n   || gs[i+sw]>n
           || gs[i-sw-1]>n || gs[i-sw+1]>n
           || gs[i+sw-1]>n || gs[i+sw+1]>n) ? 1:0;
         }
       }
+    }
+  }
+  for (i=0, y=0; y<sh; y++)
+  {
+    for (x=0; x<sw; x++, i++)
+    {
+      r=ts[i];
+      g=(x==0) ? 3 : ts[i-1];
+      b=(x==sw-1) ? 3 : ts[i+1];
+      if (more_err)
+        ss[i]=(r==2||r==1||g==1||b==1)<<1|(r==2||r==0||g==0||b==0);
+      else
+        ss[i]=(r==2||r==1)<<1|(r==2||r==0);
     }
   }
   //----------------------
@@ -652,15 +678,17 @@ int __attribute__((__stdcall__)) PicFind(
   if (err1>=len1) len1=0;
   if (err0>=len0) len0=0;
   max=(len1>len0) ? len1 : len0;
-  if (mode==5 || mode==4)
+  w=new_w; h=new_h;
+  x1=0; y1=0; x2=sw-w; y2=sh-h;
+  if (mode>3)
   {
-    x1=sx; y1=sy; sx=0; sy=0;
+    for (i=0, j=sw*sh; i<j; i++)
+      ss[i]=1;
   }
   else
   {
-    x1=0; y1=0;
+    if (more_err) sx++;
   }
-  x2=x1+sw-new_w; y2=y1+sh-new_h;
   // 1 ==> ( Left to Right ) Top to Bottom
   // 2 ==> ( Right to Left ) Top to Bottom
   // 3 ==> ( Left to Right ) Bottom to Top
@@ -706,10 +734,19 @@ int __attribute__((__stdcall__)) PicFind(
       if (dir>3) { r=y; y=x; x=r; }
       //----------------------
       FindPos:
-      e1=err1; e0=err0;
-      if (mode==5)
+      e1=err1; e0=err0; o=y*sw+x;
+      if (ss[o]==0) goto NoMatch;
+      if (mode<4)
       {
-        o=y*Stride+x*4;
+        for (i=0; i<max; i++)
+        {
+          if (i<len1 && ss[o+s1[i]]<2 && (--e1)<0) goto NoMatch;
+          if (i<len0 && (ss[o+s0[i]]&1)==0 && (--e0)<0) goto NoMatch;
+        }
+      }
+      else if (mode==5)
+      {
+        o=(sy+y)*Stride+(sx+x)*4;
         if (k)
         {
           for (i=0; i<max; i++)
@@ -742,9 +779,9 @@ int __attribute__((__stdcall__)) PicFind(
           }
         }
       }
-      else if (mode==4)
+      else  // mode==4
       {
-        o=y*Stride+x*4;
+        o=(sy+y)*Stride+(sx+x)*4;
         j=o+c; rr=Bmp[2+j]; gg=Bmp[1+j]; bb=Bmp[j];
         for (i=0; i<max; i++)
         {
@@ -760,23 +797,19 @@ int __attribute__((__stdcall__)) PicFind(
           }
         }
       }
-      else
-      {
-        o=y*sw+x;
-        for (i=0; i<max; i++)
-        {
-          if (i<len1 && ss[o+s1[i]]==0 && (--e1)<0) goto NoMatch;
-          if (i<len0 && ss[o+s0[i]]==1 && (--e0)<0) goto NoMatch;
-        }
-        // Clear the image that has been found
-        for (i=0; i<len1; i++)
-          ss[o+s1[i]]=0;
-      }
       ok++;
       if (allpos!=0)
       {
         allpos[ok-1]=(sy+y)<<16|(sx+x);
         if (ok>=allpos_max) goto Return1;
+      }
+      // Skip areas that may overlap
+      r=y-h+1; r=(r>=0) ? r:0; rr=y+h-1; rr=(rr<=sh-h) ? rr:sh-h;
+      g=x-w+1; g=(g>=0) ? g:0; gg=x+w-1; gg=(gg<=sw-w) ? gg:sw-w;
+      for (i=r; i<=rr; i++)
+      {
+        for (j=g; j<=gg; j++)
+          ss[i*sw+j]=0;
       }
       NoMatch:
       if (dir==9) goto FindPos_GoBak;
@@ -895,19 +928,19 @@ PicInfo(text)
     {
       For k1,v1 in arr
       {
-        r:=StrSplit(v1 "@1", "@"), v1:=Trim(r[1],"-"), x:=this.Floor(r[2])
+        k1:=(InStr(v1, "@") ? 0x1000000:0)
+        , r:=StrSplit(v1 "@1", "@"), x:=this.Floor(r[2])
         , x:=(x<=0||x>1?1:x), x:=Floor(4606*255*255*(1-x)*(1-x))
-        , k1:=(!InStr(v1, "-") ? 0x1000000:0)
-        , c:=StrSplit(v1 "-" Format("{:X}",x), "-")
+        , c:=StrSplit(Trim(r[1],"-") "-" Format("{:X}",x), "-")
         , NumPut("uint", this.ToRGB(c[1])&0xFFFFFF|k1, p+=4)
         , NumPut("uint", this.Floor("0x" c[2]), p+=4)
       }
     }
     else if (mode=4)
     {
-      r:=StrSplit(arr[1] "@1", "@"), c:=this.Floor(r[1]), n:=this.Floor(r[2])
+      r:=StrSplit(arr[1] "@1", "@"), n:=this.Floor(r[2])
       , n:=(n<=0||n>1?1:n), n:=Floor(4606*255*255*(1-n)*(1-n))
-      , color:=((c-1)//w)<<16|Mod(c-1,w)
+      , c:=this.Floor(r[1]), color:=((c-1)//w)<<16|Mod(c-1,w)
     }
   }
   return info[key]:=[v, w, h, seterr, err1, err0, mode, color, n, comment]
@@ -915,8 +948,8 @@ PicInfo(text)
 
 ToRGB(color)  ; color can use: RRGGBB, Red, Yellow, Black, White
 {
-  static init:=0, tab
-  if (!init && init:=1)
+  static tab:=""
+  if (!tab)
     tab:=Map(), tab.CaseSense:="Off"
     , tab.Set("Black", "000000", "White", "FFFFFF"
     , "Red", "FF0000", "Green", "008000", "Blue", "0000FF"
@@ -947,7 +980,8 @@ GetBitsFromScreen(&x:=0, &y:=0, &w:=0, &h:=0
   }
   cri:=A_IsCritical
   Critical
-  if (id:=this.BindWindow(0,0,1))
+  bits.BindWindow:=id:=this.BindWindow(0,0,1)
+  if (id)
   {
     id:=WinGetID("ahk_id " id)
     WinGetPos &zx, &zy, &zw, &zh, id
@@ -964,16 +998,17 @@ GetBitsFromScreen(&x:=0, &y:=0, &w:=0, &h:=0
   , h:=Min(y+h,zy+zh), y:=Max(y,zy), h-=y
   if (!ScreenShot || w<1 || h<1 || !bits.hBM)
   {
-    Critical(cri)
+    Critical cri
     return bits
   }
   if IsSet(GetBitsFromScreen2) && (GetBitsFromScreen2 is Func)
     && GetBitsFromScreen2(bits, x-zx, y-zy, w, h)
   {
+    ; Get the bind window use bits.BindWindow
     ; Each small range of data obtained from DXGI must be
     ; copied to the screenshot cache using FindText().CopyBits()
     zx:=bits.zx, zy:=bits.zy, zw:=bits.zw, zh:=bits.zh
-    Critical(cri)
+    Critical cri
     return bits
   }
   mDC:=DllCall("CreateCompatibleDC", "Ptr",0, "Ptr")
@@ -1011,7 +1046,7 @@ GetBitsFromScreen(&x:=0, &y:=0, &w:=0, &h:=0
     this.CaptureCursor(mDC, zx, zy, zw, zh)
   DllCall("SelectObject", "Ptr",mDC, "Ptr",oBM)
   DllCall("DeleteDC", "Ptr",mDC)
-  Critical(cri)
+  Critical cri
   return bits
 }
 
@@ -1101,7 +1136,7 @@ DrawHBM(hBM, lines)
     {
       oldc:=v[5], BGR:=(oldc&0xFF)<<16|oldc&0xFF00|(oldc>>16)&0xFF
       DllCall("DeleteObject", "Ptr",brush)
-      brush:=DllCall("CreateSolidBrush", "UInt",BGR, "Ptr")
+      brush:=DllCall("CreateSolidBrush", "uint",BGR, "Ptr")
     }
     DllCall("SetRect", "Ptr",rect, "int",v[1], "int",v[2]
       , "int",v[1]+v[3], "int",v[2]+v[4])
@@ -1183,13 +1218,23 @@ CaptureCursor(hDC:=0, zx:=0, zy:=0, zw:=0, zh:=0, get_cursor:=0)
   DllCall("DeleteObject", "Ptr",hBMColor)
 }
 
-MCode(&code, hex)
+MCode(hex)
 {
   flag:=((hex~="[^\s\da-fA-F]")?1:4), hex:=RegExReplace(hex, "[\s=]")
   code:=Buffer(len:=(flag=1 ? StrLen(hex)//4*3+3 : StrLen(hex)//2))
   DllCall("crypt32\CryptStringToBinary", "Str",hex, "uint",0
     , "uint",flag, "Ptr",code, "uint*",&len, "Ptr",0, "Ptr",0)
   DllCall("VirtualProtect", "Ptr",code, "Ptr",len, "uint",0x40, "Ptr*",0)
+  return code
+}
+
+bin2hex(addr, size, base64:=1)
+{
+  flag:=(base64 ? 1:4)|0x40000000, len:=0
+  Loop 2
+    DllCall("Crypt32\CryptBinaryToString", "Ptr",addr, "uint",size
+    , "uint",flag, "Ptr",(A_Index=1?0:(p:=Buffer(len*2))), "uint*",&len)
+  return RegExReplace(StrGet(p, len), "\s+")
 }
 
 base64tobit(s)
@@ -1246,7 +1291,7 @@ PicLib(comments, add_to_Lib:=0, index:=1)
       {
         s1:=Trim(r[1]), s2:=""
         Loop Parse, s1
-          s2.="_" . Format("{:d}",Ord(A_LoopField))
+          s2.=Format("_{:d}", Ord(A_LoopField))
         Lib[s2]:=r[0]
       }
     Lib[""]:=""
@@ -1258,7 +1303,7 @@ PicLib(comments, add_to_Lib:=0, index:=1)
     {
       s1:=Trim(A_LoopField), s2:=""
       Loop Parse, s1
-        s2.="_" . Format("{:d}",Ord(A_LoopField))
+        s2.=Format("_{:d}", Ord(A_LoopField))
       if Lib.Has(s2)
         Text.="|" . Lib[s2]
     }
@@ -1464,16 +1509,16 @@ MouseTip(x:="", y:="", w:=10, h:=10, d:=3)
 RangeTip(x:="", y:="", w:="", h:="", color:="Red", d:=3)
 {
   ListLines (lls:=A_ListLines)?0:0
-  static Range:=Map()
+  static Range:=[0,0,0,0]
   if (x="")
   {
     Loop 4
-      if (Range.Has(i:=A_Index) && Range[i])
+      if (Range[i:=A_Index])
         Range[i].Destroy(), Range[i]:=""
     ListLines lls
     return
   }
-  if !(Range.Has(1) && Range[1])
+  if (!Range[1])
   {
     Loop 4
       Range[A_Index]:=Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000")
@@ -1502,9 +1547,9 @@ State(key)
 
 GetRange(ww:=25, hh:=8, key:="RButton")
 {
-  static G_Off:="", hk
-  if (!G_Off)
-    G_Off:=this.GetRange.Bind(this, "Off")
+  static KeyOff:="", hk
+  if (!KeyOff)
+    KeyOff:=this.GetRange.Bind(this, "Off")
   if (ww=="Off")
     return hk:=Trim(A_ThisHotkey, "*")
   ;---------------------
@@ -1513,14 +1558,16 @@ GetRange(ww:=25, hh:=8, key:="RButton")
   _Gui.Title:="GetRange_HotkeyIf"
   _Gui.Show("NA x0 y0 w0 h0")
   ;---------------------
+  if GetKeyState("Ctrl")
+    Send "{Ctrl Up}"
   HotIfWinExist "GetRange_HotkeyIf"
   keys:=key "|Up|Down|Left|Right"
   For k,v in StrSplit(keys, "|")
   {
-    KeyWait v, "T3"
-    Try Hotkey "*" v, G_Off, "On"
+    if GetKeyState(v)
+      Send "{" v " Up}"
+    Try Hotkey "*" v, KeyOff, "On"
   }
-  KeyWait "Ctrl", "T3"
   HotIfWinExist
   ;---------------------
   Critical (cri:=A_IsCritical)?"Off":"Off"
@@ -1536,10 +1583,11 @@ GetRange(ww:=25, hh:=8, key:="RButton")
       keydown++
       if (keydown=1)
         MouseGetPos &x1, &y1, &Bind_ID
-      KeyWait key, "T3"
-      KeyWait "Ctrl", "T3"
+      timeout:=A_TickCount+3000
+      While (A_TickCount<timeout) && (this.State(key) || this.State("Ctrl"))
+        Sleep 50
       hk:=""
-      if (keydown>1)
+      if (keydown>=2)
         Break
     }
     else if (hk="Up") || this.State("Up")
@@ -1561,18 +1609,24 @@ GetRange(ww:=25, hh:=8, key:="RButton")
   this.RangeTip()
   HotIfWinExist "GetRange_HotkeyIf"
   For k,v in StrSplit(keys, "|")
-    Try Hotkey "*" v, G_Off, "Off"
+    Try Hotkey "*" v, KeyOff, "Off"
   HotIfWinExist
   GetRange_HotkeyIf.Destroy()
-  Critical(cri)
+  Critical cri
   return [x-ww, y-hh, x+ww, y+hh, Bind_ID]
 }
 
 GetRange2(key:="LButton")
 {
-  n:=150000, this.ShowScreenShot(-n, -n, n, n)
+  FindText_GetRange:=_Gui:=Gui()
+  _Gui.Opt("+LastFound +AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000")
+  _Gui.BackColor:="White"
+  WinSetTransparent(10)
+  this.BitmapFromScreen(,,,,0,&x,&y,&w,&h)
+  _Gui.Title:="FindText_GetRange"
+  _Gui.Show("NA x" x " y" y " w" w " h" h)
   CoordMode "Mouse"
-  tip:=this.Lang("s16"), oldx:=oldy:=""
+  tip:=this.Lang("s7"), oldx:=oldy:=""
   Loop
   {
     Sleep 50
@@ -1597,7 +1651,8 @@ GetRange2(key:="LButton")
   Until !(this.State(key) || this.State("Ctrl"))
   ToolTip
   this.RangeTip()
-  this.ShowScreenShot()
+  FindText_GetRange.Destroy()
+  A_Clipboard:=x ", " y ", " (x+w-1) ", " (y+h-1)
   return [x, y, x+w-1, y+h-1]
 }
 
@@ -1644,7 +1699,7 @@ SaveBitmapToFile(file, hBM_or_file, x:=0, y:=0, w:=0, h:=0)
     this.CopyHBM(hBM2, 0, 0, hBM, x, y, w, h)
     DllCall("DeleteObject", "Ptr",hBM), hBM:=hBM2
   }
-  dib:=Buffer(dib_size:=(A_PtrSize=8 ? 104:84))
+  dib:=Buffer(dib_size:=(A_PtrSize=8 ? 104:84), 0)
   , DllCall("GetObject", "Ptr",hBM, "int",dib_size, "Ptr",dib)
   , pbi:=dib.Ptr+(bitmap_size:=A_PtrSize=8 ? 32:24)
   , size:=NumGet(pbi+20, "uint"), pBits:=NumGet(pbi-A_PtrSize, "Ptr")
@@ -1744,9 +1799,12 @@ BitmapToWindow(hwnd, x1, y1, hBM, x2, y2, w, h)
 
 ; Quickly get the search data of screen image
 
-GetTextFromScreen(x1, y1, x2, y2, Threshold:=""
+GetTextFromScreen(x1:=0, y1:=0, x2:=0, y2:=0, Threshold:=""
   , ScreenShot:=1, &rx:="", &ry:="", cut:=1)
 {
+  x1:=this.Floor(x1), y1:=this.Floor(y1), x2:=this.Floor(x2), y2:=this.Floor(y2)
+  if (x1=0 && y1=0 && x2=0 && y2=0)
+    return this.Gui("CaptureS", ScreenShot)
   x:=Min(x1,x2), y:=Min(y1,y2), w:=Abs(x2-x1)+1, h:=Abs(y2-y1)+1
   bits:=this.GetBitsFromScreen(&x,&y,&w,&h,ScreenShot,&zx,&zy)
   if (w<1 || h<1 || !bits.Scan0)
@@ -1755,7 +1813,7 @@ GetTextFromScreen(x1, y1, x2, y2, Threshold:=""
   }
   ListLines (lls:=A_ListLines)?0:0
   gs:=Map(), gs.Default:=0
-  j:=bits.Stride-w*4, p:=bits.Scan0+(y-zy)*bits.Stride+(x-zx)*4-4-j
+  j:=bits.Stride-w*4, p:=bits.Scan0+(y-zy)*bits.Stride+(x-zx)*4-j-4
   Loop h + 0*(k:=0)
   Loop w + 0*(p+=j)
     c:=NumGet(p+=4,"uint")
@@ -1874,9 +1932,11 @@ GetPicHash(x1:=0, y1:=0, x2:=0, y2:=0, ScreenShot:=1)
   if (w<1 || h<1 || !bits.Scan0)
     return 0
   hash:=0, Stride:=bits.Stride, p:=bits.Scan0+(y-1)*Stride+x*4, w*=4
+  ListLines (lls:=A_ListLines)?0:0
   Loop h
     hash:=(hash*31+DllCall("ntdll\RtlComputeCrc32", "uint",0
       , "Ptr",p+=Stride, "uint",w, "uint"))&0xFFFFFFFF
+  ListLines lls
   return hash
 }
 
@@ -1929,7 +1989,7 @@ ImageSearch(&rx:="", &ry:="", x1:=0, y1:=0, x2:=0, y2:=0
     ? Format("{:06X}", r[2]<<16|r[2]<<8|r[2]) : "000000")
     . (RegExMatch(v, "i)(^|\s)\*Trans([\-\w]+)\s", &r)
     ? "-" . Trim(r[2],"-") : "") . "$"
-    . Trim(RegExReplace(v, "(?<=^|\s)\*\S+"))
+    . Trim(RegExReplace(v, "(^|\s)\*\S+"))
   }
   x1:=this.Floor(x1), y1:=this.Floor(y1), x2:=this.Floor(x2), y2:=this.Floor(y2)
   if (x1=0 && y1=0 && x2=0 && y2=0)
@@ -1989,7 +2049,7 @@ PixelCount(x1:=0, y1:=0, x2:=0, y2:=0, ColorID:="", Variation:=0, ScreenShot:=1)
 ColorBlock(ColorID, w, h, Count)
 {
   Text:="|<>[" (1-Count/(w*h)) ",1]"
-  . Trim(StrReplace(ColorID, "|", "/"), "/") . "$" w "."
+  . Trim(StrReplace(ColorID, "|", "/"), "/") . Format("${:d}.",w)
   . this.bit2base64(StrReplace(Format(Format("{{}:0{:d}d{}}",w*h),0),"0","1"))
   return Text
 }
@@ -2000,11 +2060,12 @@ Click(x:="", y:="", other1:="", other2:="", GoBack:=0)
   if GoBack
     MouseGetPos &oldx, &oldy
   MouseMove x, y, 0
-  Sleep(50) ; AWW:trying to fix my Lumberjack Heroes frenzyloop macro that glitches at low wattage (when CPU is slow)
+  Sleep(100) ; AWW:trying to fix my Lumberjack Heroes frenzyloop macro that glitches at low wattage (when CPU is slow)
   Click x "," y "," other1 "," other2
   if GoBack
     MouseMove oldx, oldy, 0
   CoordMode "Mouse", bak
+  return 1
 }
 
 ; Using ControlClick instead of Click, Use Screen Coordinates,
@@ -2029,6 +2090,7 @@ ControlClick(x, y, WhichButton:="", ClickCount:=1, Opt:="", hwnd:="")
   SetControlDelay -1
   ControlClick "x" x " y" y, hwnd,, WhichButton, ClickCount, "NA Pos " Opt
   DetectHiddenWindows bak
+  return 1
 }
 
 ; Running AHK code dynamically with new threads
@@ -2041,7 +2103,7 @@ Class Thread
   }
   __Delete()
   {
-    ProcessClose(this.pid)
+    ProcessClose this.pid
   }
   Exec(s, Ahk:="", args:="")    ; required AHK v1.1.34+ and Ahk2Exe Use .exe
   {
@@ -2058,18 +2120,18 @@ Class Thread
     Catch
     {
       f:=A_Temp "\~ahk.tmp"
-      s:="`r`nTry FileDelete(`"" f "`")`r`n" s
-      Try FileDelete(f)
-      FileAppend(s, f)
+      s:="`r`nTry FileDelete `"" f "`"`r`n" s
+      Try FileDelete f
+      FileAppend s, f
       r:=this.Clear.Bind(this)
-      SetTimer(r, -3000)
+      SetTimer r, -3000
       Run "`"" Ahk "`" /script /force /CP0 `"" f "`" " args,,, &pid
     }
     return pid
   }
   Clear()
   {
-    Try FileDelete(A_Temp "\~ahk.tmp")
+    Try FileDelete A_Temp "\~ahk.tmp"
     SetTimer(,0)
   }
 }
@@ -2098,9 +2160,9 @@ ToolTip(s:="", x:="", y:="", num:=1, arg:="")
   r1:=A_CoordModeToolTip
   r2:=A_CoordModeMouse
   CoordMode "Mouse", "Screen"
-  MouseGetPos &x1, &y1
+  Try MouseGetPos &x1, &y1
   CoordMode "Mouse", r1
-  MouseGetPos &x2, &y2
+  Try MouseGetPos &x2, &y2
   CoordMode "Mouse", r2
   (x!="" && x:="x" (this.Floor(x)+x1-x2))
   , (y!="" && y:="y" (this.Floor(y)+y1-y2))
@@ -2121,25 +2183,23 @@ ToolTip(s:="", x:="", y:="", num:=1, arg:="")
     ini[f]:=r
     Try tip[f].Destroy()
     tip[f]:=_Gui:=Gui()  ; WS_EX_LAYERED:=0x80000, WS_EX_TRANSPARENT:=0x20
-    _Gui.Opt("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x80020")
-    _Gui.MarginX:=2, _Gui.MarginY:=2
-    _Gui.BackColor:=bgcolor
-    _Gui.SetFont("c" color " s" size " " bold, font)
-    _Gui.Add("Text",, s)
-    _Gui.Title:=f
-    _Gui.Show("Hide")
-    ;------------------
-    DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
-    WinSetTransparent(trans, _Gui.Hwnd)
-    DetectHiddenWindows bak
+    Try {  ; because "GUI has no window" error
+      _Gui.Opt("+LastFound +AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x80020")
+      _Gui.MarginX:=2, _Gui.MarginY:=2
+      _Gui.BackColor:=bgcolor
+      _Gui.SetFont("c" color " s" size " " bold, font)
+      _Gui.Add("Text",, s)
+      _Gui.Title:=f
+      _Gui.Show("Hide")
+    }
+    WinSetTransparent(trans)
   }
   tip[f].Opt("+AlwaysOnTop")
   tip[f].Show("NA " x " " y)
   if (timeout)
   {
     (!timer.Has(f) && timer[f]:=this.ToolTip.Bind(this,"","","",num))
-    , r:=timer[f]
-    SetTimer(r, -Round(Abs(this.Floor(timeout)*1000))-1)
+    SetTimer timer[f], -Round(Abs(this.Floor(timeout)*1000))-1
   }
 }
 
@@ -2214,7 +2274,6 @@ Gui(cmd, arg1:="", args*)
     G_ := this.Gui.Bind(this)
     G_G := this.Gui.Bind(this, "G")
     G_Run := this.Gui.Bind(this, "Run")
-    G_Off := this.Gui.Bind(this, "Off")
     G_Show := this.Gui.Bind(this, "Show")
     G_KeyDown := this.Gui.Bind(this, "KeyDown")
     G_LButtonDown := this.Gui.Bind(this, "LButtonDown")
@@ -2236,23 +2295,22 @@ Gui(cmd, arg1:="", args*)
     OnMessage(0x201, G_LButtonDown)
     OnMessage(0x204, G_RButtonDown)
     OnMessage(0x200, G_MouseMove)
-    A_TrayMenu.Add()
-    A_TrayMenu.Add(Lang["s1"], G_Show)
+    MenuTray:=A_TrayMenu
+    MenuTray.Add
+    MenuTray.Add Lang["s1"], G_Show
     if (!A_IsCompiled && A_LineFile=A_ScriptFullPath)
     {
-      A_TrayMenu.Default:=Lang["s1"]
-      A_TrayMenu.ClickCount:=1
-      TraySetIcon("Shell32.dll", 23)
+      MenuTray.Default:=Lang["s1"]
+      MenuTray.ClickCount:=1
+      TraySetIcon "Shell32.dll", 23
     }
-    Critical(cri)
+    Critical cri
     Gui("+LastFound").Destroy()
     ;-------------------
     Pics:=PrevControl:=x:=y:=oldx:=oldy:="", dx:=dy:=oldt:=0
   }
   Switch cmd, 1
   {
-  Case "Off":
-    return hk:=Trim(A_ThisHotkey, "*")
   Case "G":
     id:=this.LastCtrl()
     Try id.OnEvent("Click", G_Run)
@@ -2265,7 +2323,7 @@ Gui(cmd, arg1:="", args*)
     return
   Case "Show":
     FindText_Main.Show(arg1 ? "Center" : "")
-    ControlFocus(hscr)
+    ControlFocus hscr
     return
   Case "Cancel", "Cancel2":
     WinHide
@@ -2516,15 +2574,14 @@ Gui(cmd, arg1:="", args*)
   Case "SaveScr":
     f:=A_Temp "\~scr2.tmp"
     s:=FindText_Main["scr"].Value
-    Try FileDelete(f)
-    FileAppend(s, f)
+    Try FileDelete f
+    FileAppend s, f
     return
   Case "Capture", "CaptureS":
     _Gui:=FindText_Main
-    if WinExist()!=_Gui.Hwnd
-      return this.GetRange()
-    this.Hide()
-    if !InStr(cmd, "CaptureS")
+    if show_gui:=(WinExist("ahk_id" _Gui.Hwnd))
+      this.Hide()
+    if (cmd="Capture")
     {
       w:=_Gui["Myww"].Value
       h:=_Gui["Myhh"].Value
@@ -2540,9 +2597,8 @@ Gui(cmd, arg1:="", args*)
       _Gui:=FindText_Capture
       _Gui["MyTab1"].Choose(2)
     }
-    this.ScreenShot()
     n:=150000, x:=y:=-n, w:=h:=2*n
-    hBM:=this.BitmapFromScreen(&x,&y,&w,&h,0)
+    hBM:=this.BitmapFromScreen(&x,&y,&w,&h,(arg1=0?0:1))
     G_.Call("CaptureUpdate")
     G_.Call("PicUpdate")
     FindText_SubPic.Show()
@@ -2569,6 +2625,7 @@ Gui(cmd, arg1:="", args*)
     ToolTip
     FindText_SubPic.Hide()
     _Gui:=FindText_Main
+    A_Clipboard:=Text:=RegExMatch(Result,"\|<[^>\n]*>[^$\n]+\$[^`"'\r\n]+",&r)?r[0]:""
     ;------------------------
     if (bind_mode!="")
     {
@@ -2585,7 +2642,7 @@ Gui(cmd, arg1:="", args*)
       s:=""
       if (!A_IsCompiled)
         Try s:=FileRead(A_LineFile)
-      re:="i)\n\s*FindText[^\n]+args\*[\s\S]*?Script_End[(){\s]+}"
+      re:="i)\n\s*FindText[^\n]+args\*[\s\S]*"
       s:=RegExMatch(s, re, &r) ? "`n;==========`n" r[0] "`n" : ""
       _Gui["scr"].Value:=Result "`n" s
       _Gui["MyPic"].Value:=Trim(this.ASCII(Result),"`n")
@@ -2604,8 +2661,9 @@ Gui(cmd, arg1:="", args*)
       this.EditScroll(hscr, "\Q" r[0] "\E")
     Event:=Result:=s:=""
     ;----------------------
-    G_Show.Call()
-    return
+    if (show_gui && arg1="")
+      G_Show.Call()
+    return Text
   Case "CaptureUpdate":
     nX:=sx, nY:=sy, nW:=sw, nH:=sh
     bits:=this.GetBitsFromScreen(&nX,&nY,&nW,&nH,0,&zx,&zy)
@@ -2617,7 +2675,7 @@ Gui(cmd, arg1:="", args*)
     ListLines (lls:=A_ListLines)?0:0
     if (nW>0 && nH>0 && bits.Scan0)
     {
-      j:=bits.Stride-nW*4, p:=bits.Scan0+(nY-zy)*bits.Stride+(nX-zx)*4-4-j
+      j:=bits.Stride-nW*4, p:=bits.Scan0+(nY-zy)*bits.Stride+(nX-zx)*4-j-4
       Loop nH + 0*(k:=0)
       Loop nW + 0*(p+=j)
         show[++k]:=1, cors[k]:=NumGet(p+=4,"uint")
@@ -2671,7 +2729,7 @@ Gui(cmd, arg1:="", args*)
     }
     if !FileExist(f)
     {
-      MsgBox(Lang["s17"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s17"] " !", "Tip", "4096 T1"
       return
     }
     this.ShowPic(f, 0, &sx, &sy, &sw, &sh)
@@ -2686,8 +2744,14 @@ Gui(cmd, arg1:="", args*)
     Try f:="", f:=Names[SelectBox]
     _Gui.Hide()
     this.ShowPic(f)
-    pos:=this.GetRange2()
-    G_.Call("ScreenShot", pos[1] "|" pos[2] "|" pos[3] "|" pos[4] "|0")
+    Try GuiFromHwnd(WinExist("Show Pic")).Opt("+OwnDialogs")
+    Loop
+    {
+      p:=this.GetRange2()
+      if MsgBox(Lang["s15"] " !", "Tip", "4100")="Yes"
+        Break
+    }
+    G_.Call("ScreenShot", p[1] "|" p[2] "|" p[3] "|" p[4] "|0")
     this.ShowPic()
     return
   Case "SelectBox":
@@ -2698,12 +2762,12 @@ Gui(cmd, arg1:="", args*)
     return
   Case "ClearAll":
     FindText_Capture.Hide()
-    Try FileDelete(SavePicDir "*.bmp")
+    Try FileDelete SavePicDir "*.bmp"
     return
   Case "OpenDir":
     FindText_Capture.Minimize()
     if !FileExist(SavePicDir)
-      DirCreate(SavePicDir)
+      DirCreate SavePicDir
     Run SavePicDir
     return
   Case "GetRange":
@@ -2745,10 +2809,10 @@ Gui(cmd, arg1:="", args*)
       if RegExMatch(s, "<[^>\n]*>[^$\n]+\$[^`"'\r\n]+", &r)
         v:=this.FindText(&X, &Y, 0,0,0,0, 0,0, r[0])
       r:=StrSplit(Lang["s8"] "||||", "|")
-      MsgBox(r[1] ":`t" (IsObject(v)?v.Length:v) "`n`n"
+      MsgBox r[1] ":`t" (IsObject(v)?v.Length:v) "`n`n"
         . r[2] ":`t" (A_TickCount-t) " " r[3] "`n`n"
         . r[4] ":`t" X ", " Y "`n`n"
-        . r[5] ":`t<" (IsObject(v)?v[1].id:"") ">", "Tip", "4096 T3")
+        . r[5] ":`t<" (IsObject(v)?v[1].id:"") ">", "Tip", "4096 T3"
       Try For i,j in v
         if (i<=2)
           this.MouseTip(j.x, j.y)
@@ -2803,7 +2867,7 @@ Gui(cmd, arg1:="", args*)
         , s:=SubStr(s, (s~="i)\n[ \t]*Text"))
     }
     A_Clipboard:=RegExReplace(s, "\R", "`r`n")
-    ControlFocus(hscr)
+    ControlFocus hscr
     return
   Case "Apply":
     _Gui:=FindText_Main
@@ -2822,7 +2886,7 @@ Gui(cmd, arg1:="", args*)
   Case "ScreenShot":
     Critical
     if !FileExist(SavePicDir)
-      DirCreate(SavePicDir)
+      DirCreate SavePicDir
     Loop
       f:=SavePicDir . Format("{:03d}.bmp",A_Index)
     Until !FileExist(f)
@@ -2864,13 +2928,11 @@ Gui(cmd, arg1:="", args*)
     ListLines lls
     oldx:=dx, oldy:=dy
     return
-  Case "RepColor":
-    show[k]:=1, c:=(bg="" ? cors[k] : ascii[k] ? 0 : 0xFFFFFF)
-    if (tx:=Mod(k-1,nW)-dx)>=0 && tx<71 && (ty:=(k-1)//nW-dy)>=0 && ty<25
-      SendMessage 0x2001,0,(c&0xFF)<<16|c&0xFF00|(c>>16)&0xFF,C_[ty*71+tx+1]
-    return
-  Case "CutColor":
-    show[k]:=0, c:=WindowColor
+  Case "RepColor", "CutColor":
+    if (cmd="RepColor")
+      show[k]:=1, c:=(bg="" ? cors[k] : ascii[k] ? 0 : 0xFFFFFF)
+    else
+      show[k]:=0, c:=WindowColor
     if (tx:=Mod(k-1,nW)-dx)>=0 && tx<71 && (ty:=(k-1)//nW-dy)>=0 && ty<25
       SendMessage 0x2001,0,(c&0xFF)<<16|c&0xFF00|(c>>16)&0xFF,C_[ty*71+tx+1]
     return
@@ -2994,7 +3056,7 @@ Gui(cmd, arg1:="", args*)
     if (GrayDiff="")
     {
       _Gui.Opt("+OwnDialogs")
-      MsgBox(Lang["s11"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s11"] " !", "Tip", "4096 T1"
       return
     }
     ListLines (lls:=A_ListLines)?0:0
@@ -3027,7 +3089,7 @@ Gui(cmd, arg1:="", args*)
     if (c="")
     {
       _Gui.Opt("+OwnDialogs")
-      MsgBox(Lang["s12"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s12"] " !", "Tip", "4096 T1"
       return
     }
     s:=_Gui["ColorList"].Value, c:=StrReplace(c,"0x")
@@ -3035,18 +3097,18 @@ Gui(cmd, arg1:="", args*)
       v:=_Gui["Sim"].Value, v:=c "@" Round(v/100,2)
       , s:=RegExReplace("/" s, "/" c "@[^/]*") . "/" v
     else
-      v:=_Gui["dRGB2"].Value, v:=c "-" Format("{:06X}",(v<<16)|(v<<8)|v)
+      v:=_Gui["dRGB2"].Value, v:=c "-" Format("{:06X}",v<<16|v<<8|v)
       , s:=RegExReplace("/" s, "/" c "-[^/]*") . "/" v
-    _Gui["ColorList"].Value:=Trim(s,"/")
-    ControlSend("{End}", _Gui["ColorList"].Hwnd)
+    _Gui["ColorList"].Value:=Trim(s, "/")
+    ControlSend "{End}", _Gui["ColorList"].Hwnd
     G_.Call("Color2Two")
     return
   Case "Undo2":
     _Gui:=FindText_Capture
     s:=_Gui["ColorList"].Value
     s:=RegExReplace("/" s, "/[^/]+$")
-    _Gui["ColorList"].Value:=Trim(s,"/")
-    ControlSend("{End}", _Gui["ColorList"].Hwnd)
+    _Gui["ColorList"].Value:=Trim(s, "/")
+    ControlSend "{End}", _Gui["ColorList"].Hwnd
     return
   Case "Color2Two":
     _Gui:=FindText_Capture
@@ -3054,7 +3116,7 @@ Gui(cmd, arg1:="", args*)
     if (color="")
     {
       _Gui.Opt("+OwnDialogs")
-      MsgBox(Lang["s7"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s16"] " !", "Tip", "4096 T1"
       return
     }
     ListLines (lls:=A_ListLines)?0:0
@@ -3092,7 +3154,7 @@ Gui(cmd, arg1:="", args*)
     if (c="")
     {
       _Gui.Opt("+OwnDialogs")
-      MsgBox(Lang["s12"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s12"] " !", "Tip", "4096 T1"
       return
     }
     n:=this.Floor(_Gui["Similar2"].Value), n:=Round(n/100,2)
@@ -3146,7 +3208,7 @@ Gui(cmd, arg1:="", args*)
     if (txt="")
     {
       FindText_Capture.Opt("+OwnDialogs")
-      MsgBox(Lang["s13"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s13"] " !", "Tip", "4096 T1"
       return
     }
     While InStr(txt,bg)
@@ -3169,7 +3231,7 @@ Gui(cmd, arg1:="", args*)
     G_.Call("GetTxt")
     if (txt="") && (!MultiColor)
     {
-      MsgBox(Lang["s13"] " !", "Tip", "4096 T1")
+      MsgBox Lang["s13"] " !", "Tip", "4096 T1"
       return
     }
     if InStr(color,"#") && (!MultiColor)
@@ -3191,7 +3253,7 @@ Gui(cmd, arg1:="", args*)
       ListLines lls
       if (j=0)
       {
-        MsgBox(Lang["s12"] " !", "Tip", "4096 T1")
+        MsgBox Lang["s12"] " !", "Tip", "4096 T1"
         return
       }
       color:="#" j "@" r[2]
@@ -3201,7 +3263,7 @@ Gui(cmd, arg1:="", args*)
     {
       if InStr(color,"#")
       {
-        MsgBox(Lang["s14"], "Tip", "4096 T3")
+        MsgBox Lang["s14"], "Tip", "4096 T3"
         return
       }
       bg:=StrLen(StrReplace(txt,"0"))
@@ -3269,10 +3331,10 @@ Gui(cmd, arg1:="", args*)
     . "`n}`n"
     . "`n`; ok:=FindText(&X:=`"wait`", &Y:=3, 0,0,0,0,0,0,Text)  `; " r[7]
     . "`n`; ok:=FindText(&X:=`"wait0`", &Y:=-1, 0,0,0,0,0,0,Text)  `; " r[8]
-    . "`n`nMsgBox(`"" r[1] ":``t`" (IsObject(ok)?ok.Length:ok)"
+    . "`n`nMsgBox `"" r[1] ":``t`" (IsObject(ok)?ok.Length:ok)"
     . "`n  . `"``n``n" r[2] ":``t`" (A_TickCount-t1) `" " r[3] "`""
     . "`n  . `"``n``n" r[4] ":``t`" X `", `" Y"
-    . "`n  . `"``n``n" r[5] ":``t<`" (IsObject(ok)?ok[1].id:`"`") `">`", `"Tip`", 4096)`n"
+    . "`n  . `"``n``n" r[5] ":``t<`" (IsObject(ok)?ok[1].id:`"`") `">`", `"Tip`", 4096`n"
     . "`nTry For i,v in ok  `; ok " r[6] " ok:=FindText().ok"
     . "`n  if (i<=2)"
     . "`n    FindText().MouseTip(ok[i].x, ok[i].y)`n"
@@ -3319,7 +3381,7 @@ Gui(cmd, arg1:="", args*)
         Sleep 50
         MouseGetPos &k3, &k4
         this.RangeTip(Min(k1,k3), Min(k2,k4)
-        , Abs(k1-k3), Abs(k2-k4), (A_MSec<500 ? "Red":"Blue"))
+        , Abs(k1-k3)+1, Abs(k2-k4)+1, (A_MSec<500 ? "Red":"Blue"))
       }
       Until !this.State("LButton")
       ListLines lls
@@ -3328,7 +3390,7 @@ Gui(cmd, arg1:="", args*)
       this.ClientToScreen(&sx, &sy, 0, 0, sub_hpic)
       if Abs(k1-k3)+Abs(k2-k4)>4
         sx:=zx+Min(k1,k3)-sx, sy:=zy+Min(k2,k4)-sy
-        , sw:=Abs(k1-k3), sh:=Abs(k2-k4)
+        , sw:=Abs(k1-k3)+1, sh:=Abs(k2-k4)+1
       else
         sx:=zx+k1-sx-71//2, sy:=zy+k2-sy-25//2, sw:=71, sh:=25
       G_.Call("CaptureUpdate")
@@ -3353,22 +3415,20 @@ Gui(cmd, arg1:="", args*)
       SendMessage 0x2001,0,((show[k3]:=!show[k3])?0x0000FF:0xAAFFFF),k2
       return
     }
-    k2:=Mod(k1-1,71)+dx, k3:=(k1-1)//71+dy
-    if (k2<0 || k2>=nW || k3<0 || k3>=nH)
+    k3:=Mod(k1-1,71)+dx, k4:=(k1-1)//71+dy
+    if (k3>=nW || k4>=nH)
       return
-    k1:=k, k:=k3*nW+k2+1, k4:=c
+    k1:=k, k:=k4*nW+k3+1, k5:=c
     if (MultiColor && show[k])
     {
-      c:="," (nX+k2) "/" (nY+k3) "/"
-      . Format("{:06X}",cors[k]&0xFFFFFF)
+      c:="," (nX+k3) "/" (nY+k4) "/" Format("{:06X}",cors[k]&0xFFFFFF)
       , Result.=InStr(Result,c) ? "":c
       ToolTip Trim(Result,"/,")
     }
     if (Modify && bg!="" && show[k])
     {
       c:=((ascii[k]:=!ascii[k]) ? 0 : 0xFFFFFF)
-      if (tx:=Mod(k-1,nW)-dx)>=0 && tx<71 && (ty:=(k-1)//nW-dy)>=0 && ty<25
-        SendMessage 0x2001,0,c,C_[ty*71+tx+1]
+      SendMessage 0x2001,0,c,k2
     }
     else
     {
@@ -3380,7 +3440,7 @@ Gui(cmd, arg1:="", args*)
       _Gui["SelG"].Value:=(c>>8)&0xFF
       _Gui["SelB"].Value:=c&0xFF
     }
-    k:=k1, c:=k4
+    k:=k1, c:=k5
     return
   Case "RButtonDown":
     Critical
@@ -3446,7 +3506,7 @@ Gui(cmd, arg1:="", args*)
     FindText_Main["MyPic"].Value:=Trim(s,"`n")
     return
   Case "Update":
-    ControlFocus(hscr)
+    ControlFocus hscr
     i:=EditGetCurrentLine(hscr)
     s:=EditGetLine(i, hscr)
     if !RegExMatch(s, "(<[^>\n]*>[^$\n]+\$)\d+\.[\w+/]+", &r)
@@ -3456,9 +3516,9 @@ Gui(cmd, arg1:="", args*)
     v:=StrReplace(StrReplace(v,"0","1"),"_","0")
     s:=StrReplace(s, r[0], r[1] . w "." this.bit2base64(v))
     v:="{End}{Shift Down}{Home}{Shift Up}{Del}"
-    ControlSend(v, hscr)
-    EditPaste(s, hscr)
-    ControlSend("{Home}", hscr)
+    ControlSend v, hscr
+    EditPaste s, hscr
+    ControlSend "{Home}", hscr
     return
   }
 }
@@ -3482,7 +3542,7 @@ CutL2      = CutL = Cut the Left Edge of the text in the edit box below
 CutR2      = CutR = Cut the Right Edge of the text in the edit box below
 CutD2      = CutD = Cut the Lower Edge of the text in the edit box below
 Update     = Update = Update the text in the edit box below to the line of Code
-GetRange   = GetRange = Get screen range and update the search range of the Code
+GetRange   = GetRange = Get screen range to Clipboard and update the search range of the Code
 GetOffset  = GetOffset = Get position offset relative to the Text from the Code and update FindText().Click()
 GetClipOffset  = GetOffset2 = Get position offset relative to the Text from the Left Box
 Capture    = Capture = Initiate Image Capture Sequence
@@ -3554,7 +3614,7 @@ s3  = Capture Image To Text
 s4  = Capture Image To Text and Find Text Tool
 s5  = Direction keys to fine tune\nFirst click RButton(or Ctrl)\nMove the mouse away\nSecond click RButton(or Ctrl)
 s6  = Unbind Window using
-s7  = Please add colors to the color list first
+s7  = Drag a range with LButton(or Ctrl)\nCoordinates are copied to clipboard
 s8  = Found|Time|ms|Pos|Result|value can be get from|Wait 3 seconds for appear|Wait indefinitely for disappear
 s9  = Success
 s10 = The Capture Position|Perspective binding window\nRight click to finish capture
@@ -3562,8 +3622,8 @@ s11 = Please Set Gray Difference First
 s12 = Please select the core color first
 s13 = Please convert the image to black or white first
 s14 = Can't be used in ColorPos mode, because it can cause position errors
-s15 =
-s16 = Drag a range with LButton(or Ctrl)
+s15 = Are you sure about the scope of your choice?\n\nIf not, you can choose again
+s16 = Please add colors to the color list first
 s17 = Please Save Picture First
 s18 = Capture|ScreenShot
     )"
@@ -3578,8 +3638,6 @@ s18 = Capture|ScreenShot
 
 }  ;// Class End
 
-Script_End() {
-}
 
 ;================= The End =================
 

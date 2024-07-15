@@ -243,8 +243,8 @@ firekey := 13 ; Enter
 ; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
 use_FindText := false
 MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
-; #Include "*i FindTextv2_FeiYue_9.5.ahk" ;  Version : 9.5  (2024-04-27)
-#Include "*i findtextv2_v9.7b.ahk" ; v9.7 finds x3 Charged instead of x2
+#Include "*i findtextv2_v9.6.ahk" ; revert because of crashes occurring after Windows update (23H2 rollup)
+; #Include "*i findtextv2_v9.7b.ahk" ; v9.7 adds fuzzy searching by default, 9.7b removes the default
 try {
 	; throws exception if FindText is undefined
 	use_FindText := HasMethod(FindText, "Call")
@@ -307,6 +307,8 @@ FindText_EventBossIcon() {
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
 	Text:="|<eventbossicon>E5B230-424242$10.U7BsF0004SLfwzzU"
+	Text.="|<EventBossIcon>D89C44@0.90/D6AA4D@0.90/C18825@0.90$10.07AQn0000SH/wzz02"
+	; if (ok:=FindText(&X, &Y, 1493-150000, 22-150000, 1493+150000, 22+150000, 0, 0, Text))
 	ok:=FindText(&X, &Y, 800, 0, 1600, 100, 0.01, 0.01, Text)
 	return ok
 }
@@ -1156,6 +1158,7 @@ findtext_PLAY_and_click() {
 	global EXTRA
 	t1:=A_TickCount, Text:=X:=Y:=""
 	Text:="|<PLAY>FFFF01@0.95$29.0EwA001k8003UM0070k00C0kU8M1V1k0327U366"
+	Text.="|<PLAY>*15$28.sA32DskSAgn18GnA4VP8kH3D33wAkDAEn0wV38"
 	xtra:=EXTRA
 	if (ok:=FindText(&X, &Y, 1037-xtra, 313-xtra, 1037+xtra, 313+xtra, 0, 0, Text))
 	{
