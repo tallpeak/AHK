@@ -158,7 +158,7 @@ DoFrenzy() {
 	Send("{RButton}")
 	Sleep(555)
 	Send("{RButton}")
-	Sleep(555)
+	Sleep(777)
 
 	FindText().ToolTip("Searching for GoldenTree", WINWIDTH - 150, 50)
 	t1:=A_TickCount, Text:=X:=Y:=""
@@ -169,14 +169,14 @@ DoFrenzy() {
 	Text:="|<GOLDEN_TREE>*31$52.Ml7797bCSpYKEo4KV8GF9nEF/bh94Y/178GJYKEg4GV6ARlmEF/bU"
 	if (ok:=FindText(&X, &Y, 1231-xtra, 145-xtra, 1231+xtra, 145+xtra, 0.05, 0.05, Text))
 	{
-		Sleep(333)
+		Sleep(100)
 		FindText().Click(X, Y, "L")
 	} else { 
 		FindText().ToolTip("failed findtext_GoldenTree")
 		return
 	}
 	FindText().ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
-	Sleep(555)
+	Sleep(666)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	; Text:="|<Frenzy>*11$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
@@ -184,14 +184,14 @@ DoFrenzy() {
 	Text:="|<FRENZY>*31$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
 	if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0.01, 0.01, Text))
 	{
-		Sleep(333)
+		Sleep(100)
 		FindText().Click(X, Y, "L")
 	} else { 
 		FindText().ToolTip("failed findtext_Frenzy")
 		return
 	}
 	FindText().ToolTip("Searching for Activate", WINWIDTH - 150, 50)
-	Sleep(333)
+	Sleep(666)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
 	; Text:="|<ACTIVATE>*11$53.C03v8EsyywT7qNXlxVcn6An6VX2F0ANa937wm0Ml8n6ATaMlWFyAMnDVX7XAMz303664Aly"
@@ -199,7 +199,7 @@ DoFrenzy() {
 	Text:="|<ACTIVATE>*31$52.wTjqNXnxzFaANaB36960laMYATaM3696MlXtaAMoTX69bslXlaAT363664Aly"
 	if (ok:=FindText(&X, &Y, 1065-EXTRA, 307-EXTRA, 1065+EXTRA, 307+EXTRA, 0.01, 0.01, Text))
 	{
-		Sleep(333)
+		Sleep(100)
 		FindText().Click(X, Y, "L")
 	} else { 
 		FindText().ToolTip("failed findtext_ACTIVATE")

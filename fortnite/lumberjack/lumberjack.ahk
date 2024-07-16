@@ -275,27 +275,20 @@ findtext_Charged() {
 	return ok
 }
 
-; old 	Text:="|<x1Charged>*254$58.zzzTzzzzzzwzzvzzzzxavzTfnzjzKzjxyrrvPPOSzrvTPjjhzvzRhhjyyrvjzTrqvwxzzzzzzzxzzs"
-
-
 findtext_x1Charged() {
 	global EXTRA
 	if ! use_FindText {
 		return 0
 	}
 	t1:=A_TickCount, Text:=X:=Y:=""
-	; Text:="|<x1Charged>*254$58.zDzyzzzzzNizruwzvzpjvzThxyqqqbjxyrqvvvTyzrPPPzjhyvzrxxizDTU"
-	; Text:="|<x2Charged>*254$59.zPzzTzzzzgqrxyjDyzxPzjvxjjqqqozzrvTPjjhzrziqqrzTPxzzrxxizDTU"
-	; Text:="|<x2Charged>*240$59.zPynTzzjzgqrxyjDgwxPzjvxjgqqqoyzrvTPhjhrnzgqqrzTPBVzXxZizDSU"
 	Text:="|<x2Charge>*240$52.zPynTzzjxhjvxSRFtzyzjqynPPbryzPvRhxwzvBhhzrqkzlymrTbU"
-	; if (ok:=FindText(&X, &Y, 1340-150000, 242-150000, 1340+150000, 242+150000, 0, 0, Text))	
 	xtrax:=50
 	xtray:=20
 	if EXTRA > 100 {
 		xtrax := EXTRA
 		xtray := EXTRA
 	}
-	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0.01, 0.01, Text) ; asdfasdf
+	ok:=FindText(&X, &Y, 1344-xtrax, 242-xtray, 1344+xtrax, 242+xtray, 0.05, 0.05, Text) ; asdfasdf
 	return ok
 }
 
@@ -408,7 +401,7 @@ SC027 & h::{
 }
 SC027 & s::toggleStopAtLowHealth()
 
-*^!NumLock::ClearAllKeyState()
+*^+NumLock::ClearAllKeyState()
 
 LAlt & LWin::{
 	if GetKeyState("LCtrl") {

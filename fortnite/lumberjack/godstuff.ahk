@@ -25,6 +25,7 @@ SC027 & 9::TPboss(9)
 '::TPboss()
 ^\::TPimmortalTree(true)
 ^+\::TPimmortalTree(false)
+^p::FindText().Gui("Show") ; p to mean printsceen
 #HotIf
 
 findtext_GuardiansPage2() {
@@ -32,11 +33,12 @@ findtext_GuardiansPage2() {
 		return 0
 	}
 	t1:=A_TickCount, Text:=X:="", Y:=""
-	; Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
-	Text:="|<Page2/2>*99$49.7zzzwzrtUzxzwDnsKEkkwnttVCGPTnxzYAB8DnwzaQaCrUyT1T373sDTkE"
+	Text:="|<Page2/2>*99$49.N733vDjqBthhzDryEkokzDnyPuNvzDvyRwAQDVxz3"
+	Text.="|<Page2/2>*99$49.7zzzwzrtUzxzwDnsKEkkwnttVCGPTnxzYAB8DnwzaQaCrUyT1T373sDTkE"
+	Text.="|<Page1/2>*120$46.HzvztyT1YQSDbvxawqqzTjy33H3xyzZxgxzrrwrknszTTkU"
 	xtra:=111
 	X:="wait"
-	Y:=0.2
+	Y:=0.1
 	; 968, 289, 1028, 325
 	; ok:=FindText(&X, &Y, 1000-xtra, 311-xtra, 1000+xtra, 311+xtra, 0.01, 0.01, Text)
 	ok:=FindText(&X, &Y, 1000-xtra, 310-xtra, 1000+xtra, 310+xtra, 0.01, 0.01, Text)
@@ -339,15 +341,15 @@ TPboss(n:=0) {
 	}
 	Sleep(111)
 	switchToRemote()
-	Sleep(444)
+	Sleep(450)
 	; Click("Right")
 	; Send("{RButton}")
 	Send("{RButton Down}")
-	Sleep(50)
+	Sleep(30)
 	Send("{RButton Down}")
-	Sleep(20)
+	Sleep(200)
 	Send("{RButton Up}")
-	Sleep(50)
+	Sleep(30)
 	Send("{RButton Up}")
 	Sleep(400)
 	ok := findtext_FORESTGUARDIANS()
@@ -360,19 +362,20 @@ TPboss(n:=0) {
 		FindText().ToolTip("failed findtext_FORESTGUARDIANS",,,,{timeout:3})
 		return
 	}
-	Sleep(333)
+	Sleep(600)
 	ok := findtext_GuardiansPage2() 
 	if !ok {
 		FindText().ToolTip("findtext_GuardiansPage2 not found",,,,{timeout:1})
 	}
-	if (ok && n < 6) || ((!ok) && n>=6) {
+	if (ok && ok[1].id == "Page2/2" && n < 6) 
+		|| (ok && ok[1].id == "Page1/2" && n>=6) {
 		; ToolTip("need to page switch ")
 		; go to page 1
 		; Sleep(111)
 		; X := 1169
 		; Y := 311
 		; FindText().Click(X, Y, "L")
-		Sleep(100)
+		; Sleep(100)
 		FindText_larrow_and_click()
 		Sleep(111)
 	} else {
