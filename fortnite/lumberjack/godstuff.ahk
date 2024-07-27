@@ -111,6 +111,7 @@ findtext_TELEPORT_and_click_n(n) {
 	; Text:="|<TELEPORT>*1$54.yyMTC00sDykMMDVsyDMkMMAnAn6MwMSAm4n6MkMMBW4y6MkMMD3Am6MySTA1sn6MySTA00n6U"
 	Text:="|<TELEPORT>*31$56.zTADbUMSDzrn3tyTbvwlUkkNaNaAATADaNaNX36331yNbkklUkkS6NYAATDja1yNX37nvtU66Mm"
 	X:="wait"
+	Y:=2.0
 	xtra:=EXTRA ; 100
 	xy:=0
 	; ok:=FindText(&X, &Y, 0, 0, A_ScreenWidth, A_ScreenHeight, 0.01, 0.01, Text)
@@ -232,10 +233,12 @@ FindText_larrow_and_click() {
 ; xtra:=EXTRA
 	xtra:=88
 	X:="wait"
+	Y:=2.0
 	; if (ok:=FindText(&X, &Y, A_ScreenWidth-(1600-1172)-xtra, 310-xtra, A_ScreenWidth-(1600-1172)+xtra, 310+xtra, 0.01, 0.01, Text))
 	if (ok:=FindText(&X, &Y, 1172-xtra, 310-xtra, 1172+xtra, 310+xtra, 0, 0, Text))
 	{
-	 FindText().Click(X, Y, "L")
+		Sleep(50)
+	 	FindText().Click(X, Y, "L")
 	} else {
 		FindText().ToolTip("failed to find left arrow")
 		return
@@ -339,30 +342,30 @@ TPboss(n:=0) {
 		FindText().ToolTip()
 		return
 	}
-	Sleep(111)
+	Sleep(200)
 	switchToRemote()
-	Sleep(450)
+	Sleep(600)
 	; Click("Right")
 	; Send("{RButton}")
 	Send("{RButton Down}")
-	Sleep(30)
-	Send("{RButton Down}")
 	Sleep(200)
+	Send("{RButton Down}")
+	Sleep(50)
 	Send("{RButton Up}")
-	Sleep(30)
+	Sleep(50)
 	Send("{RButton Up}")
-	Sleep(400)
+	Sleep(50)
 	ok := findtext_FORESTGUARDIANS()
 	if ok {
 		X := ok[1].1
 		Y := ok[1].2
-		; Sleep(111)
+		Sleep(50)
 		FindText().Click(X, Y, "L")
+		Sleep(600)
 	} else {
 		FindText().ToolTip("failed findtext_FORESTGUARDIANS",,,,{timeout:3})
 		return
 	}
-	Sleep(600)
 	ok := findtext_GuardiansPage2() 
 	if !ok {
 		FindText().ToolTip("findtext_GuardiansPage2 not found",,,,{timeout:1})
@@ -377,10 +380,10 @@ TPboss(n:=0) {
 		; FindText().Click(X, Y, "L")
 		; Sleep(100)
 		FindText_larrow_and_click()
-		Sleep(111)
+		Sleep(222)
 	} else {
 		; ToolTip("no page switch ")
-		Sleep(111)
+		Sleep(222)
 	}
 	; ok := findtext_ForestGuard()
 	; if ok {
@@ -409,16 +412,29 @@ TPimmortalTree(startfrenzy:=true) {
 	KeyWait("Ctrl")
 	Sleep(500)
 	Send("{Space}") ; jump up to stop crouching
-	Sleep(666)
+	Sleep(777)
 	TPboss(6) ; atlantean guard
 	;Walk backwards to wall
-	Sleep(600)
+	Sleep(1200)
 	Send("{blind}{s down}{LShift down}") ; run backwards
-	Sleep(14400) ; was rather long because half the time my character was crouching and won't run
+	; use findtext with wait1 to search for Interact?
+	Text:="|<INTERACT>*180$25.A0NY5PgjQhaLiK+oq"
+	X:="wait1"
+	Y:=15.0
+	xtra:=EXTRA
+	ok:=FindText(&X, &Y, 1264-xtra, 300-xtra, 1264+xtra, 300+xtra, 0.05, 0.05, Text)
+	; if not found then it should have waited 15 seconds, so following not needed:
+	; if (!ok) {
+	; 	Sleep(14000) ; was rather long because half the time my character was crouching and won't run
+	; }
+	if !ok {
+		FindText().ToolTip("failed findtext_INTERACT")
+	}
+	Sleep(50)
 	Send("{blind}{s up}{LShift up}") 
-	Sleep(400)
+	Sleep(500)
 	Send("e")
-	Sleep(2000) ; because "wait" doesn't work
+	Sleep(2500) ; because "wait" doesn't work?
 	;TP immortal tree
 	t1:=A_TickCount, Text:=X:="",Y:=4.0
 	Text:="|<ImmortalTree>*1$62.YG81XX47AQt4WEGEF0WI+F8YY4EE8VnYG99l442CEdIeGEFt0W4+F8U4Y2Q8ZnU"

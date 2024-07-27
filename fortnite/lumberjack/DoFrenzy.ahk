@@ -42,13 +42,13 @@ switchToRemote()
 {
 	if ! SignalRemoteKey {
 		getSignalRemoteKey()
+		while ! SignalRemoteKey {
+			FindText().ToolTip("Waiting for signal remote to appear")
+			Sleep(1000)
+			getSignalRemoteKey()
+		}  
+		FindText().ToolTip()
 	}
-	while ! SignalRemoteKey {
-		FindText().ToolTip("Waiting for signal remote to appear")
-		Sleep(1000)
-		getSignalRemoteKey()
-	}  
-	FindText().ToolTip()
 	Send(SignalRemoteKey)
 }
 
@@ -176,15 +176,16 @@ DoFrenzy() {
 		return
 	}
 	FindText().ToolTip("Searching for Frenzy", WINWIDTH - 150, 50)
-	Sleep(666)
+	Sleep(800)
 	t1:=A_TickCount, Text:=X:=Y:=""
 	X:="wait"
-	; Text:="|<Frenzy>*11$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
+	Y:=2.0
+	Text:="|<Frenzy>*11$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
 	; if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0.01, 0.01, Text))
-	Text:="|<FRENZY>*31$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
-	if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0.01, 0.01, Text))
+	Text.="|<FRENZY>*31$29.vb9CH5cOAe9QoFrQVNVcZ2m2F/Yj4U"
+	if (ok:=FindText(&X, &Y, 1057-EXTRA, 241-EXTRA, 1057+EXTRA, 241+EXTRA, 0.05, 0.05, Text))
 	{
-		Sleep(100)
+		Sleep(200)
 		FindText().Click(X, Y, "L")
 	} else { 
 		FindText().ToolTip("failed findtext_Frenzy")
@@ -214,4 +215,14 @@ DoFrenzy() {
 	; }
 	pickaxe() ; my key binding for pickaxe?
 	Sleep(333)
+}
+
+; maybe scan for this periodically and "back out" of the page if it stays there too long
+
+findtext_StrengthUpgrades()
+{
+	Text:="|<StrengthUpgrades>*240$92.PTzzzPryvzvzzjzrlvDjCBTiptxbfb6RthhhjPvhhgyqqrtSvvPPqynPPThhyKHiyryRjhqzrPPTuCPnxjnvwxRxmvtlU"
+	xtra:=EXTRA
+	ok:=FindText(&X, &Y, 1281-xtra, 32-xtra, 1281+xtra, 32+xtra, 0, 0, Text)
+	return ok
 }

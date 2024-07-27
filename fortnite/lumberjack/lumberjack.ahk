@@ -53,6 +53,9 @@ WINY := 10
 CENTERX := WINX + WINWIDTH/2
 CENTERY := WINY + WINHEIGHT/2
 
+global 	WM_KEYDOWN 	:= 0x0100
+global WM_KEYUP 	:= 0x0101
+
 ; #Include "LumberClickGui2.ahk" ; pasted below, instead
 #Requires Autohotkey v2
 ;AutoGUI creator: Alguimist autohotkey.com/boards/viewtopic.php?f=64&t=89901
@@ -421,8 +424,13 @@ r::{
 	KeyWait("r")
 	Send "{w up}{LShift Up}"
 }
+
 #HotIf
 
+#Include miner.ahk
+#HotIf WinActive(FORTNITEWINDOW)
+^Enter::start_firing()
+#HotIf
 
 maybe_unfocus() {
 	if unfocusChk.Value {
@@ -600,14 +608,14 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	global ctrl_time
 	global firekey
 	global earlyAbort
+	global WM_KEYDOWN
+	global WM_KEYUP 	
 	earlyAbort := false
 	term := false
 	DetectHiddenWindows true
 	startTick := A_TickCount
 	; tried to block alt+enter, didnt work
 	; Hotkey("Alt & Enter",DoNothing,"On") ; didnt work
-	WM_KEYDOWN 	:= 0x0100
-	WM_KEYUP 	:= 0x0101
 	starttick := A_TickCount
 	prev_delay_tick := A_TickCount
 	; I like my Window in the upper-right at 40% size
@@ -635,9 +643,11 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 	; immediately unfocusing before first Enter/click event
 	; sometimes prevented the clicking from starting
 	; I'm not sure if this fixes it?
-	Sleep(333)
+	Sleep(400)
 	pickaxe()
-	Sleep(333)
+	Sleep(400)
+	pickaxe()
+	Sleep(400)
 	Click()
 	Sleep(keydown_time)
 	; KeyWait("LAlt") ; doesnt work?!
@@ -1132,7 +1142,7 @@ scanForGameLauncher() {
 	ok:=FindText_EventBossIcon()
 	elapsed := A_TickCount - EventBossTimer
 	if ok && elapsed > 10000 {
-		FindText().ToolTip("EB icon!",ok[1].1,ok[1].2+20,,{timeout:3})
+		FindText().ToolTip("EB icon!",ok[1].1+ok[1].3,ok[1].2+ok[1].4,,{timeout:3})
 		EventBossTimer := A_TickCount + 3 * 60000
 	}
 	mins := Round(30 - elapsed / 60000)
