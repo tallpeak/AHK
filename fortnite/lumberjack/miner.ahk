@@ -17,12 +17,16 @@ start_firing() {
 }
 
 ^+NumpadDiv::{
-  seconds := 11
+  seconds := 33
   Loop {      
+    MoveWindowToUpperRight()
+    Sleep(3333)
+    ;this one usually doesnt work (except for the first time)
+    cnteff:=find_and_click_upgrades(x1:=1385,1) ; efficiency
     Sleep(1000)
-    cnteff:=find_and_click_upgrades(x1:=1385,10) ; efficiency
-    Sleep(200)
     cntup:=find_and_click_upgrades(x1:=1275,25) ; strength
+    Sleep(1000)
+    cnteff+=find_and_click_upgrades(x1:=1385,22) ; efficiency
     Sleep(1000)
     click_X()
     Sleep(1000)
@@ -68,14 +72,19 @@ find_and_click_upgrades(x1,maxcount:=10)
   KeyWait("NumpadDiv")
   KeyWait("Ctrl")
   KeyWait("Alt")
-  Sleep(300)
+  Sleep(999)
   switchToRemote() 
-  Sleep(500)
+  Sleep(999)
   Click() 
-  Sleep(1500)
+  Sleep(666)
+  Click() 
+  Sleep(666)
+  Click() 
+  Sleep(666)
   count_found := 0
   ; bottom to top:
   for y1 in [266,226,180,139,96] {
+    Sleep(555)
     y2:=y1+14
     x2:=x1+100
     click_area_if_green(x1,y1,x2,y2,max:=10)
@@ -83,22 +92,25 @@ find_and_click_upgrades(x1,maxcount:=10)
   return count_found
 }
 
-^+m::autolevel()
-autolevel() {
-  KeyWait("m")
-  KeyWait("Ctrl")
-  KeyWait("Shift")
-  seconds := 10
-  Loop {
-    clicker_unfocused(seconds)
-    eff := find_and_click_upgrades(1275,5) ; eff
-    str := find_and_click_upgrades(1385,25) ; str
-    if !eff and !str {
-      seconds += 5
-    }
-    if eff + str > 10 {
-      seconds -= 5
-    }
-  }
-}
+; ^+m::autolevel()
+; autolevel() {
+;   KeyWait("m")
+;   KeyWait("Ctrl")
+;   KeyWait("Shift")
+;   seconds := 10
+;   Loop {
+;     clicker_unfocused(seconds)
+;     Sleep(1111)
+;     MoveWindowToUpperRight()
+;     eff := find_and_click_upgrades(1385,10) ; efficiency2
+;     Sleep(1111)
+;     str := find_and_click_upgrades(1275,25) ; strength
+;     if !eff and !str {
+;       seconds += 5
+;     }
+;     if eff + str > 10 {
+;       seconds -= 5
+;     }
+;   }
+; }
 
