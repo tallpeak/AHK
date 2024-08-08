@@ -22,10 +22,12 @@ SC027 & 6::TPboss(6)
 SC027 & 7::TPboss(7)
 SC027 & 8::TPboss(8)
 SC027 & 9::TPboss(9)
+SC027 & 0::FightGodNoTP()
 '::TPboss()
 ^\::TPimmortalTree(true)
 ^+\::TPimmortalTree(false)
-^p::FindText().Gui("Show") ; p to mean printsceen
+^PrintScreen::FindText().Gui("Show") ; p to mean printsceen
+; SC027 & p::FindText().Gui("Show")
 #HotIf
 
 findtext_GuardiansPage2() {
@@ -53,7 +55,7 @@ findtext_ElysiumGod() {
 	Text:="|<ElysiumGod>*240$58.TTzzzzyvztxxXTSzvySVqqxhhjjqqTOwqqqyvPNxnxPPPvhhUzCBpzjltvzxzzzzzzzy"
 	xtra:=444
 	X:="wait"
-	ok:=FindText(&X, &Y, 1063-xtra, 201-xtra, 1063+xtra, 201+xtra, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1063-xtra, 201-xtra, 1063+xtra, 201+xtra, 0.05, 0.05, Text)
 	return ok
 }
 
@@ -66,9 +68,9 @@ findtext_FORESTGUARDIANS() {
 	Text:="|<FORESTGUARDIANS>*11$91.tXb4w6GAQsX4W00FNO545d6/KFXGU08YZm224Z4d9Fd007GQUF1OGHYYYg802/9EcUZNt+mSKI0134i8EAMYZl99400U"
 	Text.="|<FOREST_GUARDIANS>*31$78.tXb4w6GAQsX4WWmo+8/GAKgX6ZWGL888GIGYZ6YuHY28/GGQYYZVWmI+89KSGgbZZVWL486AGGsYYWU"
 	X:="wait"
-	y:=1.0
+	y:=3.0
 	xtra:=EXTRA
-	ok:=FindText(&X, &Y, 1231-xtra, 193-xtra, 1231+xtra, 193+xtra, 0.01, 0.01, Text)
+	ok:=FindText(&X, &Y, 1231-xtra, 193-xtra, 1231+xtra, 193+xtra, 0.05, 0.05, Text)
 	return ok
 }
 
@@ -133,10 +135,11 @@ findtext_JOIN_and_click() {
 	Text.="|<JOIN>*31$24.wAAlwzAtAnAtAnAxAnArAnArwzAnkAAnU"
 	xtra:=EXTRA
 	X:="wait"
+	Y:=2.0
 	if (ok:=FindText(&X, &Y, 1464-xtra, 201-xtra, 1464+xtra, 201+xtra, 0.01, 0.01, Text))
 	{
 		; ToolTip("found JOIN")
-		Sleep(100)
+		; Sleep(100)
 		FindText().Click(X+11, Y+6, "L")
 	} else {
 		FindText().ToolTip("failed findtext_JOIN")
@@ -151,6 +154,7 @@ findtext_CLOSE_and_click() {
 	Text.="|<CLOSE>*15$33.0A001vlUwNAnAAm1Y1V28DUA8ENaNVa1ASD7X9s1s00DU"
 	xtra:=EXTRA
 	X:="wait"
+	Y:=2.0
 	if (ok:=FindText(&X, &Y, 1280-xtra, 325-xtra, 1280+xtra, 325+xtra, 0.01, 0.01, Text))
 	{
 		; Sleep(100)
@@ -207,7 +211,10 @@ FightGod() {
 	; }
 	
 	Sleep(2000)
+	FightGodNoTP()
+}
 
+FightGodNoTP() {
 	; wait for [E] Forest Guardian
 	xtra:=50
 	t1:=A_TickCount, Text:="", X:="wait", Y:="3"
@@ -218,7 +225,7 @@ FightGod() {
 	Send("e")
 	Sleep(666)
 	findtext_JOIN_and_click()
-	Sleep(250)
+	Sleep(50)
 	findtext_CLOSE_and_click()
 
 	; TPboss1()
@@ -228,14 +235,14 @@ FightGod() {
 
 FindText_larrow_and_click() {
 	t1:=A_TickCount, Text:=X:="", Y:=0
-	; Text:="|<LArrow>*1$4.4zQM"
-	Text:="|<LArrow>*15$4.4zQM"
+	Text.="|<LArrow>*15$4.4zQM"
+	Text.="|<LArrow>*22$5.2Tvlk"
 ; xtra:=EXTRA
 	xtra:=88
 	X:="wait"
-	Y:=2.0
+	Y:=3.0
 	; if (ok:=FindText(&X, &Y, A_ScreenWidth-(1600-1172)-xtra, 310-xtra, A_ScreenWidth-(1600-1172)+xtra, 310+xtra, 0.01, 0.01, Text))
-	if (ok:=FindText(&X, &Y, 1172-xtra, 310-xtra, 1172+xtra, 310+xtra, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1172-xtra, 310-xtra, 1172+xtra, 310+xtra, 0.05, 0.05, Text))
 	{
 		Sleep(50)
 	 	FindText().Click(X, Y, "L")
@@ -354,7 +361,7 @@ TPboss(n:=0) {
 	Send("{RButton Up}")
 	Sleep(50)
 	Send("{RButton Up}")
-	Sleep(50)
+	Sleep(100)
 	ok := findtext_FORESTGUARDIANS()
 	if ok {
 		X := ok[1].1
@@ -439,9 +446,11 @@ TPimmortalTree(startfrenzy:=true) {
 	t1:=A_TickCount, Text:=X:="",Y:=4.0
 	Text:="|<ImmortalTree>*1$62.YG81XX47AQt4WEGEF0WI+F8YY4EE8VnYG99l442CEdIeGEFt0W4+F8U4Y2Q8ZnU"
 	Text.="|<IMMORTAL_TREE>*31$63.YG8lrX4DCQwqP//MMUlO4anN995429QweJ9C8gUFm4ZGdN97Y29EYWF699YsF/bU"
+	Text.="|<IMMORTAL_TREE>*22$63.YG8lrX4DCQwqP/98MUF+4anN995429QweJ9C8YUFm4ZGdN97Y29EYWF699YsF/bU"
+	; if (ok:=FindText(&X, &Y, 1024-150000, 215-150000, 1024+150000, 215+150000, 0, 0, Text))
 	xtra:=EXTRA+50
 	X:="wait" ; doesnt seem to work
-	if (ok:=FindText(&X, &Y, 1020-xtra, 215-xtra, 1020+xtra, 215+xtra, 0.01, 0.01, Text))
+	if (ok:=FindText(&X, &Y, 1020-xtra, 215-xtra, 1020+xtra, 215+xtra, 0.05, 0.05, Text))
 	{
 		Sleep(300)
 		FindText().Click(X, Y, "L")

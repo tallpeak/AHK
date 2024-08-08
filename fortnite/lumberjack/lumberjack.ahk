@@ -29,8 +29,8 @@ EnableGUI := true
 ; may need both EXE and CLASS due to ambiguity; see
 ; https://www.autohotkey.com/boards/viewtopic.php?t=103024
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
-; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
+; FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
+FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
 
 ; maybe lower this once used to the auto-hide behavior:
@@ -334,7 +334,7 @@ global Volume := 50
 VolumeIncrement := 5
 
 SendMode("Event")
-SetKeyDelay 50,100
+SetKeyDelay 80,80
 
 FindText().ToolTip("Loading macros...and sending {Enter up}",70,300)
 Send("{Enter up}")
@@ -418,19 +418,19 @@ LCTRL & Down::VolumeDownLoop()
 ; +e::Send "{e 100}"  ; was {e 100}
 ;^!+e::Send "{e 1000}"
 
-;run: (sprint)
-r::{
-	Send "{w down}{LShift Down}"
-	KeyWait("r")
-	Send "{w up}{LShift Up}"
-}
+; ;run: (sprint)
+; r::{
+; 	Send "{w down}{LShift Down}"
+; 	KeyWait("r")
+; 	Send "{w up}{LShift Up}"
+; }
 
 #HotIf
 
 #Include miner.ahk
-#HotIf WinActive(FORTNITEWINDOW)
-^Enter::start_firing()
-#HotIf
+; #HotIf WinActive(FORTNITEWINDOW)
+; ^Enter::start_firing()
+; #HotIf
 
 maybe_unfocus() {
 	if unfocusChk.Value {

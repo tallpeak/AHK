@@ -52,6 +52,16 @@ switchToRemote()
 	Send(SignalRemoteKey)
 }
 
+; t1:=A_TickCount, Text:=X:=Y:=""
+
+; Text:="|<SignalRemote_Down_2>*130$19.zjzk0Tk03s00w01i00b00FVk0F7w8US6EC1E60c70Q30A1UC1UTkkzyPzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzyTzzrzzrzzlzw"
+
+; if (ok:=FindText(&X, &Y, 1587-150000, 338-150000, 1587+150000, 338+150000, 0, 0, Text))
+; {
+;   ; FindText().Click(X, Y, "L")
+; }
+
+
 findtext_signalRemote()
 {
 	global EXTRA
@@ -64,7 +74,7 @@ findtext_signalRemote()
 	; if (ok:=FindText(&X, &Y, 1575-150000, 334-150000, 1575+150000, 334+150000, 0, 0, Text))
 	Text.="|<SignalRemoteUp2>D7792F@0.80$13.zzQTgUCA7130XY3kXk1s0y0zUTzTk"
 	; if (ok:=FindText(&X, &Y, 1561-150000, 327-150000, 1561+150000, 327+150000, 0, 0, Text))
-	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0.1, 0.1, Text)
+	ok:=FindText(&X, &Y, 1561-xtra, 334-xtra, 1561+xtra, 334+xtra, 0.051, 0.051, Text)
 	return ok
 }
 
@@ -77,7 +87,7 @@ getSignalRemoteKey()
 		return
 	}
 	xy:=ok[1]
-	if xy.1 > A_ScreenWidth-30 {
+	if xy.1 > A_ScreenWidth-40 {
 		SignalRemoteKey := "2"
 	} else {
 		SignalRemoteKey := "1"
