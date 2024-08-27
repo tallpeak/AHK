@@ -24,11 +24,14 @@ SC027 & 8::TPboss(8)
 SC027 & 9::TPboss(9)
 SC027 & 0::FightGodNoTP()
 '::TPboss()
-^\::TPimmortalTree(true)
-^+\::TPimmortalTree(false)
+^\::TPimmortalTree(true)     ; control slash to start frenzyloop with a frenzy
+^+\::TPimmortalTree(false)   ; control shift slash to start frenzyloop without a frenzy
+^+p::FindText().Gui("Show") 
 ^PrintScreen::FindText().Gui("Show") ; p to mean printsceen
-; SC027 & p::FindText().Gui("Show")
 #HotIf
+
+^!PrintScreen::FindText().Gui("Show") ; p to mean printsceen
+
 
 findtext_GuardiansPage2() {
 	if ! use_FindText {

@@ -1049,10 +1049,10 @@ checkForUpdate() {
 	if this_modified < last_modified  {
 		; MsgBox("this_modified=" this_modified ", last_modified=" last_modified)
         FindText().ToolTip("Notice: Update is available! see: `n" url 
-						  "`nPress y to download (in 10 seconds)",80,WINHEIGHT-80)
+						  "`nPress ^+d (control-shift-d) to download (in 10 seconds)",80,WINHEIGHT-80,,{timeout:5})
         ; Sleep(5000)
-		k := KeyWait("y","DT10")
-		if k {
+		k := KeyWait("d","DT5")
+		if k && GetKeyState("Ctrl") && GetKeyState("Shift") {
 			Download(url,filename)
 			RunWait(filename) ; open the archive; let the user extract
 		}
@@ -1163,7 +1163,7 @@ findtext_PLAY_and_click() {
 	Text:="|<PLAY>FFFF01@0.95$29.0EwA001k8003UM0070k00C0kU8M1V1k0327U366"
 	Text.="|<PLAY>*15$28.sA32DskSAgn18GnA4VP8kH3D33wAkDAEn0wV38"
 	xtra:=EXTRA
-	if (ok:=FindText(&X, &Y, 1037-xtra, 313-xtra, 1037+xtra, 313+xtra, 0, 0, Text))
+	if (ok:=FindText(&X, &Y, 1037-xtra, 313-xtra, 1037+xtra, 313+xtra, 0.03, 0.03, Text))
 	{
 		FindText().Click(X, Y, "L")
 	}
