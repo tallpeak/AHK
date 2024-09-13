@@ -21,6 +21,12 @@ NumpadIns & NumpadDel::Click_at_Cursor()
 NumpadEnd::Expedition_loop()
 Numpad1::Expedition_loop()
 ^+v::drill_loop()
+^+d::clicker_unfocused_meteor()
+
+;; experimental:
+^NumpadMult::toggle_auto_buy()
+^!NumpadMult::autobuy_fast()
+
 #HotIf
 
 ; SC019 & m::autolevel()
@@ -220,22 +226,37 @@ drill() {
   }
   Sleep(400)
   findtext_ActivateDrill()
+
+  Sleep(400)
+	pickaxe()
+	Sleep(400)
+	pickaxe()
+	Sleep(400)
+
 }
 
+; this will vary by player, depending on their strength
+; stronger players may want a higher threshold, to avoid wasting part of a drill
+global MINIMUM_METEOR_HP_FOR_DRILLING := 80
+
 drill_loop() {
+  global MINIMUM_METEOR_HP_FOR_DRILLING
   seconds := 180
   Loop {
     MoveWindowToUpperRight()
     Sleep(1200)
     ok:=findtext_Drills_0()
+    hp := get_meteorhp()
     if !ok {
-      if A_TimeIdle > 5000 || A_Index == 1 {
+      if A_TimeIdle > 5000 && hp > MINIMUM_METEOR_HP_FOR_DRILLING 
+        || A_Index == 1 {
         drill()
       } else {
-        FindText().ToolTip("you seem busy, will try drilling later...",,,,{timeout:5})
+        msg := "you seem busy (or HP(" hp ") < " MINIMUM_METEOR_HP_FOR_DRILLING "); will try drilling later..."
+        FindText().ToolTip(msg,,,,{timeout:5})
       }
     } else {
-      seconds := 900
+      seconds := 180 ; after adding meteor hp detection, we need to try for drilling more often
     }
     term := clicker_unfocused(false,seconds)
     if term { 
@@ -351,6 +372,56 @@ autobuy()
     Sleep(150)
   }
   findtext_auto_click()
+}
+
+autobuy_fast()
+{
+  BlockInput("On")
+  ; store state of wasd keys (direction the user is moving)
+  ; w:=GetKeyState("w")
+  ; a:=GetKeyState("a")
+  ; s:=GetKeyState("s")
+  ; d:=GetKeyState("d") 
+  Sleep(55)
+  switchToRemote()
+  ; Send("{Blind}2")
+  Sleep(222)
+  Send("{LButton}")
+  Send("{LButton}")
+  Sleep(222)
+  WinGetClientPos(&wx,&wy,&ww,&wh,FORTNITEWINDOW)
+  x:=1405,y:=46
+  if ww == 360 {
+    x:=1405,y:=46
+  } else if ww == 1600 {
+    x:=1238,y:=98
+  }
+  Loop 10 {
+    FindText().Click(x,y, "L") ;AUTO
+  }
+  Sleep(222)
+  click_X()
+  Sleep(222)
+  ; pickaxe() ; too slow (winactivate) 
+  Send("f")
+  Sleep(55)
+  Send(Chr(96)) ; pickaxe
+   ; Sleep(55)
+ 
+  ; ; restore wasd state
+  ; if w {
+  ;   Send("{w down}")
+  ; }
+  ; if a {
+  ;   Send("{a down}")
+  ; }
+  ; if s {
+  ;   Send("{s down}")
+  ; }
+  ; if d {
+  ;   Send("{d down}")
+  ; }
+  BlockInput("Off")
 }
 
 ; don't like how this works, and don't use it much anymore:
@@ -613,7 +684,7 @@ findtext_LAUNCH() {
 ; findtext_expeditions1() {
 ; t1:=A_TickCount, Text:=X:=Y:=""
 ; Text:="|<>*188$29.DzDY3zznjMzvYSrzsrkM"
-; if (ok:=FindText(&X, &Y, 1250-150000, 176-150000, 1250+150000, 176+150000, 0.03, 0.03, Text))
+; if (ok:=FindText(&X, &Y, 1250-xtra, 176-xtra, 1250+xtra, 176+xtra, 0.03, 0.03, Text))
 ; {
 ;   ; FindText().Click(X, Y, "L")
 ; }
@@ -693,7 +764,7 @@ findtext_PROGRESS() {
 
 findtext_extreme_exp() {
   t1:=A_TickCount, Text:=X:=Y:=""
-  Text:="|<>*166$61.3zzzzzzsTzjzjzzzzxzzrqdfDhtyyqgTPvPPPTXvNyRvVhgDjngyqRbqqzrqq3PawPvXsPOE"
+  Text:="|<EXTREME_EXP>*166$61.3zzzzzzsTzjzjzzzzxzzrqdfDhtyyqgTPvPPPTXvNyRvVhgDjngyqRbqqzrqq3PawPvXsPOE"
   xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
   if (ok:=FindText(&X, &Y, 1410-xtra, 172-xtra, 1410+xtra, 172+xtra,  0.03, 0.03, Text))
   {
@@ -712,10 +783,13 @@ findtext_mobroom_icon() {
   return ok
 }
 
+; keep Google Chrome (or presumably any other window) 
+; at least 40 pixels away from left edge of FN window
 findtext_Drills_0() {
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<Drills_0>*253$30.CzzzzBzzzpnrzzirjzzioTzzicjzzhfbzznU"
-  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 20)
+  ; ok:=FindText(&X, &Y, 964, 272, 1013, 306, 0.05, 0.05, Text)
   ok:=FindText(&X, &Y, 980-xtra, 282-xtra, 980+xtra, 282+xtra, 0.05, 0.05, Text)
   return ok
 }
@@ -732,3 +806,344 @@ findtext_auto_click()
     FindText().ToolTip("AUTO NOT FOUND")
   }
 }
+
+global meteorhp_pct := -1
+global show_meteorhp := false
+global last_auto_buy_time := 0
+global auto_buy := false
+
+settimer(get_meteorhp, 1000)
+
+get_meteorhp() {
+  global meteorhp_pct
+  global show_meteorhp
+  global last_auto_buy_time
+  try {
+    show_meteorhp |= false ; do-nothing assignment
+  } catch {
+    show_meteorhp := false
+  }
+  ; count pixels that are red in this range: 1189, 34, 1373, 43
+  color := "D61F28"
+  reds := FindText().PixelCount(1189, 34, 1373, 34, color,33)
+  hppct := Round((reds / (1373-1189))*100)
+  meteorhp_pct := hppct
+  if show_meteorhp {
+    FindText().ToolTip("HP%=" hppct, 1373,5,2)
+  }
+  if auto_buy {
+    if hppct == 0 && last_auto_buy_time < A_TickCount - 10000  {
+      autobuy_fast()
+      last_auto_buy_time := A_TickCount
+    }
+  }
+  return hppct
+}
+
+toggle_auto_buy() {
+  global auto_buy
+  auto_buy := !auto_buy
+  FindText().ToolTip("auto_buy=" auto_buy)
+}
+
+FindText_title() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<MINER_TYCOON>*253$82.bBrgATUrTTrxxsQaBbaTjPqRbNXJmOqSNywizjPqhRPhPsTntvyxjPJhiljizDjatiPgLqva6vxyzjvyytU"
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
+  ok:=FindText(&X, &Y, 1039-xtra, 261-xtra, 1039+xtra, 261+xtra, 0, 0, Text)
+  return ok
+}
+
+findtext_PLAY_and_click2() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<PLAY>*33$28.wA3XDwkSAwn1cGnA4Vvwkn7D33wAkDgkn0yVX8"
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
+  if (ok:=FindText(&X, &Y, 1038-xtra, 313-xtra, 1038+xtra, 313+xtra, 0, 0, Text))
+  {
+      FindText().Click(X, Y, "L")
+  }
+}
+
+scanForGameLauncher_Meteor() {
+	global EXTRA
+	global SignalRemoteKey
+	global EventBossTimer
+  FindText().ToolTip("Looking for title screen",500,30)
+  if (ok:=FindText_title()) {
+		FindText().ToolTip("Found title screen")
+		; LogMessage("start","Found title screen")
+		; FindText().Click(X, Y, "L")
+		earlyAbort := true
+		EventBossTimer := A_TickCount ; reset event boss timer
+		Send("{LButton up}")
+		Sleep(200)
+		Send("{Enter up}")
+		Sleep(200)
+		findtext_PLAY_and_click2()
+		Sleep(5000)
+		; FindText().ToolTip("Waiting two minutes for LJH to load...Scanning for signal remote")
+		FindText().ToolTip("Wait for Miner Tycoon to load`nScan for signal remote")
+		; Sleep(120000) ; is this long enough?
+		; wait for something to indicate loaded, such as the signal remote?
+		; (or wait for loading screen to go away)
+		SignalRemoteKey := ""
+		tries := 0
+		while !SignalRemoteKey && tries++ < 240 {
+			if findtext_signalRemote() {
+				break
+			}
+			Sleep(2000)
+		} 
+	
+    getSignalRemoteKey()
+		FindText().ToolTip("Found signal remote; about to TP Immortal Tree...")
+		MoveWindowToUpperRight()
+		ActivateFortniteWindow()
+		Sleep(1000)
+		FindText().ToolTip()
+		WalkToMeteor() 
+	}
+	
+  WalkToMeteor() {
+    FindText().ToolTip("Walking to Meteor...")
+    Sleep(1000)
+    FindText().ToolTip()
+    Send("{w down}")
+    Sleep(1000)
+    Send("{w up}")
+    Sleep(1000)
+    Send("{a down}")
+    Sleep(1000)
+    Send("{a up}")
+    Sleep(1000)
+    }   
+	; findtext_BATTLEPASS_CLAIM_and_click()
+	SetTimer(scanForGameLauncher_Meteor, -60000) ; 1 minute (temp)
+}
+
+; SetTimer(scanForGameLauncher_Meteor, -60000) ; 1 minute (temp)
+
+findtext_minertycoon_big() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<MINER_TYCOON_big>*250$227.s3z0S1s7w7U07U1zzy00A3w1zxzzzjzzxzy1z1k7y0w3k7sD00D007zs00M3s7w07zU0zw07w1y30Ds3kD0DkQ00Q007zk00s7UTU07w00zU07k3w60TU7US0DUs00s00DzU01kD0y007k00y007U3sA0T0D0w0S1kDzkDUTzy1zUQ3s3UD0A0s1U707UM0w0S1s0Q7UTzUT0zzw7zUsDkDUS1w1kDUC071k1k0w7k0sD0zz1y1zzkDz0Uz0zUs7w30zUQ0C31XW3kD00kQ00w3w7zzUTy01y1zzkDs61z0k0A63647US31Us01s7UTzz0zy07s7zz0zk87y1UkMA64MD0w603k03k03zzy1zw0TkDzy1z0kDs71U0sA1kS1sC07UTzU07zzw7zs1zUTkQ3y1UTkC3U1kM3Uw7kQ0D1zz003zzkDzs3z0z0s3s70T0w7031sC3kD1w0Q3zw3s7zzUTzkDy0Q3k30C0M1kT063kw7US3s0s00s7kDzz0zzUTy007k00y007Uy0A7zsD0w7s3k01kDUTzy1zz0zy00zk03y00T1y0sDzkS1sDk7U07UT0zzw7zy3zy07zk0Ty03y3w1kTzUw7kTkD00D1y1zzkDzs7zzzzzzTzzvzw7w3k"
+  ok:=FindText(&X, &Y, 217-150000, 598-150000, 217+150000, 598+150000, 0, 0, Text)
+  return ok 
+}
+
+findtext_READY_big() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<READY!_big>*15$113.zzw7zz0Dz07zz0zUTlzzzwDzy0Tz0DzzUzVz3zzzwTzw0zy0TzzVz3y7zzzszzs3zw0zzz1y7sDzkTly007vw1y3z3wTkTzUTXw00Drs3w3y3wz0zz0z7s00Tjk7s7w7ty1zy1yDzw1yDkDk7s7ns3zw7wTzs3wTUTUDkDzk7zzzkzzk7sz0z0TUTz0Dzzy1zzUTly1y0z0Ty0Tzzw3w00z3y3w1y0zs0zzzy7s01zzw7s7w0zk0zy7wDk07zzsDkDs1zU1vw7wTU0DzzsTUzk1y007sDszzsTzzkzzz03w00DkDlzzkz0TVzzy07s0DzUTXzzXy0zXzzs0Dk0zz0z7zz7w1z7zz00TU1zy1yDzyDk3yDzU00z03w000000000000000001Y"
+  ok:=FindText(&X, &Y, 216-150000, 744-150000, 216+150000, 744+150000, 0, 0, Text)
+  return ok
+}
+
+findtext_PLAY_big() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<PLAY>" ; TODO capture
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
+  if (ok:=FindText(&X, &Y, 1038-xtra, 313-xtra, 1038+xtra, 313+xtra, 0, 0, Text))
+  {
+      FindText().Click(X, Y, "L")
+  }
+}
+
+
+; maybe lower this once used to the auto-hide behavior:
+HIDE_SECONDS := 10
+; Some users won't like these enabled
+ENABLE_AUTO_HIDE := true
+ENABLE_RESIZE := true
+; For resize: I like FN small, in upper-right:
+SCALINGFACTOR := 0.4
+; WINWIDTH := A_ScreenWidth * SCALINGFACTOR
+; WINHEIGHT := A_ScreenHeight * SCALINGFACTOR
+; FindText().ToolTip("WW,WH,WX,WY=" WINWIDTH "," WINHEIGHT "," WINX "," WINY) ; 640,360,960,10
+; Sleep(2222)
+
+DO_UNFOCUS := true ; false ; due to winactivate failures
+WINWIDTH := 640
+WINHEIGHT := 360
+WINX := A_ScreenWidth - WINWIDTH
+WINY := 10
+CENTERX := WINX + WINWIDTH/2
+CENTERY := WINY + WINHEIGHT/2
+
+global 	WM_KEYDOWN 	:= 0x0100
+global WM_KEYUP 	:= 0x0101
+
+Delay60 := 222   ; when 60/100 
+Charged_Delay := 50 ; When "Charged!" is found
+X1Charged_Delay := 2500 ; When "x1 Charged!" is found
+Charged_Count := 0
+ChargedCountAtDelay := 1
+; Charged_MaxRunDelay := 4 ; only delay for first n appearances of Charged
+; Charged_MaxRunDelay doesnt do much because
+; "Charged!"" isn't always caught by screen-scanning
+keydown_time := 200 ; ms
+ctrl_time := "DT0.2" ; seconds
+firekey := 13 ; Enter
+; from https://www.autohotkey.com/boards/viewtopic.php?f=83&t=116471
+use_FindText := false
+MyScreenDPI := 96  ; my HP 17's laptop screen is 1600x900 (96dpi)
+#Include "*i findtextv2_v9.6.ahk" ; revert because of crashes occurring after Windows update (23H2 rollup)
+; #Include "*i findtextv2_v9.7b.ahk" ; v9.7 adds fuzzy searching by default, 9.7b removes the default
+try {
+	; throws exception if FindText is undefined
+	use_FindText := HasMethod(FindText, "Call")
+}
+if A_ScreenDPI != MyScreenDPI {
+	FindText().ToolTip("Only " MyScreenDPI " DPI supported; your DPI is " A_ScreenDPI)
+	use_FindText := false
+}
+
+; only seems to work out-of-focus when firekey = enter
+; (You need to go into FN settings and bind fire to enter)
+; drill_loop2
+clicker_unfocused_meteor(hideWindow:=false) {
+  total_seconds := 3600 * 4
+	global Delay60 
+	global Charged_Count
+	; global Charged_MaxRunDelay
+	global keydown_time
+	global ctrl_time
+	global firekey
+	global earlyAbort
+	global WM_KEYDOWN
+	global WM_KEYUP 	
+	earlyAbort := false
+	term := false
+	DetectHiddenWindows true
+	startTick := A_TickCount
+	; tried to block alt+enter, didnt work
+	; Hotkey("Alt & Enter",DoNothing,"On") ; didnt work
+	starttick := A_TickCount
+	prev_delay_tick := A_TickCount
+  hidWindow := false
+  last_hp := 0
+  global meteorhp_pct
+; I like my Window in the upper-right at 40% size
+	; I realize not all users will want this behavior
+	; Having a consistent size can enable screen-scanning macros
+	; (in the future), eg. using FindText
+  if ENABLE_RESIZE {
+		MoveWindowToUpperRight()
+		; FindText().BindWindow(WinExist(FORTNITEWINDOW)) ; doesnt work
+	}
+	; if !unfocusChk.Value {
+		ActivateFortniteWindow()
+	; }
+	msg := "Clicking! Your focus should be on the desktop."
+			. "`nIf captured, tap Windows key. Avoid alt-tab."
+			. "`nUse RCtrl/Click (when in focus) to stop clicking, or reload (Ctrl-R)."
+			. "`nIMPORTANT: Configure key bindings in Fortnite settings:"
+			. "`npickaxe(Harvesting Tool)=backquote(``) (Chr(96))"
+			. "`nFire=Enter(Return key) (Chr(13))"
+	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
+					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
+	ttHWND := FindText().ToolTip(msg,10,10,2,{timeout:3})
+	toolTip_showing := true
+	kw := KeyWait("NumPadDel","U")
+	; immediately unfocusing before first Enter/click event
+	; sometimes prevented the clicking from starting
+	; I'm not sure if this fixes it?
+	Sleep(400)
+	pickaxe()
+	Sleep(400)
+	pickaxe()
+	Sleep(400)
+	Click()
+	Sleep(keydown_time)
+	; KeyWait("LAlt") ; doesnt work?!
+	PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
+	Sleep(keydown_time)
+	PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
+	Sleep(keydown_time)
+	maybe_unfocus()
+	total_milliseconds := total_seconds * 1000
+	; FindText().ToolTip("starting clicking...")
+	; will this fix the "not chopping" issue at start?
+	; (You may need to click in the window and restart the clicker macro, at times)
+	MouseMove(CENTERX,CENTERY)
+	Click()
+	Sleep(333)
+	maybe_unfocus()
+	while A_TickCount < startTick + total_milliseconds {
+		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
+		if seconds_left < 9999 
+			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
+			FindText().ToolTip(seconds_left . "s",WINX+WINWIDTH-100,WINY+100)
+			SecondsRemain.Value:=seconds_left
+		}
+		; give user 6 seconds to read the message:
+		if A_TickCount - starttick > HIDE_SECONDS * 1000 {
+			if hideWindow {
+				hideWindow := false ; once only
+        hidWindow := true
+				unfocus()
+				Sleep(111)
+				try {
+					WinHide(FORTNITEWINDOW)
+				}
+			}
+			if toolTip_showing {
+				activeWindow := WinExist("A")
+				fnWindow := WinExist(FORTNITEWINDOW)
+				FindText().ToolTip()
+				TrayTip(msg)
+				toolTip_showing := false
+				; maybe_unfocus()
+				Sleep(333)
+				if activeWindow != fnWindow {
+					WinActivate(activeWindow) ; return focus after traytip bubble
+				}
+			}
+		}
+		PostMessage(WM_KEYDOWN,firekey,0,,FORTNITEWINDOW)
+		Sleep(keydown_time)
+		PostMessage(WM_KEYUP,firekey,0,,FORTNITEWINDOW)
+		kw := KeyWait("RCtrl",ctrl_time)
+		if WinActive(FORTNITEWINDOW) {
+			lb := GetKeyState("LButton")
+			rb := GetKeyState("RButton")
+			if A_TickCount > startTick + 2000
+			   and (kw or lb or rb) {
+				FindText().ToolTip("RCtrl/Button found; stopping clicking")
+				Sleep(1500)
+				FindText().ToolTip()
+				term := true
+				break
+			}
+		}
+    haveDrill := !findtext_Drills_0()
+    ; if meteor just came down and a new one is up:
+    if meteorhp_pct > 95 && last_hp == 0 && haveDrill{
+      if hidWindow {
+        try {
+          WinShow(FORTNITEWINDOW)
+          WinActivate(FORTNITEWINDOW)
+        } 
+      }
+      drill()
+      Sleep(555)
+      if hidWindow {
+        try {
+          WinHide(FORTNITEWINDOW)
+          unfocus()
+        }
+      }
+    }
+    last_hp := meteorhp_pct
+		if earlyAbort {
+			break
+		}
+	}
+	FindText().ToolTip("end of clicking...")
+	Sleep(2222)
+	FindText().ToolTip()
+	; Hotkey("Alt & Enter",,"Off")
+	return term
+}
+
+
+; wanted to time meteors 
+#include "*i MOTiming.ahk"

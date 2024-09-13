@@ -1,5 +1,5 @@
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
-FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
+FORTNITEWINDOW := "ahk_class UnrealWindow" .  " ahk_exe " . FORTNITEPROCESS
 ; FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
 
@@ -9,6 +9,7 @@ if A_ScreenWidth != 1600 {
 	EXTRA:= A_ScreenWidth
 }
 
+; some weird keybindings below; feel free to change for your needs!
 #HotIf WinActive(FORTNITEWINDOW)
 ^+9::FightGod()
 +NumpadPgup::FightGod()
@@ -26,11 +27,11 @@ SC027 & 0::FightGodNoTP()
 '::TPboss()
 ^\::TPimmortalTree(true)     ; control slash to start frenzyloop with a frenzy
 ^+\::TPimmortalTree(false)   ; control shift slash to start frenzyloop without a frenzy
-^+p::FindText().Gui("Show") 
-^PrintScreen::FindText().Gui("Show") ; p to mean printsceen
+; ^+p::FindText().Gui("Show") ; this is preventing the ability to enter p in searches
+^PrintScreen::FindText().Gui("Show")  
 #HotIf
 
-^!PrintScreen::FindText().Gui("Show") ; p to mean printsceen
+^!PrintScreen::FindText().Gui("Show") 
 
 
 findtext_GuardiansPage2() {

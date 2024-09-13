@@ -2,6 +2,7 @@
 #Requires AutoHotkey v2.0
 #WinActivateForce 1
 #SingleInstance
+; #MaxThreads 5
 InstallKeybdHook(true)
 InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
@@ -14,7 +15,7 @@ pickaxe() {
 	Send(Chr(96)) ; pickaxe
 }
 
-; #Include ControlColor.ahk
+; #Include ControlColor.ahk2
 
 global EXTRA
 EXTRA:=50
@@ -637,7 +638,7 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 			. "`nFire=Enter(Return key) (Chr(13))"
 	        . (hideWindow ? "`nWindow hides in " . HIDE_SECONDS . " seconds (Ctrl-C to start w/o auto-hide)"
 					        . "`nUse Ctrl-Shift-H to hide, Ctrl-Alt-Shift-H to unhide FN window.":"")
-	ttHWND := FindText().ToolTip(msg,10,10,2,{timeout:10})
+	ttHWND := FindText().ToolTip(msg,10,10,2,{timeout:5})
 	toolTip_showing := true
 	kw := KeyWait("NumPadDel","U")
 	; immediately unfocusing before first Enter/click event
