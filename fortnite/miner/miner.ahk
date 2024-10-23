@@ -1,4 +1,6 @@
 ; Miner Tycoon (Odyssey)
+; todo user config into Map https://www.autohotkey.com/docs/v2/lib/Map.htm
+; findtext strings etc
 #Requires AutoHotkey v2.0
 #WinActivateForce 1
 #SingleInstance
@@ -9,7 +11,7 @@
 
 ; #MaxThreads 5
 InstallKeybdHook(true)
-InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
+; no...  InstallMouseHook(true) ; so that A_TIMEIDLEPHYSICAL includes mouse
 ; SetDefaultMouseSpeed 3 ; default 2, trying to slow down a bit just in case mouse speed affects glitchy behavior at low wattage
 
 SendMode("Event")
@@ -28,10 +30,13 @@ Send("{Enter up}")
 
 ; ^!+e::Edit()
 
-^c::clicker_unfocused(false)  ; without hide
-SC027 & c::clicker_unfocused(false)  ; semicolon c
+; ^c::clicker_unfocused(false)  ; without hide
+SC027 & c::clicker_unfocused_meteor(false,false)  ; semicolon c
 
-^+c::clicker_unfocused(ENABLE_AUTO_HIDE)  ; move and hide
+; ^+c::clicker_unfocused(ENABLE_AUTO_HIDE)  ; move and hide
+^+c::clicker_unfocused_meteor(true,false)
+^c::clicker_unfocused_meteor(false,false)
+
 ^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
 
 ; control shift h to toggle window-hidden state when FN is in focus:
@@ -62,8 +67,8 @@ NumpadIns & NumpadDel::Click_at_Cursor()
 ^+!b::Click_at_Cursor()
 NumpadEnd::Expedition_loop()
 Numpad1::Expedition_loop()
-^+v::drill_loop()
-^d::clicker_unfocused_meteor()   ; (newer drill loop)
+^+v::old_drill_loop()
+^d::clicker_unfocused_meteor(false,true)   ; (newer drill loop)
 ; ^+d::clicker_unfocused_meteor()
 
 ; ^+w::WalkToMeteor() ; not yet implemented
@@ -79,13 +84,27 @@ Numpad1::Expedition_loop()
 ; 	}
 ; }
 
+^+z::fight_zeus()  ; Myth Heroes (sorry)
+
 #HotIf
 
+^!+h::WindowHideToggle() ; control alt shift h to toggle window-hidden state:
 
 FORTNITEPROCESS := "FortniteClient-Win64-Shipping.exe"
 ; FORTNITEWINDOW := "ahk_class UnrealWindow" ; ahk_exe " . FORTNITEPROCESS
 FORTNITEWINDOW := "ahk_exe FortniteClient-Win64-Shipping.exe"
 FORTNITEEXCLUDEWINDOW := "Epic Games Launcher"
+
+WINWIDTH := 640
+WINHEIGHT := 360
+WINX := A_ScreenWidth - WINWIDTH
+WINY := 10
+CENTERX := WINX + WINWIDTH/2
+CENTERY := WINY + WINHEIGHT/2
+
+IF ! WINEXIST(FORTNITEWINDOW) {
+  Run("com.epicgames.launcher://apps/fn%3A4fe75bbc5a674f4f9b356b5c90567da5%3AFortnite?action=launch&silent=true")
+}
 
 ; User needs to configure key bindings 
 ; for pickaxe(Harvesting tool)=` 
@@ -125,12 +144,6 @@ ENABLE_RESIZE := true
 ; For resize: I like FN small, in upper-right:
 ; SCALINGFACTOR := 0.4
 DO_UNFOCUS := true ; false ; due to winactivate failures
-WINWIDTH := 640
-WINHEIGHT := 360
-WINX := A_ScreenWidth - WINWIDTH
-WINY := 10
-CENTERX := WINX + WINWIDTH/2
-CENTERY := WINY + WINHEIGHT/2
 
 global 	WM_KEYDOWN 	:= 0x0100
 global WM_KEYUP 	:= 0x0101
@@ -333,19 +346,23 @@ start_firing() {
   ; CoordMode("Mouse",oldCoordMode)
 }
 
+; this broke. did the button move?
 findtext_ActivateDrill() {
   t1:=A_TickCount, Text:=X:=Y:=""
-  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 50)
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 100)
   X:="wait"
   Y:=1.0
-  Text:="|<ACTIVATE>*3$39.MHmGAws4UGE04UUWEE8QY4G214QYW0C84W4FWF7U"
-  if (ok:=FindText(&X, &Y, 1460-xtra, 309-xtra, 1460+xtra, 309+xtra, 0.03, 0.03, Text))
+  ; Text:="|<ACTIVATE>*3$39.MHmGAws4UGE04UUWEE8QY4G214QYW0C84W4FWF7U"
+  ; if (ok:=FindText(&X, &Y, 1460-xtra, 309-xtra, 1460+xtra, 309+xtra, 0.03, 0.03, Text))
+  ; moved from 309 to 219, apparently?
+  Text:="|<ACTIVATE>*15$39.MPmGAwv4YGFV4cUWGI8wY4GWF4wYWAS8YX4FWF7U"
+  if (ok:=FindText(&X, &Y, 1460-xtra, 219-xtra, 1460+xtra, 219+xtra, 0.03, 0.03, Text))
   {
-      Sleep(250)
-      FindText().Click(X, Y, "L")
+    Sleep(50)
+    FindText().Click(X, Y, "L")
   } else {
     FindText().ToolTip("Drill not found")
-    FindText().Click(1460, 309, "L")
+    FindText().Click(1460, 219, "L")
     Loop 2 { 
       Sleep(300)
       pickaxe()
@@ -355,44 +372,55 @@ findtext_ActivateDrill() {
 }
 
 drill() {
+  oldHWND := WinExist("A")
+  ; TEMP:
+  ; FindText().ToolTip(oldHWND) ; debug info
   ; MouseMove(A_ScreenWidth - 100, 100)
-  ActivateFortniteWindow()
-
   BlockInput("On")
 
+  ActivateFortniteWindow()
+
+  ; TODO: reduce this delay? 
+  ; (Shouldn't need to try 3 times)
+  ; But needs reasonable testing (a few drills)
+  ; Sleep(300)
+  ; switchToRemote()
+  ; Sleep(300)
+  ; Click("Right") ; try to focus the window
+  
   Sleep(300)
-  switchToRemote()
-  Sleep(300)
-  Click("Right") ; try to focus the window
-  Sleep(300)
+  Click()
+  Sleep(500)
   switchToRemote()
 
   ; Sleep(400)
   ; Send("RButton")
   ; Click("Right")
 
-  Sleep(300) ; was 1200
   Loop 2 {
+    Sleep(300)
     Click("Right")
-    Sleep(200)
   }
-  Sleep(300)
   findtext_ActivateDrill()
   Loop 2 { ; was 4
-    Sleep(200) ; was 400
+    Sleep(300) ; was 400
     pickaxe()
   }
+  Sleep(300)
+  Send("{Enter down}") ; or firekey
 
   BlockInput("Off")
+  WinActivate("AHK_ID " oldHWND)
 
 }
 
 ; this will vary by player, depending on their strength
 ; stronger players may want a higher threshold, to avoid wasting part of a drill
-global MINIMUM_METEOR_HP_FOR_DRILLING := 80
+global MINIMUM_METEOR_HP_FOR_DRILLING := 50
+global drills_estimated := 4 ; no more than this many exist
 
-; old drill loop; usually you want the new one (control d)
-drill_loop() {
+; old drill loop; usually you want the new one (control d = clicker_unfocused_meteor)
+old_drill_loop() {
   global MINIMUM_METEOR_HP_FOR_DRILLING
   seconds := 180
   Loop {
@@ -411,7 +439,7 @@ drill_loop() {
     } else {
       seconds := 180 ; after adding meteor hp detection, we need to try for drilling more often
     }
-    term := clicker_unfocused(false,seconds)
+    term := clicker_unfocused_dontuse(false,seconds)
     if term { 
      return
      }
@@ -441,7 +469,7 @@ autolevel(nloops:=1) {
       click_X()
 
       Sleep(1000)
-      term := clicker_unfocused(false,seconds_per_loop)
+      term := clicker_unfocused_dontuse(false,seconds_per_loop)
       if term { 
         return
       }
@@ -454,7 +482,7 @@ autolevel(nloops:=1) {
 
     drill()
     seconds := 100  ; maxed drill is <= 90 seconds
-    clicker_unfocused(false,seconds)
+    clicker_unfocused_dontuse(false,seconds)
     
     ; cnt2:=find_and_click_upgrades()
     ; click_X()
@@ -937,7 +965,8 @@ findtext_mobroom_icon() {
 ; at least 40 pixels away from left edge of FN window
 findtext_Drills_0() {
   t1:=A_TickCount, Text:=X:=Y:=""
-  Text:="|<Drills_0>*253$30.CzzzzBzzzpnrzzirjzzioTzzicjzzhfbzznU"
+  ; Text:="|<Drills_0>*253$30.CzzzzBzzzpnrzzirjzzioTzzicjzzhfbzznU" ; stopped working after AMD driver update
+  Text:="|<drill_0>*244$30.vzzzznzzzzXDzzz6zzzzBzzzpXnzzipjzzioSzzicfzzhV7zznz/zzzzXzzzU"
   xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 20)
   ; ok:=FindText(&X, &Y, 964, 272, 1013, 306, 0.05, 0.05, Text)
   ok:=FindText(&X, &Y, 980-xtra, 282-xtra, 980+xtra, 282+xtra, 0.05, 0.05, Text)
@@ -958,7 +987,7 @@ findtext_auto_click()
 }
 
 global meteorhp_pct := -1
-global show_meteorhp := true
+global show_meteorhp := false
 global last_auto_buy_time := 0
 global auto_buy := false
 
@@ -1106,7 +1135,7 @@ scanForGameLauncher_MinerTycoon() {
     ; WalkToMeteor() 
 		WalkToQuarryRock()
     FindText().ToolTip()
-		clicker_unfocused(false) ; don't waste drills on quarry rock
+		clicker_unfocused_meteor(false) ; don't waste drills on quarry rock
 	}
   FindText().ToolTip()
 	; findtext_BATTLEPASS_CLAIM_and_click()
@@ -1246,7 +1275,7 @@ if A_ScreenDPI != MyScreenDPI {
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
 ; drill_loop2
-clicker_unfocused_meteor(hideWindow:=false) {
+clicker_unfocused_meteor(hideWindow:=false, allowDrilling:=false) {
   total_seconds := 3600 * 4
 	global Delay60 
 	global Charged_Count
@@ -1256,7 +1285,8 @@ clicker_unfocused_meteor(hideWindow:=false) {
 	global firekey
 	global earlyAbort
 	global WM_KEYDOWN
-	global WM_KEYUP 	
+	global WM_KEYUP
+  global drills_estimated
 	earlyAbort := false
 	term := false
 	DetectHiddenWindows true
@@ -1316,7 +1346,13 @@ clicker_unfocused_meteor(hideWindow:=false) {
 	Sleep(333)
 	maybe_unfocus()
   start_time := A_TickCount
-	while A_TickCount < startTick + total_milliseconds {
+  start_tick := A_TickCount
+  end_tick := A_TickCount
+  hp := 0
+  hp2 := 0
+  start_time := A_Now
+  end_time := A_Now
+  while A_TickCount < startTick + total_milliseconds {
 		seconds_left := Floor((startTick + total_milliseconds - A_TickCount ) * 0.001) 
 		if seconds_left < 9999 
 			and ( Mod(seconds_left,5) = 0 or seconds_left < 30 ) {
@@ -1344,7 +1380,9 @@ clicker_unfocused_meteor(hideWindow:=false) {
 				; maybe_unfocus()
 				Sleep(333)
 				if activeWindow != fnWindow {
-					WinActivate(activeWindow) ; return focus after traytip bubble
+          Try {
+            WinActivate(activeWindow) ; return focus after traytip bubble
+          } 
 				}
 			}
 		}
@@ -1364,14 +1402,37 @@ clicker_unfocused_meteor(hideWindow:=false) {
 				break
 			}
 		}
+    get_meteorhp()
+    ; DEBUG:
+    ; ToolTip("meteorhp_pct=" meteorhp_pct ",last_hp=" last_hp,1000,300,2) ; DEBUG
+    if meteorhp_pct > 80 && last_hp < 2 {
+      start_tick := A_TickCount
+      start_time := A_Now
+      hp := meteorhp_pct
+    }
+    if meteorhp_pct == 0 && last_hp > 0  {
+      end_tick := A_TickCount
+      end_time := A_Now
+      elapsed := Round( (end_tick - start_tick) * 0.001 , 3)
+      hp2 := meteorhp_pct
+      dttm := FormatTime(A_Now, "yyyyMMdd_HHmmss")
+      ToolTip("elapsed=" elapsed,1000,300,2)
+      ; doesn't seem to work ; InsertTiming("Measure", "meteor", start_time, end_time, elapsed, hp, hp2)
+      txt := "meteor,"  start_time "," end_time "," elapsed "," hp "," hp2 "`n"
+      Try FileAppend(txt,"miner.log")
+    }
+
     ; if meteor just came down and a new one is up, then drill (if any drills):
     ; (unless user is busy typing or moving mouse (within last 5 seconds))
     user_initiated := start_time < A_TickCount + 10000 ; just started the macro, so do not regard A_TIMEIDLE
     user_is_idle := A_TimeIdlePhysical > 5000 || user_initiated
     haveDrill := !findtext_Drills_0()
     prevdrillover90seconds := (A_TickCount - previous_drill_tickcount) > 90000  
-    if meteorhp_pct > 80 && last_hp == 0 && haveDrill 
-        && user_is_idle && prevdrillover90seconds {
+    if allowDrilling 
+        && meteorhp_pct > MINIMUM_METEOR_HP_FOR_DRILLING 
+        && last_hp < 5 && haveDrill 
+        && user_is_idle && prevdrillover90seconds
+        && drills_estimated > 0 {
       if hidWindow {
         try {
           WinShow(FORTNITEWINDOW)
@@ -1379,9 +1440,9 @@ clicker_unfocused_meteor(hideWindow:=false) {
         } 
       }
       drill()
+      drills_estimated := drills_estimated - 1
+      drills_estimated := drills_estimated + (A_TickCount - previous_drill_tickcount) / 900
       previous_drill_tickcount := A_TickCount
-      Sleep(555)
-      Send("{Enter down}") ; or firekey
       if hidWindow {
         try {
           WinHide(FORTNITEWINDOW)
@@ -1409,13 +1470,10 @@ clicker_unfocused_meteor(hideWindow:=false) {
 ; (create global for drill count and increment every 90 seconds)
 ; (decrement every drill)
 
-; wanted to time meteors 
-; #include "*i MOTiming.ahk"
-
 ; this one probably is redundant and not needed anymore
 ; only seems to work out-of-focus when firekey = enter
 ; (You need to go into FN settings and bind fire to enter)
-clicker_unfocused(hideWindow, total_seconds := 3600*4) {
+clicker_unfocused_dontuse(hideWindow, total_seconds := 3600*4) {
 	global Delay60 
 	global Charged_Count
 	; global Charged_MaxRunDelay
@@ -1505,7 +1563,9 @@ clicker_unfocused(hideWindow, total_seconds := 3600*4) {
 				; maybe_unfocus()
 				Sleep(333)
 				if activeWindow != fnWindow {
-					WinActivate(activeWindow) ; return focus after traytip bubble
+          Try {
+            WinActivate(activeWindow) ; return focus after traytip bubble
+          }
 				}
 			}
 		}
@@ -1660,5 +1720,124 @@ AppVol(Target := "A", Level := 0) {
     return (IsSet(levelOld) ? Round(levelOld * 100) : -1)
 }
 
+
+findtext_AUTO_X()  {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<AUTO_X>*3$76.MZsU00000003AWE4U00000004c94G00000000GUYF8000000019mF4U00000004d44800000000nU"
+  if (ok:=FindText(&X, &Y, 1433-150000, 46-150000, 1433+150000, 46+150000, 0, 0, Text))
+  {
+      FindText().Click(X+20, Y, "L")
+  }
+}
+
+;;; END OF MINER TYCOON code ;;; 
+
+; sorry to you Miner Tycoon players; this was just the most convenient place to stick this for now
+fight_zeus() 
+{
+  MoveWindowToUpperRight()
+  Loop {
+    Send("{shift up}{space}{w down}")
+    Loop 10 {
+      Sleep(100)
+      Send("e")
+    }
+    Send("{w up}")
+
+    Send("e")
+    Sleep(1000)
+
+    ; choose DPS
+    t1:=A_TickCount, Text:=X:=Y:=""
+    X:="wait"
+    Y:=5.0
+    Text:="|<DPS_icon>*222$13.zDzjzrzxzWDyzyjv6xXMlXMrgPqBx5zrw"
+    if (ok:=FindText(&X, &Y, 1239-150000, 320-150000, 1239+150000, 320+150000, 0.09, 0.09, Text))
+    {
+      FindText().Click(X, Y, "L")
+    } else {
+      FindText().Click(1239,320, "L")
+    }
+    
+    t1:=A_TickCount, Text:=X:=Y:=""
+    Text:="|<FIGHT>*233$25.mwzPDPBjrhyrPqzTjPRjqxiqvSszBk"
+    X:="wait"
+    Y:=10.0
+    if (ok:=FindText(&X, &Y, 1432-150000, 311-150000, 1432+150000, 311+150000, 0.09, 0.09, Text))
+    {
+       Sleep(200)
+       FindText().Click(X, Y, "L")
+    }
+    
+    Loop 2 {
+      FindText().Click(1432, 311, "L")
+      Sleep(1000)
+    }
+
+    FindText().ToolTip("15 sec wait")
+    Sleep(15000)
+
+    ; Send("{LButton down}")
+    ; Sleep(60000)
+    FindText().ToolTip("clicking")
+    Loop 200 * 5 {
+      Click()
+      if A_Index > 150 {
+        if A_Index = 151 { 
+          FindText().ToolTip("scanning")
+        }
+        t1:=A_TickCount, Text:=X:=Y:=""
+        Text:="|<HP_left_border>*17$13.D3k00020100E088200Y0A01U0AU"
+        ok:=FindText(&X, &Y, 1065-150000, 46-150000, 1065+150000, 46+150000, 0.09, 0.09, Text)
+        Sleep(100) 
+        if (! ok)
+        {
+          Click("down")
+          FindText().ToolTip("cant find HP_left_border")
+          Sleep(2000)
+          break
+        }
+      } else {
+        Sleep(200)
+      }
+    }
+    FindText().ToolTip("Stopped clicking")
+    Sleep(2000)
+    FindText().ToolTip("10 second delay")
+    Click("up")
+    Sleep(9000)
+    FindText().ToolTip("loop")
+    Sleep(1000)
+  } 
+}
+
+; 44.7QiD @ 2:19
+; 50.9Qid @3:42
+; 6.2Qid in 83 minutes
+
+; count_pandoras() {
+;   t1:=A_TickCount, Text:=X:=Y:=""
+;   Text:="|<>00DB84-101010$3.w"
+;   xtrax:=20
+;   xtray:=0
+;   ok:=FindText(&X, &Y, 981-xtrax, 238-xtray, 981+xtrax, 238+xtray, 0, 0, Text)
+;   pandoras:=IsObject(ok)?ok.Length:ok
+;   FindText().ToolTip(pandoras)
+;   return pandoras
+; }
+
+count_pandoras() {
+  greens := FindText().PixelCount(970,238,1020,238,"00DB84")
+  pandoras := greens/3
+  ; FindText().ToolTip(pandoras)
+  return pandoras
+}
+
+; SetTimer(count_pandoras, 1000)
+
 Sleep(1000)
 FindText().ToolTip()
+
+; wanted to time meteors 
+; #include "*i MOTiming.ahk"
+

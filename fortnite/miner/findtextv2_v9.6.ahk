@@ -2120,18 +2120,20 @@ ToolTip(s:="", x:="", y:="", num:=1, arg:="")
   {
     ini[f]:=r
     Try tip[f].Destroy()
-    tip[f]:=_Gui:=Gui()  ; WS_EX_LAYERED:=0x80000, WS_EX_TRANSPARENT:=0x20
-    _Gui.Opt("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x80020")
-    _Gui.MarginX:=2, _Gui.MarginY:=2
-    _Gui.BackColor:=bgcolor
-    _Gui.SetFont("c" color " s" size " " bold, font)
-    _Gui.Add("Text",, s)
-    _Gui.Title:=f
-    _Gui.Show("Hide")
-    ;------------------
-    DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
-    WinSetTransparent(trans, _Gui.Hwnd)
-    DetectHiddenWindows bak
+    Try {
+      tip[f]:=_Gui:=Gui()  ; WS_EX_LAYERED:=0x80000, WS_EX_TRANSPARENT:=0x20
+      _Gui.Opt("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x80020")
+      _Gui.MarginX:=2, _Gui.MarginY:=2
+      _Gui.BackColor:=bgcolor
+      _Gui.SetFont("c" color " s" size " " bold, font)
+      _Gui.Add("Text",, s)
+      _Gui.Title:=f
+      _Gui.Show("Hide")
+      ;------------------
+      DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
+      WinSetTransparent(trans, _Gui.Hwnd)
+      DetectHiddenWindows bak  
+    }
   }
   tip[f].Opt("+AlwaysOnTop")
   tip[f].Show("NA " x " " y)
