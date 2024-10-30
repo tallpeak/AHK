@@ -356,19 +356,22 @@ findtext_ActivateDrill() {
   ; if (ok:=FindText(&X, &Y, 1460-xtra, 309-xtra, 1460+xtra, 309+xtra, 0.03, 0.03, Text))
   ; moved from 309 to 219, apparently?
   Text:="|<ACTIVATE>*15$39.MPmGAwv4YGFV4cUWGI8wY4GWF4wYWAS8YX4FWF7U"
-  if (ok:=FindText(&X, &Y, 1460-xtra, 219-xtra, 1460+xtra, 219+xtra, 0.03, 0.03, Text))
+  if (foundDrill:=FindText(&X, &Y, 1460-xtra, 219-xtra, 1460+xtra, 219+xtra, 0.03, 0.03, Text))
   {
     Sleep(50)
     FindText().Click(X, Y, "L")
+    return foundDrill
   } else {
     FindText().ToolTip("Drill not found")
-    FindText().Click(1460, 219, "L")
+    ; FindText().Click(1460, 219, "L")
     Loop 2 { 
       Sleep(300)
       pickaxe()
     }
     FindText().ToolTip()
+    return 0
   }
+  ; return foundDrill
 }
 
 drill() {
@@ -390,27 +393,48 @@ drill() {
   
   Sleep(300)
   Click()
-  Sleep(500)
-  switchToRemote()
 
   ; Sleep(400)
   ; Send("RButton")
   ; Click("Right")
 
-  Loop 2 {
-    Sleep(300)
-    Click("Right")
+  ; my friend's router and ISP are very bad
+  ; TODO: EXIT EARLY IF SUCCESSFUL
+  Loop 3 {
+    Loop 3 {
+      Sleep(500)
+      switchToRemote()  
+    }
+    ; Sleep(400)
+    ; Send("RButton")
+
+    Loop 3 {
+      Sleep(400)
+      Click("Right")
+    } 
+    Sleep(400)
+    foundDrill := findtext_ActivateDrill()
+    if foundDrill {
+      break
+    }
   }
-  findtext_ActivateDrill()
-  Loop 2 { ; was 4
-    Sleep(300) ; was 400
+  ; I HOPE WE FOUND IT!!!
+  FindText().Click(1460, 219, "L")
+  ; FIXME, enable pickaxe detection!!!
+  Loop 9 { ; was 4, then 2, now 8, until fixed... 
+    Sleep(400) ; was 400
     pickaxe()
+    whites := pickaxe_boxcount()
+    if whites == 23 and A_Index >= 2 {
+      FindText().ToolTip(whites)
+      break
+    }
   }
   Sleep(300)
   Send("{Enter down}") ; or firekey
 
   BlockInput("Off")
-  WinActivate("AHK_ID " oldHWND)
+  Try WinActivate("AHK_ID " oldHWND)
 
 }
 
@@ -1405,7 +1429,7 @@ clicker_unfocused_meteor(hideWindow:=false, allowDrilling:=false) {
     get_meteorhp()
     ; DEBUG:
     ; ToolTip("meteorhp_pct=" meteorhp_pct ",last_hp=" last_hp,1000,300,2) ; DEBUG
-    if meteorhp_pct > 80 && last_hp < 2 {
+    if meteorhp_pct > 10 && last_hp < 2 {
       start_tick := A_TickCount
       start_time := A_Now
       hp := meteorhp_pct
@@ -1416,11 +1440,23 @@ clicker_unfocused_meteor(hideWindow:=false, allowDrilling:=false) {
       elapsed := Round( (end_tick - start_tick) * 0.001 , 3)
       hp2 := meteorhp_pct
       dttm := FormatTime(A_Now, "yyyyMMdd_HHmmss")
-      ToolTip("elapsed=" elapsed,1000,300,2)
+      if WinActive(FORTNITEWINDOW) {
+        FindText().ToolTip(elapsed " s",580,20,2)
+      } else {
+        FindText().ToolTip()
+      } 
       ; doesn't seem to work ; InsertTiming("Measure", "meteor", start_time, end_time, elapsed, hp, hp2)
       txt := "meteor,"  start_time "," end_time "," elapsed "," hp "," hp2 "`n"
       Try FileAppend(txt,"miner.log")
     }
+
+    if allowDrilling 
+      && A_TimeIdlePhysical > 4 * 60000 
+      && WinActive("AHK_EXE CHROME.EXE") {
+        ; notifications may be blocking the window
+        allowDrilling := false
+        FindText().ToolTip("disabled drilling")
+    }   
 
     ; if meteor just came down and a new one is up, then drill (if any drills):
     ; (unless user is busy typing or moving mouse (within last 5 seconds))
@@ -1730,6 +1766,27 @@ findtext_AUTO_X()  {
   }
 }
 
+
+findtext_pickaxe_whitebox() {
+  ; #Include <FindText>
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<whiteborderbox>*253$23.0000zzztzzznzzzbzzzDzzyTzzwzzztzzznzzzbzzzDzzyTzzwzzztzzznzzzbzzzDzzyTzzwzzztzzznzzzU000E"
+  if (ok:=FindText(&X, &Y, 1536-150000, 326-150000, 1536+150000, 326+150000, 0, 0, Text))
+  {
+    ; FindText().Click(X, Y, "L")
+  }
+}
+
+; SetTimer(pickaxe_boxcount,500)
+
+; 20 when pickaxe is selected
+pickaxe_boxcount() {
+  ; 1527, 315, 1546, 315
+  whites := FindText().PixelCount(1520, 315, 1550, 315, "FEFEFE")
+  ; FindText().ToolTip(whites,500,20,3)  
+  return whites
+}
+
 ;;; END OF MINER TYCOON code ;;; 
 
 ; sorry to you Miner Tycoon players; this was just the most convenient place to stick this for now
@@ -1832,6 +1889,7 @@ count_pandoras() {
   ; FindText().ToolTip(pandoras)
   return pandoras
 }
+
 
 ; SetTimer(count_pandoras, 1000)
 
