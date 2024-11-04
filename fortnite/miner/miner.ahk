@@ -84,7 +84,11 @@ Numpad1::Expedition_loop()
 ; 	}
 ; }
 
-^+z::fight_zeus()  ; Myth Heroes (sorry)
+; Myth Heroes 
+^+z::fight_zeus()  ; Myth Heroes 
+^+g::getcolorforgeToggle() ; Myth Heroes 
+^+o::forge()
+!o::forge2()
 
 #HotIf
 
@@ -401,17 +405,18 @@ drill() {
   ; my friend's router and ISP are very bad
   ; TODO: EXIT EARLY IF SUCCESSFUL
   Loop 3 {
-    Loop 3 {
+    ; Loop 3 {
       Sleep(500)
       switchToRemote()  
-    }
+    ; }
+    
     ; Sleep(400)
     ; Send("RButton")
 
-    Loop 3 {
+    ; Loop 3 {
       Sleep(400)
       Click("Right")
-    } 
+    ; } 
     Sleep(400)
     foundDrill := findtext_ActivateDrill()
     if foundDrill {
@@ -419,14 +424,15 @@ drill() {
     }
   }
   ; I HOPE WE FOUND IT!!!
-  FindText().Click(1460, 219, "L")
+  ; if we didn't find it? ... then ... 
+  ; FindText().Click(1460, 219, "L")
   ; FIXME, enable pickaxe detection!!!
   Loop 9 { ; was 4, then 2, now 8, until fixed... 
     Sleep(400) ; was 400
     pickaxe()
     whites := pickaxe_boxcount()
-    if whites == 23 and A_Index >= 2 {
-      FindText().ToolTip(whites)
+    FindText().ToolTip(whites)
+    if whites == 23 || A_Index >= 3 {
       break
     }
   }
@@ -699,7 +705,7 @@ FindAndClick_GreenMAX() {
   cnt := 0
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<MAX>80E381-101010$24.MkcoIEcIJN8QJN8QHNwoEN4aU"
-  if (ok:=FindText(&X, &Y, 1349-99, 1, 1349+99, 1500, 0.05, 0.05, Text))
+  if (ok:=FindText(&X, &Y, FORGELEFT-99, 1, FORGELEFT+99, 1500, 0.05, 0.05, Text))
   {
     cnt += 1
     FindText().Click(X,Y, "L")
@@ -991,9 +997,10 @@ findtext_Drills_0() {
   t1:=A_TickCount, Text:=X:=Y:=""
   ; Text:="|<Drills_0>*253$30.CzzzzBzzzpnrzzirjzzioTzzicjzzhfbzznU" ; stopped working after AMD driver update
   Text:="|<drill_0>*244$30.vzzzznzzzzXDzzz6zzzzBzzzpXnzzipjzzioSzzicfzzhV7zznz/zzzzXzzzU"
-  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 20)
+  xtra:=(A_SCREENWIDTH != 1600 ? A_SCREENWIDTH: 40)
   ; ok:=FindText(&X, &Y, 964, 272, 1013, 306, 0.05, 0.05, Text)
-  ok:=FindText(&X, &Y, 980-xtra, 282-xtra, 980+xtra, 282+xtra, 0.05, 0.05, Text)
+  ; was 282 now 300?
+  ok:=FindText(&X, &Y, 980-xtra, 300-xtra, 980+xtra, 300+xtra, 0.05, 0.05, Text)
   return ok
 }
 
@@ -1030,11 +1037,12 @@ get_meteorhp() {
   color := "D61F28" ; 0xD61F28
   offset := A_ScreenWidth-1600
   ; 1522/34   1189+320=
-  reds := FindText().PixelCount(1189+offset, 34, 1373+offset, 34, color,0)
+  y := 42
+  reds := FindText().PixelCount(1189+offset, y, 1373+offset, y, color,15)
   hppct := Round((reds / (1373-1189))*100)
   meteorhp_pct := hppct
   if show_meteorhp {
-    FindText().ToolTip("HP%=" hppct, 1373,5,2)
+    FindText().ToolTip("HP%=" hppct, 1373,5,4)
   }
   if auto_buy {
     if hppct == 0 && last_auto_buy_time < A_TickCount - 10000  {
@@ -1449,6 +1457,7 @@ clicker_unfocused_meteor(hideWindow:=false, allowDrilling:=false) {
       txt := "meteor,"  start_time "," end_time "," elapsed "," hp "," hp2 "`n"
       Try FileAppend(txt,"miner.log")
     }
+    ; FindText().ToolTip(allowDrilling,400,40,3)
 
     if allowDrilling 
       && A_TimeIdlePhysical > 4 * 60000 
@@ -1891,6 +1900,146 @@ count_pandoras() {
 }
 
 
+getcolorforgeEnable := false 
+
+getcolorforge() {
+  color := PixelGetColor( 1356, 305)
+  FindText().ToolTip(color,550,20)
+  return color
+}
+
+getcolorforgeToggle() {
+  global getcolorforgeEnable
+  getcolorforgeEnable := ! getcolorforgeEnable
+  if getcolorforgeEnable {
+    SetTimer(getcolorforge, 100)
+  }  else {
+    SetTimer(getcolorforge, 0)
+    FindText().ToolTip()
+  } 
+}
+
+; untested (surely not right)
+; probably need pixelcount instead of PixelGetColor
+; didnt work; see next version
+forge_nonworking() {
+  sleeptime := 10
+  Loop 1000 {
+    purple:= "860062" 
+    blue := "0055A8"
+    c := getcolorforge()
+    if c := blue {
+      Click("L")
+      Sleep(sleeptime*3)
+    }
+    if c := purple {
+      Click("R")
+      Sleep(sleeptime*3)
+    }
+    Sleep(sleeptime)
+  }
+}
+
+FORGELEFT := 1349  ; was 1349
+
+findtext_forgeblue() {
+  global FORGELEFT
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<forge_blue>260072-101010$12.U0U0EU8801804001040EU"
+  xtra:=20
+  if (ok:=FindText(&X, &Y, FORGELEFT-xtra, 308-xtra, FORGELEFT+xtra, 308+xtra, 0, 0, Text))
+  {
+    Click()
+  }
+  return X
+}
+
+
+findtext_forgepurple() {
+  global FORGELEFT
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<forge_purple>241172-101010$14.00E08040080000088"
+  xtra:=20
+  if (ok:=FindText(&X, &Y, FORGELEFT-xtra, 308-xtra, FORGELEFT+xtra, 308+xtra, 0, 0, Text))
+  {
+     Click("R")
+  }
+  return X
+}
+
+findtext_forge_blue_purple() {
+  global FORGELEFT
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<forge_blue>260072-101010$12.U0U0EU8801804001040EU"
+  Text.="|<forge_purple>241172-101010$14.00E08040080000088"
+  xtra:=20
+  X:="wait1"
+  Y:=1.0
+  if (ok:=FindText(&X, &Y, FORGELEFT-xtra, 308-xtra, FORGELEFT+xtra, 308+xtra, 0, 0, Text))
+  {
+    ; cmnt := ""
+    ; Try
+    cmnt := ok[1].id
+    if cmnt == "forge_blue" {
+      Click("L")
+    }
+    else if cmnt == "forge_purple" {
+      Click("R")
+    }
+    ;  else {
+    ;   Click("L")
+    ;   Click("R")
+    ; }
+    ; FindText().ToolTip("(" X "," Y ") " cmnt,500,20)
+    Sleep(5)
+  }
+  return ok
+}
+
+forge()
+{
+  fails := 0
+  loop 10000 {
+    fb:=findtext_forgeblue()
+    fp:=findtext_forgepurple()
+    ok := fb || fp
+    if ok {
+      fails := 0
+      ; Try m := ok[1]
+      ; cmnt := ""
+      ; Try cmnt := m.id
+      ; Try FindText().ToolTip("(" m.x "," m.y ") " cmnt,500,20)
+      ; Sleep(20)
+    } else {
+      fails += 1
+    }
+    Sleep(15)
+    if fails > 500 {
+      break
+    }
+  }
+}
+
+forge2()
+{
+  fails := 0
+  loop 600 {
+    ; fb:=findtext_forgeblue()
+    ; fp:=findtext_forgepurple()
+    ; if fb || fp {
+    f := findtext_forge_blue_purple()
+    if f {
+      fails := 0
+    } else {
+      fails += 1
+    }
+    Sleep(5)
+    if fails > 99 {
+      FindText().ToolTip("exiting forge")
+      break
+    }
+  }
+}
 ; SetTimer(count_pandoras, 1000)
 
 Sleep(1000)

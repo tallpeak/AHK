@@ -2129,14 +2129,14 @@ ToolTip(s:="", x:="", y:="", num:=1, arg:="")
       _Gui.Add("Text",, s)
       _Gui.Title:=f
       _Gui.Show("Hide")
-      ;------------------
-      DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
-      WinSetTransparent(trans, _Gui.Hwnd)
-      DetectHiddenWindows bak  
     }
+    ;------------------
+    DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
+    WinSetTransparent(trans, _Gui.Hwnd)
+    DetectHiddenWindows bak  
   }
-  tip[f].Opt("+AlwaysOnTop")
-  tip[f].Show("NA " x " " y)
+  Try tip[f].Opt("+AlwaysOnTop")
+  Try tip[f].Show("NA " x " " y)
   if (timeout)
   {
     (!timer.Has(f) && timer[f]:=this.ToolTip.Bind(this,"","","",num))
