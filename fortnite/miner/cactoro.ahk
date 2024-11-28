@@ -3,6 +3,16 @@ NumpadPgdn::fight_cactoro()
 Numpad3::fight_cactoro()
 #HotIf
 
+findtext_HARD_MODE() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<HARD MODE>*15$47.YMtUF6AD8l+EaGGGGWIVgYYwYb92d999D9G5GGGGGGs8X77U"
+  if (ok:=FindText(&X, &Y, 1472-150000, 286-150000, 1472+150000, 286+150000, 0, 0, Text))
+  {
+    FindText().Click(X, Y, "L")
+  }  
+}
+
+; must be in 1600x900 screen resolution:
 fight_cactoro() {
   Loop {
     Loop 3 {
@@ -19,7 +29,9 @@ fight_cactoro() {
     Sleep(999)
     ; findtext_JOIN()
     ; findtext_START()
+    findtext_HARD_MODE()
     Loop 4 {
+      ; X:=A_ScreenWidth-128
       FindText().Click(1472, 253, "L")
       Sleep(500)
     }

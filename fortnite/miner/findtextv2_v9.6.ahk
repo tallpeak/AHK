@@ -1132,7 +1132,7 @@ BindWindow(bind_id:=0, bind_mode:=0, get_id:=0, get_mode:=0)
     {
       i:=WinGetExStyle(bind_id)
       bind.oldStyle:=i
-      WinSetTransparent(255, bind_id)
+      try WinSetTransparent(255, bind_id)
       Loop 30
       {
         Sleep 100
@@ -2132,7 +2132,7 @@ ToolTip(s:="", x:="", y:="", num:=1, arg:="")
     }
     ;------------------
     DetectHiddenWindows (bak:=A_DetectHiddenWindows)?1:1
-    WinSetTransparent(trans, _Gui.Hwnd)
+    try WinSetTransparent(trans, _Gui.Hwnd)
     DetectHiddenWindows bak  
   }
   Try tip[f].Opt("+AlwaysOnTop")
