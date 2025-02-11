@@ -550,15 +550,16 @@ FORGELEFT := 1369  ; was 1349 when left-to-right search, now right-to-left so ad
 
 ; do not exceed 1356 (leftmost)   pixels
 FORGE_XTRAX := 20
-FORGELEFT := 1356 + FORGE_XTRAX  ; was 1349 when left-to-right search, now right-to-left so add the 20 pixels tolerance
+FORGELEFT := 1365  ; was 1349 when left-to-right search, now right-to-left so add the 20 pixels tolerance
 
 findtext_forge_blue_purple() {
-  global FORGELEFT
+  global FORGELEFT, FORGE_XTRAX
   t1:=A_TickCount, Text:=X:=Y:=""
   ; Text:="|<forge_blue>260072-101010$12.U0U0EU8801804001040EU"
   ; Text.="|<forge_purple>241172-101010$14.00E08040080000088"
-  Text:="|<purple>662483-101010$15.00M0T0Dk7w7y3zAlz7jU1U0C0U"
-  Text.="|<blue>2D2E83@0.90$15.k07U0TU1z07z1jw7wkTD0AU7UU"
+  Text:="|<p>662483-101010$15.00M0T0Dk7w7y3zAlz7jU1U0C0U" ; purple
+  Text.="|<b>2D2E83@0.90$15.k07U0TU1z07z1jw7wkTD0AU7UU"   ; blue
+
   xtrax:=FORGE_XTRAX ; was 20, but missed a few?
   xtray:=5 ; smallest that works? (reduce?) 
   X:="wait1"
@@ -567,12 +568,12 @@ findtext_forge_blue_purple() {
   if (ok:=FindText(&X, &Y, FORGELEFT-xtrax, 308-xtray, FORGELEFT+xtrax, 308+xtray, 0.05, 0.05, Text,,FindAll:=0,,,,dir:=right_to_left))
   {
     cmnt := ok[1].id
-    if cmnt == "forge_blue" {
+    if cmnt == "b" {
       Click("L")
       ; Sleep(5)
       ; Click("R") ; if you get the color wrong, it may work to click the other color
     }
-    else if cmnt == "forge_purple" {
+    else if cmnt == "p" {
       Click("R")
       ; Sleep(5)
       ; Click("L") ; if you get the color wrong, it may work to click the other color
@@ -589,31 +590,67 @@ findtext_forge_blue_purple() {
   return ok
 }
 
+FORGE_FASTMODE := false
+
+toggle_fastmode() {
+  global FORGE_FASTMODE
+  FORGE_FASTMODE := ! FORGE_FASTMODE
+  if FORGE_FASTMODE {
+    FindText().ToolTip("Fast mode")
+  } else {
+    FindText().ToolTip("Slow mode")
+  }
+}
+
+forge_click_blue_purple() {
+  cpurple:= "860062" 
+  cpurplef := "662483"
+  cblue := "0055A8"
+  cbluef := "2D2E83"  
+  c := PixelGetColor(1369, 308)
+  if c == cblue || c == cbluef {
+    Click("L")
+  } else if c == cpurple || c == cpurplef {
+    Click("R")
+  }
+  
+}
+
+
 forge2()
 {
+  global FORGE_FASTMODE
   FindText().ToolTip("forge2",70,300)
   Send("e")
   Sleep(800)
   FindText().ToolTip()
 
-  SetTimer(getcolorforge, 999)
-
+  ; SetTimer(getcolorforge, 999) ; must disable until working again
   fails := 0
   loop 600 {
-    f := findtext_forge_blue_purple()
-    if f {
-      fails := 0
-    } else {
-      fails += 1
+    
+    if FORGE_FASTMODE {
+      forge_click_blue_purple()  
     }
-    Sleep(5)
-    rc := GetKeyState("RCtrl")
-    if fails > 10 || rc {
-      FindText().ToolTip(">10 fails exiting forge")
-      Sleep(5000)
-      FindText().ToolTip()
-      break
+    else {
+      f := findtext_forge_blue_purple()
+      if f {
+        fails := 0
+      } else {
+        fails += 1
+      }
+      Sleep(5)
+      rc := GetKeyState("RCtrl")
+      if fails > 10 || rc {
+        FindText().ToolTip(">10 fails exiting forge")
+        Sleep(5000)
+        FindText().ToolTip()
+        break
+      }
+  
     }
+
+
   }
 
   SetTimer(getcolorforge, 0)
@@ -891,6 +928,9 @@ pandora_loop() {
 ^+z::fight_zeus()  ; Myth Heroes 
 !g::fight_golem()  ; Myth Heroes 
 !p::pandora_loop()
+
+!f::toggle_fastmode()
+
 
 ; ^+g::getcolorforgeToggle() ; Myth Heroes 
 
