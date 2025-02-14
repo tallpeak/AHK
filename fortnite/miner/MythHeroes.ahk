@@ -143,15 +143,23 @@ switchToRemote()
 	}
 	Send(SignalRemoteKey)
 }
-
+  
 findtext_signalRemote()
 {
 	; global EXTRA
-	xtra := 200 ; EXTRA 
+	xtra := 444 ; EXTRA 
   t1:=A_TickCount, Text:=X:=Y:=""
   ; X:="wait"
   ; Y:=5.0
-  Text:="|<signalremote>*55$13.00X005F0sUQ0A0A0402421V0AU0UE"  
+  Text:="|<signalremote2_blackoutline>*44$12.60048307E60A08U80EsEAE3kU"
+  ok:=FindText(&X, &Y, 1582-xtra, 335-xtra, 1582+xtra, 335+xtra, 0.05,0.05, Text)
+  if ok
+    return ok
+  ; Text:="|<signalremote1>*33$11.6000010k1000802122141kU" ; latest capture, window was in wrong positions
+  ; ok:=FindText(&X, &Y, 1524-xtra, 326-xtra, 1524+xtra, 326+xtra, 0, 0, Text)
+  ; if ok
+  ;   return ok
+  Text:="|<signalremote1>*55$13.00X005F0sUQ0A0A0402421V0AU0UE"  
   ok:=FindText(&X, &Y, 1557-xtra, 327-xtra, 1557+xtra, 327+xtra, 0.051, 0.051, Text)
 	return ok
 }
@@ -175,7 +183,7 @@ getSignalRemoteKey()
 		SignalRemoteKey := "1"
 	}
 	if oldSignalRemoteKey != SignalRemoteKey {
-		FindText().ToolTip("SignalRemoteKey=" SignalRemoteKey,500,20)
+		FindText().ToolTip("x=" x ",SignalRemoteKey=" SignalRemoteKey,400,20)
 		Sleep(3333)
 		FindText().ToolTip()	
 	}
@@ -373,21 +381,23 @@ fight_zeus()
     seconds := 85
     Loop seconds * 5 {
       Click("D")
-      if A_Index/5 >= seconds - 70 {
-        if A_Index/5 = seconds - 70 { 
+      if A_Index/5 >= 25 {
+        if A_Index/5 = 25 { 
           FindText().ToolTip("scanning")
         }
         t1:=A_TickCount, Text:=X:=Y:=""
-        ; Text:="|<HP_left_border>*17$13.D3k00020100E088200Y0A01U0AU"
-        Text:="|<HP_left_border>**50$18.s00Dzz1U00zz0k00M00C003001kU"
+        Text:="|<HP_left_border>*33$17.U00000002000004004004006003001U00A004006"
+        ; if (ok:=FindText(&X, &Y, 1067-150000, 48-150000, 1067+150000, 48+150000, 0, 0, Text))
+        Text.="|<HP_left_border>*17$13.D3k00020100E088200Y0A01U0AU"
+        Text.="|<HP_left_border>**50$18.s00Dzz1U00zz0k00M00C003001kU"
         xtra:=200
-        ok:=FindText(&X, &Y, 1065-xtra, 46-xtra, 1065+xtra, 46+xtra, 0.09, 0.09, Text)
+        ok:=FindText(&X, &Y, 1065-xtra, 46-xtra, 1065+xtra, 46+xtra, 0.22, 0.22, Text)
         Sleep(100) 
         if (! ok)
         {
           Click("down")
           FindText().ToolTip("cant find HP_left_border")
-          Sleep(2000)
+          Sleep(1000)
           Click("up")
           break
         }
@@ -396,8 +406,8 @@ fight_zeus()
       }
     }
     Click("up")
-    FindText().ToolTip("Stopped clicking..wait 15 seconds..looping")
-    Sleep(15000)
+    FindText().ToolTip("Stopped clicking..wait 10 seconds..looping")
+    Sleep(10000)
     FindText().ToolTip("loop")
   } 
 }
@@ -590,15 +600,15 @@ findtext_forge_blue_purple() {
   return ok
 }
 
-FORGE_FASTMODE := false
+FORGE_FASTMODE := true
 
 toggle_fastmode() {
   global FORGE_FASTMODE
   FORGE_FASTMODE := ! FORGE_FASTMODE
   if FORGE_FASTMODE {
-    FindText().ToolTip("Fast mode")
+    FindText().ToolTip("Fast mode", 450, 20, 2, {timeout:1})
   } else {
-    FindText().ToolTip("Slow mode")
+    FindText().ToolTip("Slow mode", 450, 20, 2, {timeout:1})
   }
 }
 
@@ -606,16 +616,64 @@ forge_click_blue_purple() {
   cpurple:= "860062" 
   cpurplef := "662483"
   cblue := "0055A8"
-  cbluef := "2D2E83"  
+  cbluef := "2D2E83"
+  if A_CoordModePixel != 'Screen' {
+    CoordMode('Pixel','Screen') 
+  }  
   c := PixelGetColor(1369, 308)
-  if c == cblue || c == cbluef {
+  c2 := PixelGetColor(1369, 305)
+  if c == cblue || c == cbluef || c2 == cblue || c2 == cbluef {
     Click("L")
-  } else if c == cpurple || c == cpurplef {
+  } else if c == cpurple || c == cpurplef || c2 == cpurple || c2 == cpurplef {
     Click("R")
   }
   
 }
 
+global prev_ttt := ""
+
+forge_click_blue_purple2() {
+  global prev_ttt 
+  cpurple:= "860062" 
+  cpurplef := "662483"
+  cblue := "0055A8"
+  cbluef := "2D2E83"
+  if A_CoordModePixel != 'Screen' {
+    CoordMode('Pixel','Screen') 
+  }  
+  x1 := 1355
+  y1 := 303
+  x2 := 1368
+  y2 := 308
+
+  ; p1 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cpurple, Variation:=0, ScreenShot:=1)
+  p2 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cpurplef, Variation:=0, ScreenShot:=1)
+  ; b1 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cblue, Variation:=0, ScreenShot:=0)
+  b2 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cbluef, Variation:=0, ScreenShot:=0)
+  p := p2 ; + p1
+  b := b2 ; + b1
+  thresh := 7
+  if b > thresh  {
+    Click("L")
+  } else if p > thresh {
+    Click("R")
+  }
+  if b > thresh || p > thresh {
+    ; ; Only show non-zero values
+    ; ttt := ""
+    ; if p > 0
+    ;   ttt .= "p=" p ","
+    ; if b > 0
+    ;   ttt .= "b=" b ","
+    ; ; remove trailing comma:
+    ; ttt := SubStr(ttt, 1, StrLen(ttt)-1) ; thanks to https://www.autohotkey.com/boards/viewtopic.php?t=102806
+    ; if ttt && ttt != prev_ttt {
+    ;   FindText().ToolTip(ttt, 320, 1372)
+    ;   prev_ttt := ttt
+    ; }
+    Sleep(70)
+  }
+}
 
 forge2()
 {
@@ -627,10 +685,11 @@ forge2()
 
   ; SetTimer(getcolorforge, 999) ; must disable until working again
   fails := 0
-  loop 600 {
-    
+  loop 1234 {
     if FORGE_FASTMODE {
-      forge_click_blue_purple()  
+      ; forge_click_blue_purple() ; getpixel version
+      forge_click_blue_purple2() ; pixelcount version
+      Sleep(25)  
     }
     else {
       f := findtext_forge_blue_purple()
@@ -639,7 +698,7 @@ forge2()
       } else {
         fails += 1
       }
-      Sleep(5)
+      Sleep(15)
       rc := GetKeyState("RCtrl")
       if fails > 10 || rc {
         FindText().ToolTip(">10 fails exiting forge")
@@ -907,6 +966,9 @@ pandora_loop() {
     Sleep(1000)
     Send("Y")
     minutes := 5
+    if ps <= 2 {
+      minutes := 15
+    }
     Sleep(minutes*60*1000)
     Send("{Esc}")
     Sleep(1000)
