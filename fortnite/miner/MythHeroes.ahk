@@ -2,10 +2,12 @@
 ; todo user config into Map https://www.autohotkey.com/docs/v2/lib/Map.htm
 ; findtext strings etc
 #Requires AutoHotkey v2.0
-#WinActivateForce 1
 #SingleInstance
+; #WinActivateForce 1
 
 #Include "*i findtextv2_v9.6.ahk" ; revert because of crashes occurring after Windows update (23H2 rollup)
+#Include "appvol.ahk"
+
 
 ; no longer makes sense to time meteor1:
 TimeMeteor1 := false
@@ -31,6 +33,9 @@ global scanForGameLauncher_MinerTycoon_interval_ms := 60000
 ; ^End::Reload
 ^r::Reload
 !r::Reload
+
+LCTRL & UP::VolumeUpLoop()
+LCTRL & Down::VolumeDownLoop()
 
 ; ^!+e::Edit()
 #HotIf
@@ -170,22 +175,22 @@ getSignalRemoteKey()
 	oldSignalRemoteKey := SignalRemoteKey
 	ok:=findtext_signalRemote()
 	if !ok && SignalRemoteKey == "" {
-    FindText().ToolTip("signal remote not found")
-		Sleep(2222)
-		FindText().ToolTip()	
+    ; FindText().ToolTip("signal remote not found")
+		; Sleep(2222)
+		; FindText().ToolTip()	
 		return
 	}
   x:=0
 	Try x:=ok[1].x
 	if x > 1557+5 { ; A_ScreenWidth-40 {
 		SignalRemoteKey := "2"
-	} else {
+	} else if x > 1500 {
 		SignalRemoteKey := "1"
 	}
 	if oldSignalRemoteKey != SignalRemoteKey {
-		FindText().ToolTip("x=" x ",SignalRemoteKey=" SignalRemoteKey,400,20)
-		Sleep(3333)
-		FindText().ToolTip()	
+		FindText().ToolTip("x=" x ",SignalRemoteKey=" SignalRemoteKey,400,20,2,{timeout:3})
+		; Sleep(3333)
+		; FindText().ToolTip()	
 	}
 	; global SignalRemoteKey
 	; WinActivate(FORTNITEWINDOW)
@@ -194,16 +199,16 @@ getSignalRemoteKey()
 	; sleep(333) 
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333)
-	; every second until found, then every 30 secconds
+	; every 10 seconds until found, then every 60 secconds
 	if SignalRemoteKey {
-		SetTimer(getSignalRemoteKey,-30000)
+		SetTimer(getSignalRemoteKey,-60000)
 	} else {
-		SetTimer(getSignalRemoteKey,-1000)
+		SetTimer(getSignalRemoteKey,-10000)
 	}
 	return SignalRemoteKey
 }
 
-SetTimer(getSignalRemoteKey, -2000)
+SetTimer(getSignalRemoteKey, -10000)
  
 Click_at_Cursor() {
   Loop {
@@ -641,10 +646,10 @@ forge_click_blue_purple2() {
   if A_CoordModePixel != 'Screen' {
     CoordMode('Pixel','Screen') 
   }  
-  x1 := 1355
-  y1 := 303
-  x2 := 1368
-  y2 := 308
+  x1 := 1357
+  y1 := 305  ; 308 - 3
+  x2 := 1366
+  y2 := 311  ; 308 + 3
 
   ; p1 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cpurple, Variation:=0, ScreenShot:=1)
   p2 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cpurplef, Variation:=0, ScreenShot:=1)
@@ -652,8 +657,8 @@ forge_click_blue_purple2() {
   b2 := FindText().PixelCount(x1:=x1, y1:=y1, x2:=x2, y2:=y2, ColorID:=cbluef, Variation:=0, ScreenShot:=0)
   p := p2 ; + p1
   b := b2 ; + b1
-  thresh := 7
-  if b > thresh  {
+  thresh := 10
+  if b > thresh && b > p {
     Click("L")
   } else if p > thresh {
     Click("R")
@@ -671,7 +676,7 @@ forge_click_blue_purple2() {
     ;   FindText().ToolTip(ttt, 320, 1372)
     ;   prev_ttt := ttt
     ; }
-    Sleep(70)
+    Sleep(80)
   }
 }
 
@@ -685,11 +690,11 @@ forge2()
 
   ; SetTimer(getcolorforge, 999) ; must disable until working again
   fails := 0
-  loop 1234 {
+  loop 2345 {
     if FORGE_FASTMODE {
       ; forge_click_blue_purple() ; getpixel version
       forge_click_blue_purple2() ; pixelcount version
-      Sleep(25)  
+      Sleep(5)  
     }
     else {
       f := findtext_forge_blue_purple()
@@ -905,14 +910,15 @@ fight_golem()
 
 findtext_use_pandora()
 {
-  ; Sleep(1000)
+  ms:=666
+  ; Sleep(ms)
   ; srk:=getSignalRemoteKey()
 
-  Sleep(1000)
+  Sleep(ms)
   switchToRemote()
-  Sleep(1000)
+  Sleep(ms)
   Click("R")
-  Sleep(1000)
+  Sleep(ms)
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<PANDORASBOX>*220$56.6PEl3+7GhKaJdKuhqdJdZOpetxeJOfKhGjD4YJeZfFhtq94kdOJMPReJRfKZOqLGhDvoSyjnnnm"
   xtra:=200
@@ -928,7 +934,7 @@ findtext_use_pandora()
 
   findtext_close()
 
-  Sleep(1000)
+  Sleep(ms)
   pickaxe()
  
 }
@@ -947,33 +953,34 @@ findtext_Activate() {
 }
 
 pandora_loop() {
-
+  ms:=666
   loop {
-    Sleep(1000)
+    Sleep(ms)
     Send("Y")
-    Sleep(1000)
+    Sleep(ms)
     Send("{Escape}")
-    Sleep(1000)
+    Sleep(ms)
     Click("Left Up")
-    Sleep(1000)
+    Sleep(ms)
     ps:=count_pandoras()
     FindText().ToolTip("pandoras:" ps)
     if ps >= 2 { 
       findtext_use_pandora()
     }
-    Sleep(1000)
+    Sleep(ms)
     Click("Left Down")
-    Sleep(1000)
+    Sleep(ms)
     Send("Y")
+    FindText().ToolTip()
     minutes := 5
     if ps <= 2 {
       minutes := 15
     }
     Sleep(minutes*60*1000)
     Send("{Esc}")
-    Sleep(1000)
+    Sleep(ms)
     Click("Left Up")
-    Sleep(1000)
+    Sleep(ms)
   }
 
 }
@@ -985,17 +992,17 @@ pandora_loop() {
 ; RShift & ]::FindText().CaptureCursor(0) ; to Cancel Capture Cursor
 ; look into MouseGetPos and Gui_MouseMove and how FindText captures the mouse cursor
 
-; Myth Heroes 
-!o::forge2()
-^+z::fight_zeus()  ; Myth Heroes 
-!g::fight_golem()  ; Myth Heroes 
-!p::pandora_loop()
+^o::forge2()
+RShift & o::forge2()
+^+z::fight_zeus() ; actually any boss except Golem
+^g::fight_golem() ; blocking not implemented
+^p::pandora_loop()
 
-!f::toggle_fastmode()
+^f::toggle_fastmode()
 
+^+m::MoveWindowToUpperRight() ; for when I accidentally fullscreen
 
-; ^+g::getcolorforgeToggle() ; Myth Heroes 
+; ^+g::getcolorforgeToggle()
 
-; RShift & o::forge()
 
 #HotIf 
