@@ -964,9 +964,11 @@ pandora_loop() {
     Sleep(ms)
     ps:=count_pandoras()
     FindText().ToolTip("pandoras:" ps)
-    if ps >= 2 { 
+    if ps >= 3 { 
       findtext_use_pandora()
     }
+    ; fails if not in focus:
+    ActivateFortniteWindow()
     Sleep(ms)
     Click("Left Down")
     Sleep(ms)
