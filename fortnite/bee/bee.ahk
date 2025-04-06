@@ -529,14 +529,15 @@ clicking(minutes) {
   Click("Left Up")
   Sleep(ms)
   Sleep(minutes*60*1000)
-  hp := get_hivehp()
-  if hp == 0 {
-    return
-  }
-  while hp > 0 {  
-    Sleep(2000)
-    hp := get_hivehp()
-  }
+  ; re-think this; default behavior for ^d is to dump 6 smokers in 18 minutes
+  ; hp := get_hivehp()
+  ; if hp == 0 {
+  ;   return
+  ; }
+  ; while hp > 0 {  
+  ;   Sleep(2000)
+  ;   hp := get_hivehp()
+  ; }
   Sleep(3000)
   FindText().ToolTip()
 }
