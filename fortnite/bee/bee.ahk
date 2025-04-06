@@ -42,6 +42,7 @@ LCTRL & Down::VolumeDownLoop()
 ^PrintScreen::FindText().Gui("Show")
 
 ^!+h::WindowHideToggle() ; control alt shift h to toggle window-hidden state:
+^!+f::WinShow(FORTNITEWINDOW)
 
 WINWIDTH := 640
 WINHEIGHT := 360
@@ -117,17 +118,28 @@ global 	WM_KEYDOWN 	:= 0x0100
 global WM_KEYUP 	:= 0x0101
 global hidden := false
 
+WinShow(FORTNITEWINDOW)
+
 WindowHideToggle() {
-	global hidden
-	try {
-		WinHide(FORTNITEWINDOW)
-		hidden := true
-		; BtnHide.Text := "Unhide"
-	} catch {
-		WinShow(FORTNITEWINDOW)
-		hidden := false
-		; BtnHide.Text := "ClickHide"
-	}
+	DetectHiddenWindows true
+  global hidden
+	if !hidden {
+    ; try catch as for the default setting, which is
+    ; DetectHiddenWindows false
+    try {
+      WinHide(FORTNITEWINDOW)
+      hidden := true
+      ; BtnHide.Text := "Unhide"
+    } catch {
+      WinShow(FORTNITEWINDOW)
+      hidden := false
+      ; BtnHide.Text := "ClickHide"
+    } 
+    }
+    else {
+    WinShow(FORTNITEWINDOW)
+    hidden := false
+  }
 }
 
 WindowShowAndFocus() {
@@ -359,10 +371,12 @@ findtext_Activate()
     xtra:=200
     if (ok:=FindText(&X, &Y, 1099-xtra, 264-xtra, 1099+xtra, 264+xtra, 0.05, 0.05, Text))
     {
+        Sleep(500)
         FindText().Click(X, Y, "L")
     }
     else
     {
+        Sleep(500)
         FindText().Click(1099, 264, "L")
     }
 }
@@ -386,7 +400,6 @@ findtext_use_smoker()
   xtra:=200
   if (ok:=FindText(&X, &Y, 1279-xtra, 263-xtra, 1279+xtra, 263+xtra, 0.05, 0.05, Text))
   {
-    FindText().Click(X, Y, "L")
     Sleep(500)
     FindText().Click(X, Y, "L")
   } else {
@@ -394,7 +407,8 @@ findtext_use_smoker()
     FindText().Click(1279, 263, "L")
   }
 
-    findtext_Activate()
+  Sleep(500)
+  findtext_Activate()
 
 
     ; findtext_close() ; not needed
@@ -515,6 +529,15 @@ clicking(minutes) {
   Click("Left Up")
   Sleep(ms)
   Sleep(minutes*60*1000)
+  hp := get_hivehp()
+  if hp == 0 {
+    return
+  }
+  while hp > 0 {  
+    Sleep(2000)
+    hp := get_hivehp()
+  }
+  Sleep(3000)
   FindText().ToolTip()
 }
 
@@ -559,11 +582,11 @@ available_efficiencies_unbuyable()
 
 
   ; I will then use this function to determine whether to buy efficiencies or not
-  ScreenShot := 0
+  ScreenShot := 0 ; only do the bitblt the first time
   for i, box in {
     1: [1104, 246, 1323, 289],
-    2: [1116,350,1321,386],
-    3: [1098,441,1326,480],
+    2: [1116, 350, 1321, 386],
+    3: [1098, 441, 1326, 480],
     4: [1102, 542, 1326, 572],
     5: [1102, 629, 1317, 669]
   } {
@@ -576,17 +599,20 @@ available_efficiencies_unbuyable()
   }
 }
 
+BUY_ANY := false
 
 findtext_autobuy_click()
 {
+  global BUY_ANY
   ms:=666
+  Sleep(ms/2)
   Send("{y down}")
-  Sleep(200)
+  Sleep(ms/2)
   Send("{y up}")
   
-  Sleep(ms)
+  Sleep(ms*2)
   Send("{Escape}")
-  Sleep(ms)
+  Sleep(ms*2)
   switchToRemote()
   Sleep(ms)
   switchToRemote()  ; often fails first attempt
@@ -594,7 +620,7 @@ findtext_autobuy_click()
   Click("L")
   Sleep(ms)
 
-  if ! available_efficiencies_unbuyable() {
+  if BUY_ANY || ! available_efficiencies_unbuyable() {
     t1:=A_TickCount, Text:=X:=Y:=""
     Text:="|<AUTO>*55$22.QqwtHNYpBaFyqNi9lX8"
     ; xtra:=200
@@ -610,6 +636,7 @@ findtext_autobuy_click()
     Sleep(ms)
   }
   ; findtext_close()
+  Sleep(ms)
   findtext_X()  ; hit X to close
   
   Sleep(ms)
@@ -624,13 +651,16 @@ findtext_X()
 {
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<smallX>*33$6.nHOSOHnU"
-  if (ok:=FindText(&X, &Y, 1468-150000, 45-150000, 1468+150000, 45+150000, 0, 0, Text))
+  xtra:=100
+  if (ok:=FindText(&X, &Y, 1468-xtra, 45-xtra, 1468+xtra, 45+xtra, 0.08, 0.08, Text))
   {
     Sleep(500)
     FindText().Click(X, Y, "L")
     Sleep(100)
-    FindText().Click(X, Y, "L")
+  } else {
     Sleep(500)
+    FindText().Click(1468, 45, "L")
+    Sleep(100)
   }
   return ok 
 }
