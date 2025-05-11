@@ -6,7 +6,7 @@
 ; #WinActivateForce 1
 
 ; #Include "*i findtextv2_v9.6.ahk" ; revert because of crashes occurring after Windows update (23H2 rollup)
-#Include "*i findtextv2_v10.ahk"  
+#Include "*i findtextv2_v10.ahk"
 
 #Include "appvol.ahk"
 
@@ -123,7 +123,9 @@ WinShow(FORTNITEWINDOW)
 WindowHideToggle() {
 	DetectHiddenWindows true
   global hidden
-	if !hidden {
+  localHidden := false  ; AHK fails to initialize globals half the time??!
+  try localHidden := hidden
+	if !localHidden {
     ; try catch as for the default setting, which is
     ; DetectHiddenWindows false
     try {
@@ -134,7 +136,7 @@ WindowHideToggle() {
       WinShow(FORTNITEWINDOW)
       hidden := false
       ; BtnHide.Text := "ClickHide"
-    } 
+    }
     }
     else {
     WinShow(FORTNITEWINDOW)
@@ -148,7 +150,7 @@ WindowShowAndFocus() {
 	WinWaitActive(FORTNITEWINDOW)
 }
 
-switchToRemote() 
+switchToRemote()
 {
 	if ! SignalRemoteKey {
 		getSignalRemoteKey()
@@ -156,7 +158,7 @@ switchToRemote()
 			FindText().ToolTip("Waiting for signal remote to appear")
 			Sleep(1000)
 			getSignalRemoteKey()
-		}  
+		}
 		FindText().ToolTip()
 	}
 	Send(SignalRemoteKey)
@@ -165,7 +167,7 @@ switchToRemote()
 findtext_signalRemote()
 {
 	; global EXTRA
-	xtra := 444 ; EXTRA 
+	xtra := 444 ; EXTRA
   t1:=A_TickCount, Text:=X:=Y:=""
   ; X:="wait"
   ; Y:=5.0
@@ -182,7 +184,7 @@ findtext_signalRemote()
   ; ok:=FindText(&X, &Y, 1524-xtra, 326-xtra, 1524+xtra, 326+xtra, 0, 0, Text)
   ; if ok
   ;   return ok
-  Text:="|<signalremote1>*55$13.00X005F0sUQ0A0A0402421V0AU0UE"  
+  Text:="|<signalremote1>*55$13.00X005F0sUQ0A0A0402421V0AU0UE"
   ok:=FindText(&X, &Y, 1557-xtra, 327-xtra, 1557+xtra, 327+xtra, 0.051, 0.051, Text)
 	return ok
 }
@@ -195,7 +197,7 @@ getSignalRemoteKey()
 	if !ok && SignalRemoteKey == "" {
     ; FindText().ToolTip("signal remote not found")
 		; Sleep(2222)
-		; FindText().ToolTip()	
+		; FindText().ToolTip()
 		return
 	}
   x:=0
@@ -208,13 +210,13 @@ getSignalRemoteKey()
 	if oldSignalRemoteKey != SignalRemoteKey {
 		FindText().ToolTip("x=" x ",SignalRemoteKey=" SignalRemoteKey,400,20,2,{timeout:3})
 		; Sleep(3333)
-		; FindText().ToolTip()	
+		; FindText().ToolTip()
 	}
 	; global SignalRemoteKey
 	; WinActivate(FORTNITEWINDOW)
-	; sleep(333) 
+	; sleep(333)
 	; SignalRemoteKey := InputBox("Enter signal remote key (eg. 1 or 2)","SignalRemoteKey",,"1").Value
-	; sleep(333) 
+	; sleep(333)
 	; WinActivate(FORTNITEWINDOW)
 	; sleep(333)
 	; every 10 seconds until found, then every 60 secconds
@@ -227,7 +229,7 @@ getSignalRemoteKey()
 }
 
 SetTimer(getSignalRemoteKey, -10000)
- 
+
 Click_at_Cursor() {
   Loop {
     Click()
@@ -252,7 +254,7 @@ Click_at_Cursor() {
 ;   }
 ; }
 
- 
+
 TryWinActivate(w)
 {
 	try {
@@ -319,7 +321,7 @@ try {
 if A_ScreenDPI != MyScreenDPI {
 	FindText().ToolTip("Only " MyScreenDPI " DPI supported; your DPI is " A_ScreenDPI)
 	use_FindText := false
-}   
+}
 
 findtext_signalRemote_bottomleftcurve() {
   t1:=A_TickCount, Text:=X:=Y:=""
@@ -393,7 +395,7 @@ findtext_use_smoker()
   Sleep(ms)
   switchToRemote()
   Sleep(ms)
-  Click("R") 
+  Click("R")
   Sleep(ms)
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<BEE SMOKER>*66$71.zDrsTiCTAnxzWMA0kSxXNa37syT1spP6yDaSNUk0ReqBwMDgP1U0PNgPAkNzbvwDq3DaNylU"
@@ -413,13 +415,13 @@ findtext_use_smoker()
 
     ; findtext_close() ; not needed
     ; Sleep(ms)
-    
+
     Sleep(ms)
     pickaxe()
     Sleep(ms)
     pickaxe()
     Sleep(ms/2)
-    
+
 }
 
 find_0_smoke()
@@ -450,7 +452,7 @@ smoker_loop(enable_buying:=true, total_minutes:=15) {
       continue
     }
 
-    ; first loop is user-initiated 
+    ; first loop is user-initiated
     ; after that he may forget the macro is running
     if A_Index > 1 && A_TimeIdlePhysical < 60*1000 {
         FindText().ToolTip("smoker_loop:user busy (need 60s idle)",270,70)
@@ -481,17 +483,17 @@ smoker_loop(enable_buying:=true, total_minutes:=15) {
     FindText().ToolTip("smoker_loop:smokers=" smokers,270,70)
     Sleep(ms)
 
-    if smokers { 
+    if smokers {
         FindText().ToolTip("smoker_loop:smoking",270,70)
         findtext_use_smoker()
     } else {
         FindText().ToolTip("smoker_loop:0 smoke",270,70)
     }
 
-    clicking(3)    
+    clicking(3)
     if enable_buying
       findtext_autobuy_click()
-    if total_minutes > 3 
+    if total_minutes > 3
       clicking(total_minutes - 3)
 
     ; Send("{Esc}")
@@ -514,11 +516,11 @@ clicking(minutes) {
   Send("{y down}")
   Sleep(200)
   Send("{y up}")
-  
+
   Sleep(ms)
   Send("{Escape}")
- 
-  
+
+
   Sleep(ms*2)
   Click("Left Down")
   Sleep(ms*2)
@@ -534,7 +536,7 @@ clicking(minutes) {
   ; if hp == 0 {
   ;   return
   ; }
-  ; while hp > 0 {  
+  ; while hp > 0 {
   ;   Sleep(2000)
   ;   hp := get_hivehp()
   ; }
@@ -556,6 +558,47 @@ smallwindow() {
   }
 }
 
+; available_efficiencies_unbuyable()
+; {
+;   if smallwindow()
+;     return true
+
+;   green := "0x63DE64"
+;   red := "0xE06B72"
+;   ; The following are GetRange offsets of bounding boxes
+;   ; for which I would like code to count the pixels of red or green:
+;   ; 1104, 246, 1323, 289
+;   ; 1116,350,1321,386
+;   ; 1098,441,1326,480
+;   ; 1102, 542, 1326, 572
+;   ; 1102, 629, 1317, 669
+
+;   ; please write the code for me below, using PixelCount() to count the pixels of red or green in the bounding boxes above:
+;   ; and track the count of boxes containing red pixels,
+;   ; and the count of boxes containing green pixels:
+;   ; finally return ttrue iff boxes containing red > 0
+;   ; and boxes containing green == 0
+;   ; (indicating that the player has unbuyable efficiencies)
+;   ; otherwise return false
+
+
+;   ; I will then use this function to determine whether to buy efficiencies or not
+;   ScreenShot := 0 ; only do the bitblt the first time
+;   for i, box in {
+;     1: [1104, 246, 1323, 289],
+;     2: [1116, 350, 1321, 386],
+;     3: [1098, 441, 1326, 480],
+;     4: [1102, 542, 1326, 572],
+;     5: [1102, 629, 1317, 669]
+;   } {
+;     red_pixels := FindText().PixelCount(1104, box[2], 1320, box[4], red, ScreenShot)
+;     ScreenShot := 1
+;     green_pixels := FindText().PixelCount(1104, box[2], 1320, box[4], green, ScreenShot)
+;     if (red_pixels > 0 && green_pixels == 0) {
+;       return true
+;     }
+;   }
+; }
 
 
 available_efficiencies_unbuyable()
@@ -565,39 +608,36 @@ available_efficiencies_unbuyable()
 
   green := "0x63DE64"
   red := "0xE06B72"
-  ; The following are GetRange offsets of bounding boxes 
-  ; for which I would like code to count the pixels of red or green:
-  ; 1104, 246, 1323, 289
-  ; 1116,350,1321,386
-  ; 1098,441,1326,480
-  ; 1102, 542, 1326, 572
-  ; 1102, 629, 1317, 669
 
-  ; please write the code for me below, using PixelCount() to count the pixels of red or green in the bounding boxes above:
-  ; and track the count of boxes containing red pixels, 
-  ; and the count of boxes containing green pixels:
-  ; finally return ttrue iff boxes containing red > 0 
-  ; and boxes containing green == 0 
-  ; (indicating that the player has unbuyable efficiencies)
-  ; otherwise return false
+  ; Constants for X positions (averaged from provided boxes)
+  x1 := 1104
+  x2 := 1320
 
+  ; Y positions calculated for equidistant spacing
+  ; First button at y=246, last at y=629, with 5 buttons
+  y_start := 246
+  spacing := (629 - 246) / 4  ; Approx 95.75 pixels between buttons
 
-  ; I will then use this function to determine whether to buy efficiencies or not
-  ScreenShot := 0 ; only do the bitblt the first time
-  for i, box in {
-    1: [1104, 246, 1323, 289],
-    2: [1116, 350, 1321, 386],
-    3: [1098, 441, 1326, 480],
-    4: [1102, 542, 1326, 572],
-    5: [1102, 629, 1317, 669]
-  } {
-    red_pixels := FindText().PixelCount(1104, box[2], 1320, box[4], red, ScreenShot)
-    ScreenShot := 1 
-    green_pixels := FindText().PixelCount(1104, box[2], 1320, box[4], green, ScreenShot)
-    if (red_pixels > 0 && green_pixels == 0) {
-      return true
-    }
+  red_count := 0
+  green_count := 0
+  ScreenShot := 0
+
+  Loop 5
+  {
+    y_top := y_start + (A_Index - 1) * spacing
+    y_bottom := y_top + 43  ; Approximate height from original boxes (e.g., 289-246)
+
+    red_pixels := FindText().PixelCount(x1, y_top, x2, y_bottom, red, ScreenShot)
+    ScreenShot := 1
+    green_pixels := FindText().PixelCount(x1, y_top, x2, y_bottom, green, ScreenShot)
+
+    if (red_pixels > 0)
+      red_count++
+    if (green_pixels > 0)
+      green_count++
   }
+
+  return (red_count > 0 && green_count == 0)
 }
 
 BUY_ANY := false
@@ -610,7 +650,7 @@ findtext_autobuy_click()
   Send("{y down}")
   Sleep(ms/2)
   Send("{y up}")
-  
+
   Sleep(ms*2)
   Send("{Escape}")
   Sleep(ms*2)
@@ -639,12 +679,12 @@ findtext_autobuy_click()
   ; findtext_close()
   Sleep(ms)
   findtext_X()  ; hit X to close
-  
+
   Sleep(ms)
-   
+
   pickaxe()
   Sleep(ms)
-  
+
 }
 
 ; close
@@ -663,7 +703,7 @@ findtext_X()
     FindText().Click(1468, 45, "L")
     Sleep(100)
   }
-  return ok 
+  return ok
 }
 
 global meteorhp_pct := 0
@@ -678,8 +718,8 @@ get_hivehp() { ; get_meteorhp() {
   ;   show_meteorhp := false
   ; }
   ; count pixels that are red in this range: 1189, 34, 1373, 43
-  ; 0xC41C24 , 0xA1171E 
-  color := "A1171E" 
+  ; 0xC41C24 , 0xA1171E
+  color := "A1171E"
   ; offset := A_ScreenWidth-1600
   ; 1522/34   1189+320=
   ; y := 36  ; back to 34; it was 42; was the window moved temporarily? What would have moved it?
@@ -709,7 +749,7 @@ get_hivehp() { ; get_meteorhp() {
   return hppct
 }
 
-; SetTimer(get_hivehp, 2000)  
+; SetTimer(get_hivehp, 2000)
 
 toggleWindowPosition() {
   if smallwindow() {
@@ -717,21 +757,163 @@ toggleWindowPosition() {
   } else {
     MoveWindowToUpperRight()
   }
-} 
+}
+
+findtext_joinfight() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<>*22$56.000T000007zUzw3sz1xzsTzkyDsTTyDzwDXy7kDXwTXszlw3sy3syDwT0yTUyDXrbkDbkDXsxtw3tw3syDDT0yT0yDXnrkDbkDXswTw3sy3syD7z0yDUyDXkzsTXwzXswDzzkTzkyD1zzw3zsDXkTzw0Tw3sw3y"
+
+  if (ok:=FindText(&X, &Y, 1226-150000, 565-150000, 1226+150000, 565+150000, 0, 0, Text))
+  {
+    Sleep(55)
+    FindText().Click(X, Y, "L")
+  } else {
+    Sleep(55)
+    FindText().Click(1226, 565, "L")
+  }
+}
+
+findtext_start()
+{
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<>*22$80.1s000000000003zlzzUTs3zy7zxzyTzs7y0zzlzzzDbzy1zkDzyTzzVw3s0yw3sDUDXs00y0DD0y3s3sz00DU3nsDUy0y7y03s1wy3sDUDUzw0y0T7Uy7k3s3zUDU7lwDzk0y03w3s3sT3zy0DU0T0y0zzkzzk3sw7kDUDzwDUy0yDVw3s3zzXsDUDXzz0y1w3sy3s3sTzUDUT0yDUy0y1zU3s7kDnsDUDW"
+  if (ok:=FindText(&X, &Y, 1226-150000, 565-150000, 1226+150000, 565+150000, 0, 0, Text))
+  {
+    Sleep(55)
+    FindText().Click(X, Y, "L")
+  } else {
+    Sleep(55)
+    FindText().Click(1226, 565, "L")
+  }
+
+}
+
+findtext_timer00()
+{
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<00:>*254$31.s7y1zk1w0TssSC7sSC7XUT77lkDXXss7klwCXssyDlwQT7sSC7XyC7XVl07k1ss7y1wE"
+  xtra:=80
+  X:="wait0"
+  Y:=20.0
+  ok:=FindText(&X, &Y, 1091-xtra, 492-xtra, 1091+xtra, 492+xtra, 0.06, 0.06, Text)
+  return ok
+}
+
+findtext_1of4()
+{
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<1/4>*254$30.zznzzzznzzkzXy10zbwF0zbwl8z7slsz7tlszDllsyDXlsyDblsyTU0swTU0swTzlswzzlswzzlzszzzzszzzU"
+  xtra:=80
+  ok:=FindText(&X, &Y, 1307-xtra, 263-xtra, 1307+xtra, 263+xtra, 0.05, 0.05, Text)
+  return ok
+}
+
+findtext_HPleft(seconds)
+{
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<>C41C24-0.80$24.zzzzzzzzzzzzzzzz0003zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzU"
+  xtra:=80
+  X:="wait0"
+  Y:=seconds
+  ok:=FindText(&X, &Y, 579-xtra, 124-xtra, 579+xtra, 124+xtra, 0, 0, Text)
+  return ok
+}
+
+bear() {
+  MoveWindowToBigCenter()
+  KeyWait("Control", "T2")
+  Send("{space}")
+  Sleep(111)
+  Loop {
+    ; Send("{space}")
+    Send("2") ; gun, I hope
+    Send("e")
+    Sleep(111)
+    ; search JOIN     
+    findtext_joinfight()
+    Sleep(333)
+    Sleep(2222)
+    ; cant chat inside a fight
+    ; Send("{y down}")
+    ; Sleep(333)
+    ; Send("{y up}")
+    ; Sleep(333)
+    ; Send("you have three seconds to join the fight{enter}")
+    ; Sleep(2222)
+    ; Send("{y down}")
+    ; Sleep(333)
+    ; Send("{y up}")
+    ; Sleep(333)
+    ; Send("y{Escape}")
+    carry_mode := ! findtext_1of4()
+    findtext_start()
+    findtext_timer00()
+    findtext_start()
+
+    Sleep(55)
+    Send("2") ; gun, I hope
+    Sleep(55)
+    shooting_length := 15
+    if carry_mode {
+      Send("2") ; gun, I hope
+      Send("{d down}")
+      Sleep(222)
+      Send("{d up}")
+      shooting_length := 25
+    }
+    Sleep(55)
+    ; Send("2") ; gun, I hope
+    ; Sleep(55)
+    Loop shooting_length {
+      Click("Left Down")  ; firing
+      Sleep(350)    
+      Click("Left Up")  ; firing
+      Sleep(33)
+      if A_Index > 10 && ! findtext_HPleft(0.001)
+        break
+    }
+    Click("Left Down")  ; firing
+    Send("{w down}")
+    Sleep(4444)
+    Click("Left Up")  ; firing
+    Sleep(111)
+
+    Send("{w up}{a down}{e down}")
+    Sleep(3999)
+    Send("{a up}")
+    Sleep(111)
+    Send("{e up}")
+    ; Loop(5)
+    ; {
+    ;   Send("e")
+    ;   Send("{w down}")
+    ;   Sleep(444)
+    ;   Send("{w up}")
+    ; }
+
+    Sleep(4444)
+  ; walk back to the platform
+    Send("{d down}{e down}")
+    Sleep(900)
+    Send("{d up}{e up}")
+    
+  }
+
+}
 
 #HotIf WinActive(FORTNITEWINDOW)
 
 ^s::smoker_loop(true,15)
-^d::smoker_loop(false,3) ; dump "drills" without autobuy  
+^d::smoker_loop(false,3) ; dump "drills" without autobuy
 
-
+RShift & b::bear()
 ^+m::toggleWindowPosition() ; MoveWindowToUpperRight() ; for when I accidentally fullscreen
 ^+a::findtext_autobuy_click()
 
-#HotIf 
+#HotIf
 
 
 ; Area4 Huge Hive gather rate comparison:
 ; 3x critical damage (7%) =  41 to 64 = 23qtdc (smoker)
-; 3x gather rate (7%) = 66.7 to  89 or less = 22.3qtdc (smoker) 
-; 2x crit chance + FS = 91 to 113 = 22 qtdc (smoker) 
+; 3x gather rate (7%) = 66.7 to  89 or less = 22.3qtdc (smoker)
+; 2x crit chance + FS = 91 to 113 = 22 qtdc (smoker)
