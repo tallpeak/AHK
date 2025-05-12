@@ -808,15 +808,24 @@ findtext_1of4()
   return ok
 }
 
-findtext_HPleft(seconds)
+findtext_HPleft()
 {
   t1:=A_TickCount, Text:=X:=Y:=""
-  Text:="|<>C41C24-0.80$24.zzzzzzzzzzzzzzzz0003zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzU"
+  Text:="|<>C41C24-102020$24.zzzzzzzzzzzzzzzz0003zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzU"
   xtra:=80
-  X:="wait0"
-  Y:=seconds
-  ok:=FindText(&X, &Y, 579-xtra, 124-xtra, 579+xtra, 124+xtra, 0, 0, Text)
+  ; X:="wait0"
+  ; Y:=seconds
+  ok:=FindText(&X, &Y, 579-xtra, 124-xtra, 579+xtra, 124+xtra, 0.09, 0.09, Text)
   return ok
+}
+
+getHPbar()
+{
+  ; 568, 110, 1031, 137
+  color := "C41C24"
+  reds := FindText().PixelCount(568,116,1031,116,color,0)
+  FindText().ToolTip("reds=" reds, 1031-160,137-66)
+  return reds
 }
 
 bear() {
@@ -869,8 +878,10 @@ bear() {
       Sleep(350)    
       Click("Left Up")  ; firing
       Sleep(33)
-      if A_Index > 10 && ! findtext_HPleft(0.001)
+      if A_Index > 10 && getHPbar() < 2 {
+        ; FindText().ToolTip("HP gone,walking forward",,{timeout:3})
         break
+      }
     }
     Click("Left Down")  ; firing
     Send("{w down}")
