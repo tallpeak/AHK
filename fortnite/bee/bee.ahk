@@ -1,4 +1,4 @@
-; Fortnite Creative - bee tycoon
+ ; Fortnite Creative - bee tycoon
 ; todo user config into Map https://www.autohotkey.com/docs/v2/lib/Map.htm
 ; findtext strings etc
 #Requires AutoHotkey v2.0
@@ -762,8 +762,10 @@ toggleWindowPosition() {
 findtext_joinfight() {
   t1:=A_TickCount, Text:=X:=Y:=""
   Text:="|<>*22$56.000T000007zUzw3sz1xzsTzkyDsTTyDzwDXy7kDXwTXszlw3sy3syDwT0yTUyDXrbkDbkDXsxtw3tw3syDDT0yT0yDXnrkDbkDXswTw3sy3syD7z0yDUyDXkzsTXwzXswDzzkTzkyD1zzw3zsDXkTzw0Tw3sw3y"
-
-  if (ok:=FindText(&X, &Y, 1226-150000, 565-150000, 1226+150000, 565+150000, 0, 0, Text))
+  X:="wait"
+  Y:=5.0
+  xtra:=100
+  if (ok:=FindText(&X, &Y, 1226-xtra, 565-xtra, 1226+xtra, 565+xtra, 0, 0, Text))
   {
     Sleep(55)
     FindText().Click(X, Y, "L")
@@ -776,8 +778,11 @@ findtext_joinfight() {
 findtext_start()
 {
   t1:=A_TickCount, Text:=X:=Y:=""
+  X:="wait"
+  Y:=5
   Text:="|<>*22$80.1s000000000003zlzzUTs3zy7zxzyTzs7y0zzlzzzDbzy1zkDzyTzzVw3s0yw3sDUDXs00y0DD0y3s3sz00DU3nsDUy0y7y03s1wy3sDUDUzw0y0T7Uy7k3s3zUDU7lwDzk0y03w3s3sT3zy0DU0T0y0zzkzzk3sw7kDUDzwDUy0yDVw3s3zzXsDUDXzz0y1w3sy3s3sTzUDUT0yDUy0y1zU3s7kDnsDUDW"
-  if (ok:=FindText(&X, &Y, 1226-150000, 565-150000, 1226+150000, 565+150000, 0, 0, Text))
+  xtra:=100
+  if (ok:=FindText(&X, &Y, 1226-xtra, 565-xtra, 1226+xtra, 565+xtra, 0, 0, Text))
   {
     Sleep(55)
     FindText().Click(X, Y, "L")
@@ -824,21 +829,48 @@ getHPbar()
   ; 568, 110, 1031, 137
   color := "C41C24"
   reds := FindText().PixelCount(568,116,1031,116,color,0)
-  FindText().ToolTip("reds=" reds, 1031-160,137-66)
+  ; FindText().ToolTip("reds=" reds, 1031-160,137-66)
   return reds
 }
 
 bear() {
   MoveWindowToBigCenter()
-  KeyWait("Control", "T2")
+  KeyWait("Control", "T3")
+  KeyWait("b", "T3")
   Send("{space}")
   Sleep(111)
+  Send("2") ; gun, I hope
+  Sleep(111)
+  Send("2") ; gun, I hope
+  Sleep(111)
+  Send("2") ; gun, I hope
   Loop {
+
+    if !WinActive(FORTNITEWINDOW, , FORTNITEEXCLUDEWINDOW) {
+      break
+    }
+
     ; Send("{space}")
+    Sleep(111)
     Send("2") ; gun, I hope
+    Sleep(111)
+    if A_TimeIdlePhysical < 1111 && A_Index > 1 {
+      FindText().ToolTip("bear:stopped due to user activity",270,70)
+      break
+    }
     Send("e")
     Sleep(111)
-    ; search JOIN     
+    
+    Sleep(2222)
+    if A_Index = 1 {
+      findtext_hardmode_click()
+      Sleep(666)
+      findtext_exmode_click()
+      Sleep(111)
+    }
+
+
+    ; search JOIN
     findtext_joinfight()
     Sleep(333)
     Sleep(2222)
@@ -857,40 +889,40 @@ bear() {
     carry_mode := ! findtext_1of4()
     findtext_start()
     findtext_timer00()
-    findtext_start()
-
-    Sleep(55)
-    Send("2") ; gun, I hope
-    Sleep(55)
+    ; findtext_start()
+    ; Sleep(55)
+    ; Send("2") ; gun, I hope
+    ; Sleep(55)
     shooting_length := 15
     if carry_mode {
-      Send("2") ; gun, I hope
+      ; Send("2") ; gun, I hope
       Send("{d down}")
-      Sleep(222)
+      Sleep(300)
       Send("{d up}")
       shooting_length := 25
     }
-    Sleep(55)
+    Sleep(22)
     ; Send("2") ; gun, I hope
     ; Sleep(55)
     Loop shooting_length {
-      Click("Left Down")  ; firing
-      Sleep(350)    
       Click("Left Up")  ; firing
       Sleep(33)
-      if A_Index > 10 && getHPbar() < 2 {
+      Click("Left Down")  ; firing
+      Sleep(350)
+      if A_Index > 12 && getHPbar() < 2 {
         ; FindText().ToolTip("HP gone,walking forward",,{timeout:3})
+        Click("Left Up")  ; firing
         break
       }
     }
-    Click("Left Down")  ; firing
+    ; Click("Left Down")  ; firing
     Send("{w down}")
-    Sleep(4444)
-    Click("Left Up")  ; firing
-    Sleep(111)
-
+    Sleep(1111)
+    Click("Left Up")
+    Sleep(3666) ; was 3333
+    
     Send("{w up}{a down}{e down}")
-    Sleep(3999)
+    Sleep(3888) ; was 3555
     Send("{a up}")
     Sleep(111)
     Send("{e up}")
@@ -902,14 +934,45 @@ bear() {
     ;   Send("{w up}")
     ; }
 
-    Sleep(4444)
+    ; Sleep(4000)  ; a little long because we dont know how long it will take to exit the battle
+    FindText().ToolTip("Stop with shift...(4 sec)",270,70)
+    kwshift := KeyWait("Shift", "DT4")
+    if kwshift {
+      FindText().ToolTip("bear:stopped with shift",270,70)
+      Sleep(3000)
+      FindText().ToolTip()
+      return
+    }
+    FindText().ToolTip()
   ; walk back to the platform
     Send("{d down}{e down}")
     Sleep(900)
     Send("{d up}{e up}")
-    
+
   }
 
+}
+
+findtext_hardmode_click()
+{
+
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<HARD M>*22$61.sQ3sDsDs0DQC3w7z7z07y71q3XnXk3z3UvVktks1zVkNksQsS0vzsQsQQQD0RzwCCDwC7UCQC777z73U7C77zXXnVk3b3XVtktzs1nVlkQsQzs0t"
+  if (ok:=FindText(&X, &Y, 1226-150000, 637-150000, 1226+150000, 637+150000, 0, 0, Text))
+  {
+    Sleep(222)
+      FindText().Click(X, Y, "L")
+  }  
+}
+
+findtext_exmode_click() {
+  t1:=A_TickCount, Text:=X:=Y:=""
+  Text:="|<EX MODE>*22$79.znls1sD1w3y1zzsss0wDXzVzkzy0SQ0S7lvktsQ707Q0DXtswQCC3U3i06nQsCC771z0y039iQ773XyzUzU1abC3XVlzQ0Rk0nnb1lkssC0Sw0MtnlsswQ7yCC0AMszsTwDzzD7U60QDsDw7y00000001k0000U"
+  if (ok:=FindText(&X, &Y, 1226-150000, 638-150000, 1226+150000, 638+150000, 0, 0, Text))
+  {
+    Sleep(222)
+     FindText().Click(X, Y, "L")
+  }  
 }
 
 #HotIf WinActive(FORTNITEWINDOW)
